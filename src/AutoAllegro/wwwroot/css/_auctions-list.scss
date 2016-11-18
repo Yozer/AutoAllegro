@@ -1,0 +1,18 @@
+@import 'variables';
+
+#main {
+    .buyers-list,
+    .list-wrapper {
+        table {
+            tr {
+                td {
+                    padding: 12px 8px;
+                }
+            }
+        }
+    }
+
+    .pagination-wrapper {
+        text-align: center;
+    }
+}

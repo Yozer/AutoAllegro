@@ -1,0 +1,12 @@
+@import url('bootstrap.css');
+
+@import 'variables';
+
+body {
+}
+
+@import 'footer';
+
+.auctions-list {
+    @import 'auctions-list';
+}
