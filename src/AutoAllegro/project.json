@@ -24,7 +24,6 @@
       "type": "build"
     },
     "Microsoft.AspNetCore.Authentication.Cookies": "1.1.0",
-    "BundlerMinifier.Core": "2.2.306",
     "Microsoft.ApplicationInsights.AspNetCore": "1.0.2",
     "Microsoft.AspNetCore.Diagnostics": "1.1.0",
     "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "1.1.0",
@@ -89,7 +88,8 @@
   },
 
   "scripts": {
-    "prepublish": [ "bower install", "dotnet bundle" ],
+    "precompile": [ "gulp clean", "gulp compile"],
+    "prepublish": [ "gulp clean", "gulp compile", "gulp min" ],
     "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
   }
 }

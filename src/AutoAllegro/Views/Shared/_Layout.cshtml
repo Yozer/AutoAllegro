@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pl">
 
 <head>
@@ -6,8 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@ViewData["Title"] - AutoAllegro</title>
+<environment names="Development">
     <link href="~/css/main.css" rel="stylesheet">
-    @RenderSection("stylesheets", required: false)
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+</environment>
+<environment names="Staging,Production">
+    <link src="~/js/main.min.js" rel="stylesheet">
+</environment>
 </head>
 
 <body class="@ViewData["bodyClass"]">
@@ -58,9 +63,16 @@
             </div>
         </div>
     </footer>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="~/js/app.min.js"></script>
-    @RenderSection("javascripts", required: false)
+<environment names="Development">
+    <script src="~/js/main.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</environment>
+<environment names="Staging,Production">
+    <script src="~/js/main.min.js"></script>
+</environment>
 </body>
 
 </html>

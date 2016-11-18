@@ -1,14 +1,12 @@
 @import url("bootstrap.css");
 footer#footer {
-  padding: 30px 0;
-}
-footer#footer .copyright {
-  text-align: center;
-}
+  padding: 30px 0; }
+  footer#footer .copyright {
+    text-align: center; }
 
-.auctions-list #main .list-wrapper table tr td, .auctions-list #main .buyers-list table tr td {
-  padding: 12px 8px;
-}
+.auctions-list #main .buyers-list table tr td,
+.auctions-list #main .list-wrapper table tr td {
+  padding: 12px 8px; }
+
 .auctions-list #main .pagination-wrapper {
-  text-align: center;
-}
+  text-align: center; }
