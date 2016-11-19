@@ -15,7 +15,7 @@ var paths = {
 
 paths.js = paths.webroot + "js/**/*.js";
 paths.minJs = paths.webroot + "js/**/*.min.js";
-paths.css = paths.webroot + "css/**/*.css";
+paths.css = paths.webroot + "css/main*.css";
 paths.minCss = paths.webroot + "css/**/*.min.css";
 paths.sass = paths.webroot + "css/**/*.scss";
 paths.concatJsDest = paths.webroot + "js/main.min.js";
@@ -53,7 +53,7 @@ gulp.task("min:js", function () {
 
 gulp.task("min:css", function () {
     return gulp.src([paths.css, "!" + paths.minCss])
-        .pipe(addsrc(paths.webroot + "lib/bootstrap/dist/css/bootstrap.css"))
+        .pipe(addsrc(paths.webroot + "css/bootstrap-custom.css"))
         .pipe(concat(paths.concatCssDest))
         .pipe(cssmin())
         .pipe(gulp.dest("."));
