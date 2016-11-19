@@ -1,4 +1,27 @@
 # Commitiownie
 
-Do mastera nie commitujemy. Robimy nowego brancha dla danego issue. Jak skończymy pracę to robimy merge requesta:
+Do mastera nie commitujemy. Robimy nowego brancha dla danego issue. 
+
+Jak skończymy pracę to robimy merge requesta:
 https://docs.gitlab.com/ee/gitlab-basics/add-merge-request.html
+
+Zaznaczymy w merge request, żeby zamykało issue po zamknięciu merge requesta!
+
+# Pierwsze uruchomienie
+
+1. Klonujemy repo
+3. Installujemy npm jak nie mamy
+3. Ustawiamy sobie zmienną środowiskową na:
+```
+ASPNETCORE_ENVIRONMENT=Development
+```
+
+4. Uruchamiamy (będą w src/AutoAllegro):
+```
+npm install bower gulp -g
+npm install
+dotnet restore
+dotnet run
+```
+
+5. Na localhost:5000 mamy stronke
