@@ -245,3 +245,4 @@ ModelManifest.xml
 .fake/
 
 *.min.*
+src/AutoAllegro/wwwroot/css/main.css
