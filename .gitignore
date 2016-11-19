@@ -244,5 +244,6 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 
-*.min.*
 src/AutoAllegro/wwwroot/css/main.css
+src/AutoAllegro/wwwroot/css/*.min.css
+src/AutoAllegro/wwwroot/js/*.min.js
