@@ -25,3 +25,7 @@ dotnet run
 ```
 
 5. Na localhost:5000 mamy stronke
+
+# Pomoce
+Przykładowy projekt w którym możemy zobaczyć jak zrobić wiele rzeczy:
+https://github.com/aspnet/MusicStore/tree/rel/1.1.0
