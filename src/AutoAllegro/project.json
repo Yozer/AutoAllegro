@@ -88,8 +88,7 @@
   },
 
   "scripts": {
-    "precompile": [ "gulp clean", "gulp compile"],
-    "prepublish": [ "gulp min" ],
+    "precompile": [ "gulp clean", "gulp compile", "gulp min"],
     "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
   }
 }
