@@ -13,82 +13,153 @@
                 <h1>{{auction_title}}</h1>
                 <div class="row">
                     <div class="col-md-8">
-                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quibusdam quae eos dolorum expedita, id tenetur inventore ut sed, facere odit eveniet nesciunt et. Possimus enim, itaque, at consectetur voluptatem mollitia.</p>
+                        <p><strong>Prowizja od sprzedaży:</strong> xx zł</p>
+                        <p><strong>Prowizja od wystawienia aukcji:</strong> xx zł</p>
                     </div>
                     <div class="col-md-4">
                         <p><strong>Cena:</strong> 29,99 zł</p>
                         <p><strong>Koniec:</strong> 28.12.2016</p>
-                        <p><strong>Sprzedano:</strong> 28 sztuk</p>
                     </div>
                 </div>
-                <p><a class="btn btn-primary btn-lg">Zobacz na allegro</a></p>
+                <p><a class="btn btn-primary btn-lg">Synchronizuj opłaty</a></p>
             </div>
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12 buyers-list">
-            <table class="table table-hover ">
-                <thead>
-                    <tr>
-                        <th>Login</th>
-                        <th>E-mail</th>
-                        <th>Sztuk</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><a href="order.html">login</a></td>
-                        <td><a href="order.html">user@domain.com</a></td>
-                        <td>3</td>
-                        <td>Zrealizowane</td>
-                    </tr>
-                    <tr>
-                        <td><a href="order.html">login</a></td>
-                        <td><a href="order.html">user@domain.com</a></td>
-                        <td>3</td>
-                        <td>Zrealizowane</td>
-                    </tr>
-                    <tr>
-                        <td><a href="order.html">login</a></td>
-                        <td><a href="order.html">user@domain.com</a></td>
-                        <td>3</td>
-                        <td>Zrealizowane</td>
-                    </tr>
-                    <tr>
-                        <td><a href="order.html">login</a></td>
-                        <td><a href="order.html">user@domain.com</a></td>
-                        <td>3</td>
-                        <td>Zrealizowane</td>
-                    </tr>
-                    <tr>
-                        <td><a href="order.html">login</a></td>
-                        <td><a href="order.html">user@domain.com</a></td>
-                        <td>3</td>
-                        <td>Zrealizowane</td>
-                    </tr>
-                    <tr>
-                        <td><a href="order.html">login</a></td>
-                        <td><a href="order.html">user@domain.com</a></td>
-                        <td>3</td>
-                        <td>Zrealizowane</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12 pagination-wrapper">
-            <ul class="pagination">
-                <li class="disabled"><a href="#">&laquo;</a></li>
-                <li class="active"><a href="#">1</a></li>
-                <li><a href="#">2</a></li>
-                <li><a href="#">3</a></li>
-                <li><a href="#">4</a></li>
-                <li><a href="#">5</a></li>
-                <li><a href="#">&raquo;</a></li>
+        <div class="col-md-12">
+            <ul id="panel-nav" class="nav nav-justified nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#buyers" aria-controls="buyers" role="tab" data-toggle="tab">Zamówienia</a></li>
+                <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Ustawienia</a></li>
             </ul>
+
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="buyers">
+                    <table class="table table-hover ">
+                        <thead>
+                            <tr>
+                                <th>Login</th>
+                                <th>E-mail</th>
+                                <th>Sztuk</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><a href="order.html">login</a></td>
+                                <td><a href="order.html">user@domain.com</a></td>
+                                <td>3</td>
+                                <td>Zrealizowane</td>
+                            </tr>
+                            <tr>
+                                <td><a href="order.html">login</a></td>
+                                <td><a href="order.html">user@domain.com</a></td>
+                                <td>3</td>
+                                <td>Zrealizowane</td>
+                            </tr>
+                            <tr>
+                                <td><a href="order.html">login</a></td>
+                                <td><a href="order.html">user@domain.com</a></td>
+                                <td>3</td>
+                                <td>Zrealizowane</td>
+                            </tr>
+                            <tr>
+                                <td><a href="order.html">login</a></td>
+                                <td><a href="order.html">user@domain.com</a></td>
+                                <td>3</td>
+                                <td>Zrealizowane</td>
+                            </tr>
+                            <tr>
+                                <td><a href="order.html">login</a></td>
+                                <td><a href="order.html">user@domain.com</a></td>
+                                <td>3</td>
+                                <td>Zrealizowane</td>
+                            </tr>
+                            <tr>
+                                <td><a href="order.html">login</a></td>
+                                <td><a href="order.html">user@domain.com</a></td>
+                                <td>3</td>
+                                <td>Zrealizowane</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="pagination-wrapper">
+                        <ul class="pagination">
+                            <li class="disabled"><a href="#">&laquo;</a></li>
+                            <li class="active"><a href="#">1</a></li>
+                            <li><a href="#">2</a></li>
+                            <li><a href="#">3</a></li>
+                            <li><a href="#">4</a></li>
+                            <li><a href="#">5</a></li>
+                            <li><a href="#">&raquo;</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="settings">
+                    <form action="#" class="form-horizontal">
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        <input name="automatic_comments" type="checkbox"> Automatycznie wystawiaj komentarze
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox"> Monitoruj aukcję
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        <input name="non_material_checkbox" type="checkbox"> Przedmiot niematerialny
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="non-material-wrapper" class="hidden">
+                            <div class="form-group">
+                              <label for="non_material_message" class="col-sm-2">Wiadomość dla kupujących</label>
+                              <div class="col-sm-10">
+                                  <textarea class="form-control" name="non_material_message" id="non_material_message" rows="6" placeholder="Wpisz swoją wiadomość..."></textarea>
+                              </div>
+                            </div>
+                            <div class="form-group">
+                              <label for="codes_list" class="col-sm-2">Lista kodów</label>
+                              <div class="col-sm-10">
+                                  <textarea class="form-control" name="codes_list" id="codes_list" rows="6" placeholder="Wprowadź każdy kod w nowej linii..."></textarea>
+                              </div>
+                            </div>
+                            <div class="form-group">
+                              <label for="codes_to_send" class="col-sm-2">Liczba kodów do wysłania</label>
+                              <div class="col-sm-10">
+                                  <input type="number" id="codes_to_send" name="codes_to_send">
+                              </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-group">
+                            <div class="col-sm-10 col-sm-offset-2">
+                                <button type="submit" class="btn btn-success">Zapisz</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

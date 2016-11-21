@@ -3,8 +3,14 @@
 body {
 }
 
+@import 'components/forms';
+
 @import 'footer';
 
 .auctions-list {
     @import 'auctions-list';
+}
+
+.auction {
+    @import 'auction';
 }

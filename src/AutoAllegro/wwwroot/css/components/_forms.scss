@@ -1,0 +1,7 @@
+@import 'variables';
+
+input {
+    &:focus {
+        outline: none;
+    }
+}

@@ -42,10 +42,9 @@ gulp.task("compile", ["compile:sass"]);
 
 gulp.task("min:js", function () {
     return gulp.src([paths.js, "!" + paths.minJs], { base: "." })
-        .pipe(addsrc(paths.webroot + "lib/jquery/dist/jquery.js"))
         .pipe(addsrc(paths.webroot + "lib/jquery-validation/dist/jquery.validate.js"))
         .pipe(addsrc(paths.webroot + "lib/jquery-validation-unobtrusive/jquery-validation-unobtrusive.js"))
-        .pipe(addsrc(paths.webroot + "lib/bootstrap/dist/js/boostrap.js"))
+        .pipe(addsrc(paths.webroot + "lib/bootstrap/dist/js/bootstrap.min.js"))
         .pipe(concat(paths.concatJsDest))
         .pipe(uglify())
         .pipe(gulp.dest("."));
