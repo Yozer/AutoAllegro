@@ -18,7 +18,7 @@ ASPNETCORE_ENVIRONMENT=Development
 
 4. Uruchamiamy (będą w src/AutoAllegro):
 ```
-npm install bower gulp -g
+npm install gulp -g
 npm install
 dotnet restore
 dotnet run
