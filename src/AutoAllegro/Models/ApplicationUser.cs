@@ -8,5 +8,8 @@ namespace AutoAllegro.Models
     public class User : IdentityUser
     {
         public virtual ICollection<Auction> Auctions{ get; set; }
+        public string AllegroKey { get; set; }
+        public string AllegroUserName { get; set; }
+        public string AllegroHashedPass { get; set; }
     }
 }
