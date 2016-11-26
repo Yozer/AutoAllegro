@@ -51,6 +51,11 @@ namespace AutoAllegro
             services.AddIdentity<ApplicationUser, IdentityRole>(options =>
                 {
                     options.Cookies.ApplicationCookie.AccessDeniedPath = "/Home/AccessDenied";
+                    options.Password.RequireDigit = false;
+                    options.Password.RequireLowercase = false;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequiredLength = 5;
                 })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
@@ -84,7 +89,7 @@ namespace AutoAllegro
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
 
             // StatusCode pages to gracefully handle status codes 400-599.
-            app.UseStatusCodePagesWithRedirects("~/Home/StatusCodePage");
+            app.UseStatusCodePagesWithRedirects("~/Auction/StatusCodePage");
 
             app.UseExceptionHandler("/Home/Error");
 

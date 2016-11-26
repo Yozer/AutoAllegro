@@ -6,21 +6,32 @@
 
 @if (SignInManager.IsSignedIn(User))
 {
-    <form asp-area="" asp-controller="Account" asp-action="LogOff" method="post" id="logoutForm" class="navbar-right">
-        <ul class="nav navbar-nav navbar-right">
-            <li>
-                <a asp-area="" asp-controller="Manage" asp-action="Index" title="Manage">Hello @UserManager.GetUserName(User)!</a>
-            </li>
-            <li>
-                <button type="submit" class="btn btn-link navbar-btn navbar-link">Log off</button>
-            </li>
-        </ul>
+    <form asp-controller="Account" asp-action="LogOff" method="post" id="logoutForm" class="navbar-right">
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li class="active"><a asp-controller="Auction" asp-action="Index">Lista aukcji <span class="sr-only">(current)</span></a></li>
+                <li><a asp-controller="Auction" asp-action="Add">Dodaj aukcję</a></li>
+                <li><a href="#">Statystyki</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Witaj @User.Identity.Name<span class="caret"></span> <span class="badge">3</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">Ustawienia</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><button type="submit" class="btn btn-link navbar-btn navbar-link">Wyloguj</button></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        
     </form>
 }
 else
 {
     <ul class="nav navbar-nav navbar-right">
-        <li><a asp-area="" asp-controller="Account" asp-action="Register">Register</a></li>
-        <li><a asp-area="" asp-controller="Account" asp-action="Login">Log in</a></li>
+        @*<li><a asp-area="" asp-controller="Account" asp-action="Register">Register</a></li> Do not allow register*@
+        <li><a asp-controller="Account" asp-action="Login">Zaloguj się</a></li>
     </ul>
 }

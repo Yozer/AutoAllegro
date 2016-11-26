@@ -1,10 +1,15 @@
 using System;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AutoAllegro.Controllers {
-    public class StatsController : Controller {
+namespace AutoAllegro.Controllers
+{
+    [Authorize]
+    public class StatsController : Controller
+    {
 
-        public IActionResult index() {
+        public IActionResult Index()
+        {
             return View();
         }
 

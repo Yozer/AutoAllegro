@@ -123,7 +123,7 @@ namespace AutoAllegro.Controllers
         {
             await _signInManager.SignOutAsync();
             _logger.LogInformation(4, "User logged out.");
-            return RedirectToAction(nameof(HomeController.Index), "Home");
+            return RedirectToAction("Index", "Auction");
         }
 
         // GET: /Account/ConfirmEmail
@@ -258,7 +258,7 @@ namespace AutoAllegro.Controllers
             }
             else
             {
-                return RedirectToAction(nameof(HomeController.Index), "Home");
+                return RedirectToAction(nameof(AuctionController.Index), "Auction");
             }
         }
 

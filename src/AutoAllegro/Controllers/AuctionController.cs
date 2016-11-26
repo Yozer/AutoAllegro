@@ -1,22 +1,30 @@
 using System;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AutoAllegro.Controllers {
-    public class AuctionController : Controller {
+namespace AutoAllegro.Controllers
+{
+    [Authorize]
+    public class AuctionController : Controller
+    {
 
-        public IActionResult index(int? id) {
+        public IActionResult Index(int? id)
+        {
             return View();
         }
 
-        public IActionResult auction(int? id) {
+        public IActionResult Auction(int? id)
+        {
             return View();
         }
 
-        public IActionResult order(int? id) {
+        public IActionResult Order(int? id)
+        {
             return View();
         }
 
-        public IActionResult add() {
+        public IActionResult Add()
+        {
             return View();
         }
 
