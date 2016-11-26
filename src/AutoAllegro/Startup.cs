@@ -48,7 +48,7 @@ namespace AutoAllegro
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            services.AddIdentity<User, IdentityRole>(options =>
                 {
                     options.Cookies.ApplicationCookie.AccessDeniedPath = "/Home/AccessDenied";
                     options.Password.RequireDigit = false;
