@@ -6,7 +6,6 @@ using AutoAllegro.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SoaAllegroService;
 
 namespace AutoAllegro.Controllers
 {

@@ -67,7 +67,6 @@ namespace AutoAllegro
             services.AddTransient<IEmailSender, AuthMessageSender>();
 
             // add allegro service
-            var endpoint = new EndpointAddress(Configuration["AllegroEndpoint"]);
             services.AddScoped<IAllegroService, AllegroService>();
         }
         public void ConfigureDevelopment(IApplicationBuilder app, ILoggerFactory loggerFactory)
