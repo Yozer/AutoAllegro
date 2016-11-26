@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AccountViewModels;
 using AutoAllegro.Services;
+using AutoAllegro.Services.Interfaces;
 
 namespace AutoAllegro.Controllers
 {

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.ServiceModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -12,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Services;
+using AutoAllegro.Services.Interfaces;
 
 namespace AutoAllegro
 {
@@ -66,6 +65,10 @@ namespace AutoAllegro
 
             // Add application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();
+
+            // add allegro service
+            var endpoint = new EndpointAddress(Configuration["AllegroEndpoint"]);
+            services.AddScoped<IAllegroService, AllegroService>();
         }
         public void ConfigureDevelopment(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {

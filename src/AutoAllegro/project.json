@@ -1,6 +1,19 @@
-﻿{
-  "userSecretsId": "aspnet-AutoAllegro-47921eff-6ac5-4ed2-8efe-afccaa4e8616",
+{
+  "configurations": {
+    "Debug": {
+      "buildOptions": {
+        "define": [ "DEBUG", "TRACE", "ALLEGRO_SANDBOX" ]
+      }
+    },
+    "Release": {
+      "buildOptions": {
+        "define": [ "RELEASE", "TRACE" ],
+        "optimize": true
+      }
+    }
+  },
 
+  "userSecretsId": "aspnet-AutoAllegro-47921eff-6ac5-4ed2-8efe-afccaa4e8616",
   "dependencies": {
     "Microsoft.NETCore.App": {
       "version": "1.1.0",
@@ -40,27 +53,30 @@
     "Microsoft.AspNetCore.Server.IISIntegration.Tools": "1.1.0-preview4-final",
     "Microsoft.EntityFrameworkCore.Tools.DotNet": "1.1.0-preview4-final"
   },
-
   "frameworks": {
     "netcoreapp1.1": {
       "imports": [
         "dotnet5.6",
         "portable-net45+win8"
-      ]
+      ],
+      "dependencies": {
+        "System.ServiceModel.Duplex": "4.3.0",
+        "System.ServiceModel.Http": "4.3.0",
+        "System.ServiceModel.NetTcp": "4.3.0",
+        "System.ServiceModel.Security": "4.3.0",
+        "System.Xml.XmlSerializer": "4.3.0"
+      }
     }
   },
-
   "buildOptions": {
     "emitEntryPoint": true,
     "preserveCompilationContext": true
   },
-
   "runtimeOptions": {
     "configProperties": {
       "System.GC.Server": true
     }
   },
-
   "publishOptions": {
     "include": [
       "wwwroot",
@@ -69,10 +85,15 @@
       "web.config"
     ]
   },
-
   "scripts": {
-    "precompile": [ "gulp process" ],
-    "prepublish": [ "dotnet ef database update" ],
-    "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
+    "precompile": [
+      "gulp process"
+    ],
+    "prepublish": [
+      "dotnet ef database update"
+    ],
+    "postpublish": [
+      "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%"
+    ]
   }
 }
