@@ -23,8 +23,13 @@ npm install
 dotnet restore
 dotnet run
 ```
+5. Jeśli jest to pierwsze uruchomienie albo ty/ktoś zmienił bazę to robimy:
+```
+dotnet ef database update
+```
+Więcej o migracjach bazy po aktualizowaniu modelu można poczytać na necie.
 
-5. Na localhost:5000 mamy stronke
+6. Na localhost:5000 mamy stronke
 
 # Pomoce
 Przykładowy projekt w którym możemy zobaczyć jak zrobić wiele rzeczy:
