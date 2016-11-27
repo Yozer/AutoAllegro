@@ -234,6 +234,9 @@ FakesAssemblies/
 **/*.Server/ModelManifest.xml
 _Pvt_Extensions
 
+#Visual Studio Code
+.vscode
+
 # LightSwitch generated files
 GeneratedArtifacts/
 ModelManifest.xml

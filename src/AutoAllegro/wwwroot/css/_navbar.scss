@@ -1,0 +1,13 @@
+@import 'variables';
+
+.navbar-collapse {
+    .navbar-right {
+        #logout-btn {
+            color: #666;
+            text-transform: capitalize;
+            width: 100%;
+            text-align: left;
+            padding: 3px 20px;
+        }
+    }
+}
