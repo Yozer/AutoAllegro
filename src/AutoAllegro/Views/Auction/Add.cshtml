@@ -1,42 +1,54 @@
-@{
-    ViewData["Title"] = "Dodaj aukcję";
-}
+@model AddViewModel
 
 @{
+    ViewData["Title"] = "Dodaj aukcję";
     ViewData["bodyClass"] = "add-new-auction";
 }
 
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <h2>Dodaj nową aukcję</h2>
+            <div class="jumbotron">
+                <h1>Dodaj aukcje</h1>
+                <p><button class="btn btn-default">Pobierz aukcje</button></p>
+            </div>
         </div>
     </div>
-    <form action="#" class="form-horizontal">
-        <div class="form-group">
-            <label for="inputEmail3" class="col-sm-2 control-label">Email</label>
-            <div class="col-sm-10">
-                <input type="email" class="form-control" id="inputEmail3" placeholder="Email">
+
+    <form asp-controller="Auction" asp-action="Add" method="POST" class="form-horizontal">
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <td>ID</td>
+                            <td>Tytuł</td>
+                            <td>Od</td>
+                            <td>Do</td>
+                            <td>Cena</td>
+                            <td>Monitoruj</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(var auction in Model.Auctions) {
+                            <tr>
+                                <td>@auction.Id</td>
+                                <td>@auction.Name</td>
+                                <td>@auction.StartDate</td>
+                                <td>@auction.EndDate</td>
+                                <td>@auction.Price</td>
+                                <td><input name="auction_@auction.Id" type="checkbox" checked="@auction.IsMonitored"></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
-        <div class="form-group">
-            <label for="inputPassword3" class="col-sm-2 control-label">Password</label>
-            <div class="col-sm-10">
-                <input type="password" class="form-control" id="inputPassword3" placeholder="Password">
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox"> Remember me
-                    </label>
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-                <button type="submit" class="btn btn-success">Sign in</button>
+        <div class="row">
+            <div class="col-md-12 text-right">
+                
+                <button type="submit" class="btn btn-primary btn-lg">Zapisz</button>
+                
             </div>
         </div>
     </form>

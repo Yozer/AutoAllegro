@@ -1,7 +1,9 @@
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
+using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -42,9 +44,45 @@ namespace AutoAllegro.Controllers
             return View();
         }
 
+        // GET: /Auction/Add
+        [HttpGet]
         public IActionResult Add()
         {
-            return View();
+
+            
+            List<NewAuction> list = new List<NewAuction>();
+
+            list.Add(new NewAuction {
+                Id = 1,
+                Name = "Lorem Ipsum",
+                Price = "19,99 zł",
+                StartDate = new DateTime(2016, 12, 14),
+                EndDate = new DateTime(2017, 01, 17),
+                IsMonitored = true
+            });
+
+            list.Add(new NewAuction {
+                Id = 2,
+                Name = "Dolor Sit Amet",
+                Price = "79,99 zł",
+                StartDate = new DateTime(2016, 12, 10),
+                EndDate = new DateTime(2017, 02, 17),
+                IsMonitored = false
+            });
+            
+
+            AddViewModel model = new AddViewModel{
+                Auctions = list
+            };
+
+            return View(model);
+        }
+
+        // POST: /Auction/Add
+        [HttpPost]
+        public IActionResult Add(AddViewModel model)
+        {
+            return RedirectToAction(nameof(Index));
         }
 
     }
