@@ -10,16 +10,18 @@
         <div class="col-md-12">
             <div class="jumbotron">
                 <h1>Dodaj aukcje</h1>
-                <p><button class="btn btn-default">Pobierz aukcje</button></p>
+                <p><a asp-action="Add" asp-route-fetch="true" class="btn btn-default">Pobierz aukcje</a></p>
             </div>
         </div>
     </div>
-
-    <form asp-controller="Auction" asp-action="Add" method="POST" class="form-horizontal">
-        <div class="row">
-            <div class="col-md-12">
-                <table class="table table-striped">
-                    <thead>
+    
+    @if (Model.Auctions != null)
+    {
+        <form asp-controller="Auction" asp-action="Add" method="POST" class="form-horizontal">
+            <div class="row">
+                <div class="col-md-12">
+                    <table class="table table-striped">
+                        <thead>
                         <tr>
                             <td>ID</td>
                             <td>Tytuł</td>
@@ -28,9 +30,10 @@
                             <td>Cena</td>
                             <td>Monitoruj</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach(var auction in Model.Auctions) {
+                        </thead>
+                        <tbody>
+                        @foreach (var auction in Model.Auctions)
+                        {
                             <tr>
                                 <td>@auction.Id</td>
                                 <td>@auction.Name</td>
@@ -40,16 +43,15 @@
                                 <td><input name="auction_@auction.Id" type="checkbox" checked="@auction.IsMonitored"></td>
                             </tr>
                         }
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12 text-right">
-                
-                <button type="submit" class="btn btn-primary btn-lg">Zapisz</button>
-                
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <button type="submit" class="btn btn-primary btn-lg">Zapisz</button>
+                </div>
             </div>
-        </div>
-    </form>
+        </form>
+    }
 </div>

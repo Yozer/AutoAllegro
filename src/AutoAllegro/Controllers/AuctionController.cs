@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Models.HelperModels;
+using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SoaAllegroService;
 
 namespace AutoAllegro.Controllers
 {
@@ -102,32 +105,18 @@ namespace AutoAllegro.Controllers
             var viewModel = _mapper.Map<OrderViewModel>(order);
             return View(viewModel);
         }
-        public IActionResult Add()
+        public async Task<IActionResult> Add(bool? fetch)
         {
-            List<NewAuction> list = new List<NewAuction>();
+            AddViewModel model = new AddViewModel();
 
-            list.Add(new NewAuction {
-                Id = 1,
-                Name = "Lorem Ipsum",
-                Price = "19,99 z³",
-                StartDate = new DateTime(2016, 12, 14),
-                EndDate = new DateTime(2017, 01, 17),
-                IsMonitored = true
-            });
+            if (fetch.GetValueOrDefault())
+            {
 
-            list.Add(new NewAuction {
-                Id = 2,
-                Name = "Dolor Sit Amet",
-                Price = "79,99 z³",
-                StartDate = new DateTime(2016, 12, 10),
-                EndDate = new DateTime(2017, 02, 17),
-                IsMonitored = false
-            });
-            
-
-            AddViewModel model = new AddViewModel{
-                Auctions = list
-            };
+                var user = await _userManager.GetUserAsync(User);
+                await _allegroService.Login(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey);
+                ImmutableHashSet<long> userAuctions = _dbContext.Auctions.Where(t => t.UserId == user.Id).Select(t => t.AllegroAuctionId).ToImmutableHashSet();
+                model.Auctions = (await _allegroService.GetNewAuctions()).Where(t => !userAuctions.Contains(t.Id)).ToList();
+            }
 
             return View(model);
         }

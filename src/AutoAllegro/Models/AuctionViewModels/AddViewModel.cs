@@ -22,10 +22,9 @@ namespace AutoAllegro.Models.AuctionViewModels
 
         public DateTime EndDate { get; set; }
 
-        public string Price { get; set; }
+        public decimal Price { get; set; }
 
         public bool IsMonitored { get; set; }
-
 
     }
 }

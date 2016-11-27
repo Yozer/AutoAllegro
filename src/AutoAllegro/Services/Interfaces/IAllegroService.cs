@@ -1,11 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using AutoAllegro.Models.AuctionViewModels;
 using SoaAllegroService;
 
 namespace AutoAllegro.Services.Interfaces
 {
     public interface IAllegroService
     {
-        Task<doGetCountriesResponse> GetCountries(doGetCountriesRequest request);
         Task<bool> Login(string userAllegroUserName, string userAllegroHashedPass, string userAllegroKey);
+        Task<List<NewAuction>> GetNewAuctions();
     }
 }
