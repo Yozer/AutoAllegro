@@ -1,0 +1,44 @@
+@model AllegroSettingsViewModel
+@{
+    ViewData["Title"] = "Ustawienia Allegro";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>@ViewData["Title"]</h2>
+
+            <form asp-controller="Manage" asp-action="AllegroSettings" method="post" class="form-horizontal">
+                <h4>Podaj dane do konta Allego</h4>
+                <hr />
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div class="form-group">
+                    <label asp-for="ApiKey" class="col-md-2 control-label"></label>
+                    <div class="col-md-10">
+                        <input asp-for="ApiKey" class="form-control" />
+                        <span asp-validation-for="ApiKey" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Login" class="col-md-2 control-label"></label>
+                    <div class="col-md-10">
+                        <input asp-for="Login" class="form-control" />
+                        <span asp-validation-for="Login" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label asp-for="HashPassword" class="col-md-2 control-label"></label>
+                    <div class="col-md-10">
+                        <input asp-for="HashPassword" class="form-control" />
+                        <span asp-validation-for="HashPassword" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button type="submit" class="btn btn-primary">Zapisz</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

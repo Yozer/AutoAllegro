@@ -55,6 +55,21 @@ namespace AutoAllegro.Controllers
             };
             return View(model);
         }
+
+        // GET: /Manage/AllegroSettings
+        [HttpGet]
+        public IActionResult AllegroSettings() 
+        {
+            return View();
+        }
+
+        // POST: /Manage/AllegroSettings
+        [HttpPost]
+        public IActionResult AllegroSettings(AllegroSettingsViewModel model)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
         //
         // GET: /Manage/ChangePassword
         [HttpGet]

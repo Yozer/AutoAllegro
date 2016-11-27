@@ -13,7 +13,7 @@
         
             <div>
                 <div class="list-group">
-                    <a href="#" class="list-group-item">Ustawienia allegro</a>
+                    <a asp-controller="Manage" asp-action="AllegroSettings" class="list-group-item">Ustawienia allegro</a>
                     @if (Model.HasPassword)
                     {
                         <a asp-controller="Manage" asp-action="ChangePassword" class="list-group-item">Zmień hasło</a>
