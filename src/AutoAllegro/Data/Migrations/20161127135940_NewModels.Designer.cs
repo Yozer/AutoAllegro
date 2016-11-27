@@ -9,8 +9,8 @@ using AutoAllegro.Models;
 namespace AutoAllegro.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20161126182414_order_models")]
-    partial class order_models
+    [Migration("20161127135940_NewModels")]
+    partial class NewModels
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -40,16 +40,14 @@ namespace AutoAllegro.Data.Migrations
 
                     b.Property<string>("Title");
 
-                    b.Property<int>("UserId");
-
-                    b.Property<string>("UserId1");
+                    b.Property<string>("UserId");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AllegroAuctionId")
                         .IsUnique();
 
-                    b.HasIndex("UserId1");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Auctions");
                 });
@@ -147,7 +145,7 @@ namespace AutoAllegro.Data.Migrations
 
                     b.Property<int>("Quantity");
 
-                    b.Property<int>("SendAddressId");
+                    b.Property<int>("ShippingAddressId");
 
                     b.HasKey("Id");
 
@@ -158,13 +156,13 @@ namespace AutoAllegro.Data.Migrations
 
                     b.HasIndex("BuyerId");
 
-                    b.HasIndex("SendAddressId")
+                    b.HasIndex("ShippingAddressId")
                         .IsUnique();
 
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("AutoAllegro.Models.SendAddress", b =>
+            modelBuilder.Entity("AutoAllegro.Models.ShippingAddress", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
@@ -211,6 +209,12 @@ namespace AutoAllegro.Data.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<int>("AccessFailedCount");
+
+                    b.Property<string>("AllegroHashedPass");
+
+                    b.Property<string>("AllegroKey");
+
+                    b.Property<string>("AllegroUserName");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken();
@@ -366,7 +370,7 @@ namespace AutoAllegro.Data.Migrations
                 {
                     b.HasOne("AutoAllegro.Models.User", "User")
                         .WithMany("Auctions")
-                        .HasForeignKey("UserId1");
+                        .HasForeignKey("UserId");
                 });
 
             modelBuilder.Entity("AutoAllegro.Models.Event", b =>
@@ -402,9 +406,9 @@ namespace AutoAllegro.Data.Migrations
                         .HasForeignKey("BuyerId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("AutoAllegro.Models.SendAddress", "SendAddress")
+                    b.HasOne("AutoAllegro.Models.ShippingAddress", "ShippingAddress")
                         .WithOne("Order")
-                        .HasForeignKey("AutoAllegro.Models.Order", "SendAddressId")
+                        .HasForeignKey("AutoAllegro.Models.Order", "ShippingAddressId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 

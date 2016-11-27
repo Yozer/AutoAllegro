@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Security.Claims;
 using System.ServiceModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -85,6 +85,9 @@ namespace AutoAllegro
             app.UseBrowserLink();
 
             Configure(app);
+
+            //Populates the app sample data
+            SampleData.InitializeDatabaseAsync(app.ApplicationServices).Wait();
         }
         public void ConfigureStaging(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {

@@ -1,25 +1,25 @@
 @{
-    ViewData["Title"] = "Zamówienie {{id}}";
-}
-
-@{
+    ViewData["Title"] = "Zamówienie " + Model.Id;
     ViewData["bodyClass"] = "order";
 }
 
+@model OrderViewModel
 
 <div class="container">
     <div class="row">
         <div class="col-md-12">
             <div class="jumbotron">
-                <h1>Order: #{{order_id}}</h1>
+                <h1>Order: #@Model.Id</h1>
                 <div class="row">
                     <div class="col-md-8">
                         <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quibusdam quae eos dolorum expedita, id tenetur inventore ut sed, facere odit eveniet nesciunt et. Possimus enim, itaque, at consectetur voluptatem mollitia.</p>
                     </div>
                     <div class="col-md-4">
-                        <p><strong>Login:</strong> lorem_ipsum</p>
-                        <p><strong>Cena:</strong> 29,99 zł</p>
-                        <p><strong>Sztuk:</strong> 4</p>
+                        <p><strong>Login:</strong> @Model.Buyer.UserLogin</p>
+                        <p><strong>Email:</strong> @Model.Buyer.Email</p>
+                        <p><strong>Cena:</strong> @Model.TotalPayment zł</p>
+                        <p><strong>Sztuk:</strong> @Model.Quantity</p>
+                        <p><strong>Status:</strong> @Model.Status</p>
                     </div>
                 </div>
                 <p><a class="btn btn-primary btn-lg">Zobacz na allegro</a></p>
@@ -33,28 +33,46 @@
                     <h3 class="panel-title">Dane kupującego</h3>
                 </div>
                 <div class="panel-body">
-                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ratione tempore rerum dolores veniam, ea voluptates cum non soluta sint debitis.</p>
+                    <table class="table">
+                        <tbody>
+                        <tr>
+                            <td>Imię i nazwisko</td>
+                            <td>@Model.Buyer.FirstName @Model.Buyer.LastName</td>
+                        </tr>
+                        <tr>
+                            <td>Telefon</td>
+                            <td>@Model.Buyer.Phone</td>
+                        </tr>
+                        <tr>
+                            <td>Adres</td>
+                            <td>@Model.Buyer.Address</td>
+                        </tr>
+                        <tr>
+                            <td>Miasto</td>
+                            <td>@Model.Buyer.City @Model.Buyer.PostCode</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Dane do wysyłki</h3>
+                </div>
+                <div class="panel-body">
                     <table class="table">
                         <tbody>
                             <tr>
-                                <td>Login</td>
-                                <td>loremipsum</td>
-                            </tr>
-                            <tr>
-                                <td>Telefon</td>
-                                <td>+48 123 456 789</td>
-                            </tr>
-                            <tr>
-                                <td>E-mail</td>
-                                <td>name@domain.com</td>
+                                <td>Imię i nazwisko</td>
+                                <td>@Model.ShippingAddress.FirstName @Model.ShippingAddress.LastName</td>
                             </tr>
                             <tr>
                                 <td>Adres</td>
-                                <td>ul. Czarnowiejska 34</td>
+                                <td>@Model.ShippingAddress.Address</td>
                             </tr>
                             <tr>
                                 <td>Miasto</td>
-                                <td>Kraków</td>
+                                <td>@Model.ShippingAddress.City @Model.ShippingAddress.PostCode</td>
                             </tr>
                         </tbody>
                     </table>

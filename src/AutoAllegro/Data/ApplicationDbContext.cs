@@ -12,7 +12,7 @@ namespace AutoAllegro.Data
         public DbSet<Event> Events { get; set; }
         public DbSet<GameCode> GameCodes { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<SendAddress> SendAddresses { get; set; }
+        public DbSet<ShippingAddress> SendAddresses { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

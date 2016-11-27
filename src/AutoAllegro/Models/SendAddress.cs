@@ -1,7 +1,7 @@
 ﻿
 namespace AutoAllegro.Models
 {
-    public class SendAddress
+    public class ShippingAddress
     {
         public int Id { get; set; }
         public string FirstName { get; set; }

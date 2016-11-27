@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace AutoAllegro.Data.Migrations
 {
-    public partial class order_models : Migration
+    public partial class NewModels : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -15,6 +15,21 @@ namespace AutoAllegro.Data.Migrations
             migrationBuilder.DropIndex(
                 name: "RoleNameIndex",
                 table: "AspNetRoles");
+
+            migrationBuilder.AddColumn<string>(
+                name: "AllegroHashedPass",
+                table: "AspNetUsers",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "AllegroKey",
+                table: "AspNetUsers",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "AllegroUserName",
+                table: "AspNetUsers",
+                nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "Auctions",
@@ -31,15 +46,14 @@ namespace AutoAllegro.Data.Migrations
                     IsMonitored = table.Column<bool>(nullable: false),
                     OpenCost = table.Column<decimal>(nullable: false),
                     Title = table.Column<string>(nullable: true),
-                    UserId = table.Column<int>(nullable: false),
-                    UserId1 = table.Column<string>(nullable: true)
+                    UserId = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Auctions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Auctions_AspNetUsers_UserId1",
-                        column: x => x.UserId1,
+                        name: "FK_Auctions_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -96,7 +110,7 @@ namespace AutoAllegro.Data.Migrations
                     BuyerId = table.Column<int>(nullable: false),
                     OrderDate = table.Column<DateTime>(nullable: false),
                     Quantity = table.Column<int>(nullable: false),
-                    SendAddressId = table.Column<int>(nullable: false)
+                    ShippingAddressId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -114,8 +128,8 @@ namespace AutoAllegro.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Orders_SendAddresses_SendAddressId",
-                        column: x => x.SendAddressId,
+                        name: "FK_Orders_SendAddresses_ShippingAddressId",
+                        column: x => x.ShippingAddressId,
                         principalTable: "SendAddresses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -204,9 +218,9 @@ namespace AutoAllegro.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Auctions_UserId1",
+                name: "IX_Auctions_UserId",
                 table: "Auctions",
-                column: "UserId1");
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Buyers_AllegroUserId",
@@ -252,9 +266,9 @@ namespace AutoAllegro.Data.Migrations
                 column: "BuyerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_SendAddressId",
+                name: "IX_Orders_ShippingAddressId",
                 table: "Orders",
-                column: "SendAddressId",
+                column: "ShippingAddressId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -295,6 +309,18 @@ namespace AutoAllegro.Data.Migrations
             migrationBuilder.DropIndex(
                 name: "RoleNameIndex",
                 table: "AspNetRoles");
+
+            migrationBuilder.DropColumn(
+                name: "AllegroHashedPass",
+                table: "AspNetUsers");
+
+            migrationBuilder.DropColumn(
+                name: "AllegroKey",
+                table: "AspNetUsers");
+
+            migrationBuilder.DropColumn(
+                name: "AllegroUserName",
+                table: "AspNetUsers");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserRoles_UserId",
