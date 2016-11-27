@@ -25,8 +25,6 @@ namespace AutoAllegro.Data.Migrations
 
                     b.Property<int>("Converter");
 
-                    b.Property<decimal>("CostPerItem");
-
                     b.Property<DateTime>("CreationDate");
 
                     b.Property<DateTime>("EndDate");
@@ -36,6 +34,8 @@ namespace AutoAllegro.Data.Migrations
                     b.Property<bool>("IsMonitored");
 
                     b.Property<decimal>("OpenCost");
+
+                    b.Property<decimal>("PricePerItem");
 
                     b.Property<string>("Title");
 

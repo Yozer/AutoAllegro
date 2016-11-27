@@ -11,7 +11,7 @@ namespace AutoAllegro.Models
         public string Title { get; set; }
         public DateTime CreationDate { get; set; }
         public DateTime EndDate { get; set; }
-        public decimal CostPerItem { get; set; }
+        public decimal PricePerItem { get; set; }
         public bool IsMonitored { get; set; }
         public int Converter { get; set; }
         public decimal Fee { get; set; }

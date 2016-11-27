@@ -27,7 +27,7 @@
                 @foreach (var auction in Model.Auctions)
                 {
                     <tr>
-                        <td>@auction.AllegroId</td>
+                        <td>@auction.AllegroAuctionId</td>
                         <td><a asp-action="Auction" asp-route-id="@auction.Id">@auction.Title</a></td>
                         <td>@auction.PricePerItem zł</td>
                     </tr>

@@ -38,7 +38,9 @@
     "Microsoft.Extensions.Logging": "1.1.0",
     "Microsoft.Extensions.Logging.Console": "1.1.0",
     "Microsoft.VisualStudio.Web.CodeGenerators.Mvc": "1.1.0-preview4-final",
-    "Microsoft.AspNetCore.Mvc.TagHelpers": "1.1.0"
+    "Microsoft.AspNetCore.Mvc.TagHelpers": "1.1.0",
+    "AutoMapper": "5.2.0",
+    "AutoMapper.Extensions.Microsoft.DependencyInjection": "1.1.2"
   },
   "tools": {
     "Microsoft.VisualStudio.Web.CodeGeneration.Tools": {

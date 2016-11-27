@@ -9,8 +9,8 @@ using AutoAllegro.Models;
 namespace AutoAllegro.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20161127144335_OrderStatusAdded")]
-    partial class OrderStatusAdded
+    [Migration("20161127152054_RenameColumn")]
+    partial class RenameColumn
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -26,8 +26,6 @@ namespace AutoAllegro.Data.Migrations
 
                     b.Property<int>("Converter");
 
-                    b.Property<decimal>("CostPerItem");
-
                     b.Property<DateTime>("CreationDate");
 
                     b.Property<DateTime>("EndDate");
@@ -37,6 +35,8 @@ namespace AutoAllegro.Data.Migrations
                     b.Property<bool>("IsMonitored");
 
                     b.Property<decimal>("OpenCost");
+
+                    b.Property<decimal>("PricePerItem");
 
                     b.Property<string>("Title");
 

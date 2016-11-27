@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace AutoAllegro.Models
 {
@@ -26,10 +27,15 @@ namespace AutoAllegro.Models
 
     public enum OrderStatus
     {
+        [Display(Name = "Rozpoczęte")]
         Created = 0,
+        [Display(Name = "Zapłacone")]
         Paid = 1,
+        [Display(Name = "Anulowane")]
         Canceled = 2,
+        [Display(Name = "Wysłane")]
         Send = 3,
+        [Display(Name = "Zakończone")]
         Done = 4
     }
 }

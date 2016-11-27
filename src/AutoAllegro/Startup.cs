@@ -9,8 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
+using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
+using AutoMapper;
 
 namespace AutoAllegro
 {
@@ -68,6 +70,11 @@ namespace AutoAllegro
 
             // add allegro service
             services.AddScoped<IAllegroService, AllegroService>();
+            services.AddAutoMapper(cf =>
+            {
+                cf.CreateMap<Order, OrderViewModel>().AfterMap((order, model) => model.TotalPayment = order.Quantity*order.Auction.PricePerItem).ReverseMap();
+                cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
+            });
         }
         public void ConfigureDevelopment(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {

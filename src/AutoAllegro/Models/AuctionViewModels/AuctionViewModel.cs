@@ -8,7 +8,7 @@ namespace AutoAllegro.Models.AuctionViewModels
     {
         public int Id { get; set; }
         public string Title { get; set; }
-        public long AllegroId { get; set; }
+        public long AllegroAuctionId { get; set; }
         public decimal PricePerItem { get; set; }
         public decimal Fee { get; set; }
         public decimal OpenCost { get; set; }

@@ -6,7 +6,7 @@ namespace AutoAllegro.Models.AuctionViewModels
     {
         public int Id { get; set; }
         public int Quantity { get; set; }
-        public object Status { get; set; }
+        public OrderStatus OrderStatus { get; set; }
         public decimal TotalPayment { get; set; }
         public DateTime OrderDate { get; set; }
         public ShippingAddress ShippingAddress { get; set; }

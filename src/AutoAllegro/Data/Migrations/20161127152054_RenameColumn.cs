@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace AutoAllegro.Data.Migrations
 {
-    public partial class NewModels : Migration
+    public partial class RenameColumn : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -39,12 +39,12 @@ namespace AutoAllegro.Data.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     AllegroAuctionId = table.Column<long>(nullable: false),
                     Converter = table.Column<int>(nullable: false),
-                    CostPerItem = table.Column<decimal>(nullable: false),
                     CreationDate = table.Column<DateTime>(nullable: false),
                     EndDate = table.Column<DateTime>(nullable: false),
                     Fee = table.Column<decimal>(nullable: false),
                     IsMonitored = table.Column<bool>(nullable: false),
                     OpenCost = table.Column<decimal>(nullable: false),
+                    PricePerItem = table.Column<decimal>(nullable: false),
                     Title = table.Column<string>(nullable: true),
                     UserId = table.Column<string>(nullable: true)
                 },
@@ -109,6 +109,7 @@ namespace AutoAllegro.Data.Migrations
                     AuctionId = table.Column<int>(nullable: false),
                     BuyerId = table.Column<int>(nullable: false),
                     OrderDate = table.Column<DateTime>(nullable: false),
+                    OrderStatus = table.Column<int>(nullable: false),
                     Quantity = table.Column<int>(nullable: false),
                     ShippingAddressId = table.Column<int>(nullable: false)
                 },
