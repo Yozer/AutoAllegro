@@ -138,15 +138,15 @@ namespace AutoAllegro.Controllers
                     Email = "eqwew@wp.pl",
                     UserLogin = "eqweqw",
                     Phone = "515-560-352",
-                    Address = "GÃ³wno 2/3",
-                    City = "Nowy SÄ…cz",
+                    Address = "Gówno 2/3",
+                    City = "Nowy S¹cz",
                     PostCode = "00-000",
                     FirstName = "Tomasz",
                     LastName = "Mniszek"
                 },
                 OrderDate = DateTime.Now,
                 Quantity = 5,
-                ShippingAddress = new ShippingAddress { Address = "addresdasdasdd", City = "KrakÃ³w", PostCode = "33-300", FirstName = "Dominik", LastName = "Baran"}
+                ShippingAddress = new ShippingAddress { Address = "addresdasdasdd", City = "Kraków", PostCode = "33-300", FirstName = "Dominik", LastName = "Baran"}
             };
             if (order == null)
             {
@@ -173,7 +173,7 @@ namespace AutoAllegro.Controllers
             list.Add(new NewAuction {
                 Id = 1,
                 Name = "Lorem Ipsum",
-                Price = "19,99 zÅ‚",
+                Price = "19,99 z³",
                 StartDate = new DateTime(2016, 12, 14),
                 EndDate = new DateTime(2017, 01, 17),
                 IsMonitored = true
@@ -182,7 +182,7 @@ namespace AutoAllegro.Controllers
             list.Add(new NewAuction {
                 Id = 2,
                 Name = "Dolor Sit Amet",
-                Price = "79,99 zÅ‚",
+                Price = "79,99 z³",
                 StartDate = new DateTime(2016, 12, 10),
                 EndDate = new DateTime(2017, 02, 17),
                 IsMonitored = false
@@ -206,15 +206,15 @@ namespace AutoAllegro.Controllers
         private string GetOrderStatus(Order order)
         {
             if (order.OrderStatus == OrderStatus.Created)
-                return "RozpoczÄ™te";
+                return "Rozpoczête";
             if (order.OrderStatus == OrderStatus.Paid)
-                return "Transakcja rozpoczÄ™ta";
+                return "Transakcja rozpoczêta";
             else if (order.OrderStatus == OrderStatus.Canceled)
                 return "Transakcja anulowana";
             else if (order.OrderStatus == OrderStatus.Send)
-                return "ZamÃ³wienie wysÅ‚ane";
+                return "Zamówienie wys³ane";
             else if (order.OrderStatus == OrderStatus.Done)
-                return "ZakoÅ„czone";
+                return "Zakoñczone";
 
             throw new ArgumentException(nameof(order));
         }
