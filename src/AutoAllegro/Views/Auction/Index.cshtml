@@ -29,7 +29,7 @@
                     <tr>
                         <td>@auction.AllegroAuctionId</td>
                         <td><a asp-action="Auction" asp-route-id="@auction.Id">@auction.Title</a></td>
-                        <td>@auction.PricePerItem zł</td>
+                        <td>@Html.DisplayFor(x => auction.PricePerItem)</td>
                     </tr>
                 }
                 </tbody>

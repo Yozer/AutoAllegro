@@ -3,9 +3,9 @@ using AutoAllegro.Models.HelperModels;
 
 namespace AutoAllegro.Models.AuctionViewModels
 {
-    public class IndexViewModel
+    public class IndexViewModel : IPaginable
     {
         public IList<AuctionViewModel> Auctions { get; set; }
-        public PaginationSettings PaginationSettings { get; set; }
+        public PaginationView PaginationSettings { get; set; }
     }
 }

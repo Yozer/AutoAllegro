@@ -51,7 +51,7 @@
                                 <td>@order.Buyer.UserLogin</td>
                                 <td>@order.OrderDate</td>
                                 <td>@order.Quantity</td>
-                                <td>@order.TotalPayment</td>
+                                <td>@Html.DisplayFor(x => order.TotalPayment)</td>
                                 <td>@order.OrderStatus</td>
                             </tr>
                         }

@@ -39,7 +39,7 @@
                                 <td>@auction.Name</td>
                                 <td>@auction.StartDate</td>
                                 <td>@auction.EndDate</td>
-                                <td>@auction.Price</td>
+                                <td>@Html.DisplayFor(x => auction.Price)</td>
                                 <td><input name="auction_@auction.Id" type="checkbox" checked="@auction.IsMonitored"></td>
                             </tr>
                         }

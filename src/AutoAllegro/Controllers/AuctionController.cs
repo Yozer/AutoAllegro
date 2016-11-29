@@ -4,6 +4,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoAllegro.Data;
+using AutoAllegro.Helpers;
+using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Models.HelperModels;
@@ -42,20 +44,13 @@ namespace AutoAllegro.Controllers
                 return RedirectToAction(nameof(AccountController.Login), "Account");
             }
 
-            page = page ?? 1;
-            --page;
-            int from = Math.Max(0, page.Value * pageSize);
-            var view = new IndexViewModel
+            var viewModel = new IndexViewModel
             {
-                PaginationSettings = new PaginationSettings
-                {
-                    CurrentPage = page.Value + 1,
-                    PagesCount = Math.Max(1, (int) Math.Ceiling(auctions.Count/(decimal) pageSize))
-                },
-                Auctions = _mapper.Map<List<AuctionViewModel>>(auctions.Skip(from).Take(pageSize).ToList())
+                Auctions = _mapper.Map<List<AuctionViewModel>>(auctions)
             };
 
-            return View(view);
+            viewModel.Paginate(page, pageSize, c => c.Auctions);
+            return View(viewModel);
         }
 
 
@@ -73,19 +68,9 @@ namespace AutoAllegro.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-
-            page = page ?? 1;
-            --page;
-            int from = Math.Max(0, page.Value * pageSize);
-
-            auction.Orders = auction.Orders.Skip(from).Take(pageSize).ToList();
+            // possible bottleneck
             var viewModel = _mapper.Map<AuctionViewModel>(auction);
-            viewModel.PaginationSettings = new PaginationSettings
-            {
-                CurrentPage = page.Value + 1,
-                PagesCount = Math.Max(1, (int)Math.Ceiling(auction.Orders.Count / (decimal)pageSize))
-            };
-
+            viewModel.Paginate(page, pageSize, c => c.Orders);
             return View(viewModel);
         }
 

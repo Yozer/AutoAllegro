@@ -4,7 +4,7 @@ using AutoAllegro.Models.HelperModels;
 
 namespace AutoAllegro.Models.AuctionViewModels
 {
-    public class AuctionViewModel
+    public class AuctionViewModel : IPaginable
     {
         public int Id { get; set; }
         public string Title { get; set; }
@@ -14,6 +14,6 @@ namespace AutoAllegro.Models.AuctionViewModels
         public decimal OpenCost { get; set; }
         public DateTime EndDate { get; set; }
         public IList<OrderViewModel> Orders { get; set; }
-        public PaginationSettings PaginationSettings { get; set; }
+        public PaginationView PaginationSettings { get; set; }
     }
 }
