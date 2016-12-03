@@ -19,7 +19,7 @@ namespace AutoAllegro.Models
         public string Phone2 { get; set; }
         public string UserBirthDate { get; set; }
 
-        public virtual ICollection<Order> Orders { get; set; }
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 
 }

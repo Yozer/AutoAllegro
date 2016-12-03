@@ -4,19 +4,16 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoAllegro.Data;
-using AutoAllegro.Helpers;
 using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
-using AutoAllegro.Models.HelperModels;
-using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SoaAllegroService;
+using NuGet.Packaging;
 
 namespace AutoAllegro.Controllers
 {
@@ -108,8 +105,31 @@ namespace AutoAllegro.Controllers
 
         // POST: /Auction/Add
         [HttpPost]
-        public IActionResult Add(AddViewModel model)
+        public async Task<IActionResult> Add(AddViewModel model)
         {
+            if(!ModelState.IsValid)
+                return RedirectToAction(nameof(Index));
+
+            var user = await _userManager.GetUserAsync(User);
+            await _allegroService.Login(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey);
+            var auctions = model.Auctions
+                .Where(t => t.IsMonitored)
+                .Select(t => new Auction
+                {
+                    AllegroAuctionId = t.Id,
+                    Converter = 1,
+                    CreationDate = t.StartDate,
+                    EndDate = t.EndDate,
+                    IsMonitored = true,
+                    PricePerItem = t.Price,
+                    Title = t.Name
+                })
+                .Select(_allegroService.UpdateAuctionFees).ToList();
+
+            await Task.WhenAll(auctions);
+            user.Auctions.AddRange(auctions.Select(t => t.Result));
+
+            await _dbContext.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

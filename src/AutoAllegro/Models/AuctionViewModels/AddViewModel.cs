@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoAllegro.Helpers.Attributes;
 
 
@@ -9,7 +7,7 @@ namespace AutoAllegro.Models.AuctionViewModels
 {
     public class AddViewModel
     {
-        public List<NewAuction> Auctions;
+        public IList<NewAuction> Auctions { get; set; }
     }
 
     public class NewAuction

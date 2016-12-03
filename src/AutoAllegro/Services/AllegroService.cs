@@ -67,6 +67,22 @@ namespace AutoAllegro.Services
             });
         }
 
+        public Task<Auction> UpdateAuctionFees(Auction auction)
+        {
+            ThrowIfNotLogged();
+
+            return _servicePort.doMyBillingItemAsync(new doMyBillingItemRequest
+            {
+                itemId = auction.AllegroAuctionId,
+                sessionHandle = _sessionKey
+            }).ContinueWith(task =>
+            {
+                auction.Fee = task.Result.endingFees.Sum(t => -decimal.Parse(t.biValue));
+                auction.OpenCost = task.Result.entryFees.Sum(t => -decimal.Parse(t.biValue));
+                return auction;
+            });
+        }
+
         private void ThrowIfNotLogged()
         {
             if(!IsLogged)

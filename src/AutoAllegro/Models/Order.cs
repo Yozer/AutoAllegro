@@ -12,9 +12,9 @@ namespace AutoAllegro.Models
         public DateTime OrderDate { get; set; }
         public OrderStatus OrderStatus { get; set; }
 
-        public virtual ICollection<GameCode> GameCodes { get; set; }
-        public virtual ICollection<Event> Events { get; set; }
-        public virtual ICollection<Transaction> Transactions {get; set;}
+        public virtual ICollection<GameCode> GameCodes { get; set; } = new List<GameCode>();
+        public virtual ICollection<Event> Events { get; set; } = new List<Event>();
+        public virtual ICollection<Transaction> Transactions {get; set;} = new List<Transaction>();
 
         public int AuctionId { get; set; }
         public virtual Auction Auction { get; set; }

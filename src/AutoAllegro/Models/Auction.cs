@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace AutoAllegro.Models
 {
@@ -20,7 +19,7 @@ namespace AutoAllegro.Models
         public string UserId { get; set; }
         public virtual User User { get; set; }
 
-        public virtual ICollection<Order> Orders { get; set; }
-        public virtual ICollection<GameCode> GameCodes { get; set; }
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+        public virtual ICollection<GameCode> GameCodes { get; set; } = new List<GameCode>();
     }
 }
