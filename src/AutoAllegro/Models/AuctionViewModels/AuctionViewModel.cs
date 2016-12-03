@@ -15,5 +15,6 @@ namespace AutoAllegro.Models.AuctionViewModels
         public DateTime EndDate { get; set; }
         public IList<OrderViewModel> Orders { get; set; }
         public PaginationView PaginationSettings { get; set; }
+        public bool IsMonitored { get; set; }
     }
 }

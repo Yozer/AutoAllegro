@@ -59,7 +59,7 @@ namespace AutoAllegro.Controllers
             }
 
             const int pageSize = 25;
-            var auction = await GetUserAuction(id);
+            var auction = await GetUserAuctionWithOrders(id);
             if (auction == null)
             {
                 return RedirectToAction(nameof(Index));
@@ -69,6 +69,23 @@ namespace AutoAllegro.Controllers
             var viewModel = _mapper.Map<AuctionViewModel>(auction);
             viewModel.Paginate(page, pageSize, c => c.Orders);
             return View(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Auction(Auction updatedAuction)
+        {
+            if (!ModelState.IsValid)
+                return RedirectToAction(nameof(Index));
+
+            var userAuctions = await GetUserAuctions();
+            var auction = userAuctions.FirstOrDefault(t => t.Id == updatedAuction.Id);
+            if(auction == null)
+                return RedirectToAction(nameof(Index));
+
+            auction.IsMonitored = updatedAuction.IsMonitored;
+
+            await _dbContext.SaveChangesAsync();
+            return RedirectToAction(nameof(Auction), new {id = auction.Id});
         }
 
         public async Task<IActionResult> Order(int id)
@@ -144,7 +161,7 @@ namespace AutoAllegro.Controllers
                 .ContinueWith(t => t.Result?.Auctions))
                 .Unwrap();
         }
-        private Task<Auction> GetUserAuction(int id)
+        private Task<Auction> GetUserAuctionWithOrders(int id)
         {
             return GetUserId()
                 .ContinueWith(task => _dbContext.Users.Include(t => t.Auctions)
