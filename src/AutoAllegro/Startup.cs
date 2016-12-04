@@ -1,5 +1,5 @@
-﻿using System.Security.Claims;
-using System.ServiceModel;
+﻿using System;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
+using Hangfire.MemoryStorage;
 
 namespace AutoAllegro
 {
@@ -54,7 +55,7 @@ namespace AutoAllegro
             services.AddApplicationInsightsTelemetry(Configuration);
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+                    options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddIdentity<User, IdentityRole>(options =>
                 {
@@ -75,13 +76,17 @@ namespace AutoAllegro
             services.AddTransient<IEmailSender, AuthMessageSender>();
 
             // add allegro service
-            services.AddScoped<IAllegroService, AllegroService>();
+            services.AddTransient<IAllegroService, AllegroService>();
             services.AddAutoMapper(cf =>
             {
                 cf.CreateMap<Order, OrderViewModel>().AfterMap((order, model) => model.TotalPayment = order.Quantity*order.Auction.PricePerItem).ReverseMap();
                 cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
             });
+
+            services.AddSingleton<AllegroProcessor>();
+            services.AddHangfire(t => t.UseMemoryStorage());
         }
+
         public void ConfigureDevelopment(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
             app.UseApplicationInsightsRequestTelemetry();
@@ -127,6 +132,8 @@ namespace AutoAllegro
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
+            app.UseHangfireDashboard();
+            app.UseHangfireServer();
             app.UseApplicationInsightsExceptionTelemetry();
 
             //app.UseSession();
@@ -139,6 +146,33 @@ namespace AutoAllegro
                     name: "default",
                     template: "{controller=Auction}/{action=Index}/{id?}");
             });
+
+            GlobalConfiguration.Configuration.UseActivator(new ContainerJobActivator(app.ApplicationServices));
+            InitAllegroProcessor(app.ApplicationServices);
+        }
+
+        private void InitAllegroProcessor(IServiceProvider serviceProvider)
+        {
+            using (var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            {
+                var allegroProcessor = serviceScope.ServiceProvider.GetService<AllegroProcessor>();
+                allegroProcessor.Init();
+            }
+        }
+    }
+
+    public class ContainerJobActivator : JobActivator
+    {
+        private readonly IServiceProvider _serviceProvider;
+
+        public ContainerJobActivator(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public override object ActivateJob(Type type)
+        {
+            return _serviceProvider.GetService(type);
         }
     }
 }
