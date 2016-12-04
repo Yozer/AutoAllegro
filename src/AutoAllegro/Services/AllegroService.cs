@@ -50,41 +50,39 @@ namespace AutoAllegro.Services
             _sessionKey = loginResult.sessionHandlePart;
             _memoryCache.Set(userId, _sessionKey, WebApiKeyExpirationTime);
         }
-        public Task<List<NewAuction>> GetNewAuctions()
+        public async Task<List<NewAuction>> GetNewAuctions()
         {
             ThrowIfNotLogged();
 
-            return _servicePort.doGetMySellItemsAsync(new doGetMySellItemsRequest
+            var auctions = await _servicePort.doGetMySellItemsAsync(new doGetMySellItemsRequest
             {
                 pageSize = 1000,
                 sessionId = _sessionKey
-            }).ContinueWith(task =>
-            {
-                return task.Result.sellItemsList.Select(t => new NewAuction
-                {
-                    Id = t.itemId,
-                    Name = t.itemTitle,
-                    StartDate = t.itemStartTime.ToDateTime(),
-                    EndDate = t.itemEndTime.ToDateTime(),
-                    Price = Convert.ToDecimal(t.itemPrice[0].priceValue)
-                }).ToList();
             });
+
+            return auctions.sellItemsList.Select(t => new NewAuction
+            {
+                Id = t.itemId,
+                Name = t.itemTitle,
+                StartDate = t.itemStartTime.ToDateTime(),
+                EndDate = t.itemEndTime.ToDateTime(),
+                Price = Convert.ToDecimal(t.itemPrice[0].priceValue)
+            }).ToList();
         }
 
-        public Task<Auction> UpdateAuctionFees(Auction auction)
+        public async Task<Auction> UpdateAuctionFees(Auction auction)
         {
             ThrowIfNotLogged();
 
-            return _servicePort.doMyBillingItemAsync(new doMyBillingItemRequest
+            var billing = await _servicePort.doMyBillingItemAsync(new doMyBillingItemRequest
             {
                 itemId = auction.AllegroAuctionId,
                 sessionHandle = _sessionKey
-            }).ContinueWith(task =>
-            {
-                auction.Fee = task.Result.endingFees.Sum(t => -decimal.Parse(t.biValue));
-                auction.OpenCost = task.Result.entryFees.Sum(t => -decimal.Parse(t.biValue));
-                return auction;
             });
+
+            auction.Fee = billing.endingFees.Sum(t => -decimal.Parse(t.biValue));
+            auction.OpenCost = billing.entryFees.Sum(t => -decimal.Parse(t.biValue));
+            return auction;
         }
 
         private void ThrowIfNotLogged()
