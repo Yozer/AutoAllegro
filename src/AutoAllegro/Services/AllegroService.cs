@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using SoaAllegroService;
 
 namespace AutoAllegro.Services
@@ -12,40 +14,42 @@ namespace AutoAllegro.Services
     public class AllegroService : IAllegroService
     {
         private const int CountryCode = 1;
+        private static readonly TimeSpan WebApiKeyExpirationTime = TimeSpan.FromMinutes(55);
 
+        private readonly IMemoryCache _memoryCache;
         private readonly servicePort _servicePort;
+
         private string _sessionKey;
         public bool IsLogged => _sessionKey != null;
 
-        public AllegroService()
+        public AllegroService(IMemoryCache memoryCache)
         {
+            _memoryCache = memoryCache;
             _servicePort = new servicePortClient();
         }
 
-        public Task<bool> Login(string username, string pass, string key)
+        public async Task Login(string userId, Func<AllegroCredentials> getAllegroCredentials)
         {
             if(IsLogged)
                 throw new InvalidOperationException();
 
-            return _servicePort.doQuerySysStatusAsync(new doQuerySysStatusRequest(1, CountryCode, key)).ContinueWith(sys =>
-            {
-                return _servicePort.doLoginEncAsync(new doLoginEncRequest
-                {
-                    countryCode = CountryCode,
-                    webapiKey = key,
-                    userHashPassword = pass,
-                    userLogin = username,
-                    localVersion = sys.Result.verKey,
-                }).ContinueWith(login =>
-                {
-                    if (login.IsFaulted)
-                        return false;
-                    _sessionKey = login.Result.sessionHandlePart;
-                    return true;
-                });
-            }).Unwrap();
-        }
+            if (_memoryCache.TryGetValue(userId, out _sessionKey))
+                return;
 
+            var credentials = await Task.Run(getAllegroCredentials);
+            var sysStatus = await _servicePort.doQuerySysStatusAsync(new doQuerySysStatusRequest(1, CountryCode, credentials.ApiKey));
+            var loginResult = await _servicePort.doLoginEncAsync(new doLoginEncRequest
+            {
+                countryCode = CountryCode,
+                webapiKey = credentials.ApiKey,
+                userHashPassword = credentials.Pass,
+                userLogin = credentials.UserName,
+                localVersion = sysStatus.verKey,
+            });
+
+            _sessionKey = loginResult.sessionHandlePart;
+            _memoryCache.Set(userId, _sessionKey, WebApiKeyExpirationTime);
+        }
         public Task<List<NewAuction>> GetNewAuctions()
         {
             ThrowIfNotLogged();
@@ -163,13 +167,17 @@ namespace AutoAllegro.Services
         }
     }
 
-    public static class AllegroServiceExtensions
+    public class AllegroCredentials
     {
-        public static DateTime ToDateTime(this long unixTimeStamp)
+        public string UserName { get; }
+        public string Pass { get; }
+        public string ApiKey { get; }
+
+        public AllegroCredentials(string userName, string pass, string apiKey)
         {
-            DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-            dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
-            return dateTime;
+            UserName = userName;
+            Pass = pass;
+            ApiKey = apiKey;
         }
     }
 }

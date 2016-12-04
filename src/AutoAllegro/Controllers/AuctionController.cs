@@ -7,6 +7,7 @@ using AutoAllegro.Data;
 using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
+using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -108,8 +109,8 @@ namespace AutoAllegro.Controllers
 
             if (fetch.GetValueOrDefault())
             {
-                var user = await LoginToAllegro();
-                ImmutableHashSet<long> userAuctions = _dbContext.Auctions.Where(t => t.UserId == user.Id).Select(t => t.AllegroAuctionId).ToImmutableHashSet();
+                await LoginToAllegro();
+                ImmutableHashSet<long> userAuctions = _dbContext.Auctions.Where(t => t.UserId == GetUserId()).Select(t => t.AllegroAuctionId).ToImmutableHashSet();
                 model.Auctions = (await _allegroService.GetNewAuctions()).Where(t => !userAuctions.Contains(t.Id)).ToList();
             }
 
@@ -123,7 +124,7 @@ namespace AutoAllegro.Controllers
             if(!ModelState.IsValid)
                 return RedirectToAction(nameof(Index));
 
-            var user = await LoginToAllegro();
+            await LoginToAllegro();
             var auctions = model.Auctions
                 .Where(t => t.IsMonitored)
                 .Select(t => new Auction
@@ -134,24 +135,27 @@ namespace AutoAllegro.Controllers
                     EndDate = t.EndDate,
                     IsMonitored = true,
                     PricePerItem = t.Price,
-                    Title = t.Name
+                    Title = t.Name,
+                    UserId = GetUserId()
                 })
                 .Select(_allegroService.UpdateAuctionFees).ToList();
 
             await Task.WhenAll(auctions);
-            user.Auctions.AddRange(auctions.Select(t => t.Result));
+            _dbContext.Auctions.AddRange(auctions.Select(t => t.Result));
 
             await _dbContext.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private Task<User> LoginToAllegro()
+        private Task LoginToAllegro()
         {
-            return _userManager.GetUserAsync(User).ContinueWith(task =>
+            Func<AllegroCredentials> getUser = () =>
             {
-                _allegroService.Login(task.Result.AllegroUserName, task.Result.AllegroHashedPass, task.Result.AllegroKey).Wait();
-                return task.Result;
-            });
+                var user = _userManager.GetUserAsync(User).Result;
+                return new AllegroCredentials (user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey);
+            };
+
+            return _allegroService.Login(GetUserId(), getUser);
         }
 
         private string GetUserId()
