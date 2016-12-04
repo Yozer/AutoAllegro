@@ -19,7 +19,7 @@
                         <p><strong>Koniec:</strong> @Model.EndDate</p>
                     </div>
                 </div>
-                <p><a class="btn btn-primary btn-lg">Synchronizuj opłaty</a></p>
+                <p><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-refresh="true" class="btn btn-primary btn-lg">Synchronizuj opłaty</a></p>
             </div>
         </div>
     </div>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoAllegro.Data;
@@ -51,7 +52,7 @@ namespace AutoAllegro.Controllers
         }
 
 
-        public async Task<IActionResult> Auction(int id, int? page)
+        public async Task<IActionResult> Auction(int id, int? page, bool refresh)
         {
             if (!ModelState.IsValid)
             {
@@ -61,8 +62,13 @@ namespace AutoAllegro.Controllers
             const int pageSize = 25;
             var auction = await GetUserAuctionWithOrders(id);
             if (auction == null)
-            {
                 return RedirectToAction(nameof(Index));
+
+            if (refresh)
+            {
+                await _allegroService.Login(auction.User.AllegroUserName, auction.User.AllegroHashedPass, auction.User.AllegroKey);
+                await _allegroService.UpdateAuctionFees(auction);
+                await _dbContext.SaveChangesAsync();
             }
 
             // possible bottleneck
@@ -77,9 +83,8 @@ namespace AutoAllegro.Controllers
             if (!ModelState.IsValid)
                 return RedirectToAction(nameof(Index));
 
-            var userAuctions = await GetUserAuctions();
-            var auction = userAuctions.FirstOrDefault(t => t.Id == updatedAuction.Id);
-            if(auction == null)
+            var auction = await GetUserAuction(updatedAuction.Id);
+            if (auction == null)
                 return RedirectToAction(nameof(Index));
 
             auction.IsMonitored = updatedAuction.IsMonitored;
@@ -154,32 +159,32 @@ namespace AutoAllegro.Controllers
         {
             return _userManager.GetUserAsync(HttpContext.User).ContinueWith(t => t.Result?.Id);
         }
-        private Task<ICollection<Auction>> GetUserAuctions()
+        private Task<List<Auction>> GetUserAuctions()
         {
             return GetUserId()
-                .ContinueWith(task => _dbContext.Users.Include(t => t.Auctions).Where(t => t.Id == task.Result).SingleOrDefaultAsync()
-                .ContinueWith(t => t.Result?.Auctions))
-                .Unwrap();
+                .ContinueWith(task => _dbContext.Auctions.Where(t => t.User.Id == task.Result).ToList());
         }
         private Task<Auction> GetUserAuctionWithOrders(int id)
         {
             return GetUserId()
-                .ContinueWith(task => _dbContext.Users.Include(t => t.Auctions)
-                .Where(t => t.Id == task.Result).SelectMany(t => t.Auctions)
-                .Where(t => t.Id == id).Include(t => t.Orders)
-                .SingleOrDefaultAsync())
-                .Unwrap();
+                    .ContinueWith(task => _dbContext.Auctions.Include(t => t.Orders).FirstOrDefault(t => t.User.Id == task.Result && t.Id == id));
+        }
+
+        private Task<Auction> GetUserAuction(int id)
+        {
+            return GetUserId()
+                .ContinueWith(task => _dbContext.Auctions.FirstOrDefault(t => t.Id == id && t.User.Id == task.Result));
         }
 
         private Task<Order> GetUserOrder(int id)
         {
+            throw new NotImplementedException();
             return GetUserId()
-                .ContinueWith(task => _dbContext.Users.Include(t => t.Auctions)
-                    .Where(t => t.Id == task.Result).SelectMany(t => t.Auctions)
-                    .Include(t => t.Orders).SelectMany(t => t.Orders)
-                    .Include(t => t.ShippingAddress).Where(t => t.Id == id)
-                    .SingleOrDefaultAsync())
-                .Unwrap();
+                .ContinueWith(task => _dbContext.Users
+                    .Include(t => t.Auctions).Where(t => t.Id == task.Result)
+                    .SelectMany(t => t.Auctions).Include(t => t.Orders)
+                    .SelectMany(t => t.Orders).Include(t => t.ShippingAddress)
+                    .FirstOrDefault(t => t.Id == id));
         }
     }
 }
