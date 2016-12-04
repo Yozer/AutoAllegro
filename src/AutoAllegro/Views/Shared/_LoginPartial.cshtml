@@ -9,9 +9,9 @@
     <form asp-controller="Account" asp-action="LogOff" method="post" id="logoutForm" class="navbar-right">
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <li><a asp-controller="Auction" asp-action="Index">Lista aukcji</a></li>
-                <li><a asp-controller="Auction" asp-action="Add">Dodaj aukcję</a></li>
-                <li><a href="#">Statystyki</a></li>
+                <menulink controller-name="Auction" action-name="Index" menu-text="Lista aukcji"></menulink>
+                <menulink controller-name="Auction" action-name="Add" menu-text="Dodaj aukcję"></menulink>
+                <menulink controller-name="Statystyki" action-name="Index" menu-text="Statystyki"></menulink>    
             </ul>
 
             <ul class="nav navbar-nav navbar-right">

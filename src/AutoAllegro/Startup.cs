@@ -13,6 +13,10 @@ using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace AutoAllegro
 {
@@ -43,6 +47,9 @@ namespace AutoAllegro
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddSingleton<IUrlHelperFactory, UrlHelperFactory>();
             // Add framework services.
             services.AddApplicationInsightsTelemetry(Configuration);
 
