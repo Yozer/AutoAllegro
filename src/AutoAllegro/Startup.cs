@@ -63,7 +63,6 @@ namespace AutoAllegro
 
             services.AddMvc();
             services.AddMemoryCache();
-            //services.AddSession();
 
             // Add application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();
