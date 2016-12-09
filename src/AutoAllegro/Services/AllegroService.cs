@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -85,6 +86,79 @@ namespace AutoAllegro.Services
             return auction;
         }
 
+        public IEnumerable<SiteJournalDealsStruct> FetchJournal(long journalStart)
+        {
+            ThrowIfNotLogged();
+            SiteJournalDealsStruct[] response;
+
+            do
+            {
+                response = _servicePort.doGetSiteJournalDealsAsync(new doGetSiteJournalDealsRequest
+                {
+                    sessionId = _sessionKey,
+                    journalStart = journalStart,
+                    
+                }).Result.siteJournalDeals;
+
+                foreach (var dealsStruct in response)
+                    yield return dealsStruct;
+
+            } while (response.Length >= 100);
+        }
+
+        public Buyer FetchBuyerData(long dealItemId, long dealBuyerId)
+        {
+            var response = _servicePort.doGetPostBuyDataAsync(new doGetPostBuyDataRequest
+            {
+                sessionHandle = _sessionKey,
+                buyerFilterArray = new[] {dealBuyerId},
+                itemsArray = new[] {dealItemId}
+            }).Result.itemsPostBuyData[0].usersPostBuyData[0];
+
+            return new Buyer
+            {
+                AllegroUserId = response.userData.userId,
+                UserLogin = response.userData.userLogin,
+                FirstName = response.userData.userFirstName,
+                LastName = response.userData.userLastName,
+                PostCode = response.userData.userPostcode,
+                City = response.userData.userCity,
+                Address = response.userData.userAddress,
+                Email = response.userData.userEmail,
+                Phone = response.userData.userPhone,
+                Phone2 = response.userData.userPhone2,
+            };
+        }
+
+        public Transaction GetTransactionDetalis(long dealTransactionId, Order order)
+        {
+            var response = _servicePort.doGetPostBuyFormsDataForSellersAsync(new doGetPostBuyFormsDataForSellersRequest
+            {
+                sessionId = _sessionKey,
+                transactionsIdsArray = new[] {dealTransactionId}
+            }).Result.postBuyFormData[0];
+
+            var transaction = new Transaction
+            {
+                TransactionStatus = TransactionStatus.Created,
+                Amount = Convert.ToDecimal(response.postBuyFormPaymentAmount),
+                Order = order,
+                AllegroTransactionId = dealTransactionId
+            };
+
+            order.ShippingAddress = new ShippingAddress
+            {
+                Address = response.postBuyFormShipmentAddress.postBuyFormAdrStreet,
+                City = response.postBuyFormShipmentAddress.postBuyFormAdrCity,
+                FirstName = response.postBuyFormShipmentAddress.postBuyFormAdrFullName.Split(' ')[0],
+                LastName = string.Join(" ", response.postBuyFormShipmentAddress.postBuyFormAdrFullName.Split(' ').Skip(1)),
+                PostCode = response.postBuyFormShipmentAddress.postBuyFormAdrPostcode,
+                MessageToSeller = response.postBuyFormMsgToSeller,
+            };
+
+            return transaction;
+        }
+
         private void ThrowIfNotLogged()
         {
             if(!IsLogged)
@@ -101,7 +175,7 @@ namespace AutoAllegro.Services
                     new FieldsValue
                     {
                         fid = 1,
-                        fvalueString = "testow aaukcja"
+                        fvalueString = "testow aaukcja 2"
                     },
                     new FieldsValue
                     {
@@ -170,12 +244,14 @@ namespace AutoAllegro.Services
         public string UserName { get; }
         public string Pass { get; }
         public string ApiKey { get; }
+        public long JournalStart { get; }
 
-        public AllegroCredentials(string userName, string pass, string apiKey)
+        public AllegroCredentials(string userName, string pass, string apiKey, long journalStart)
         {
             UserName = userName;
             Pass = pass;
             ApiKey = apiKey;
+            JournalStart = journalStart;
         }
     }
 }

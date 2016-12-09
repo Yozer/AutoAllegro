@@ -4,11 +4,10 @@ namespace AutoAllegro.Helpers.Extensions
 {
     public static class AllegroServiceExtensions
     {
+        private static readonly DateTime UnixDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
         public static DateTime ToDateTime(this long unixTimeStamp)
         {
-            DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-            dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
-            return dateTime;
+            return UnixDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
         }
     }
 }

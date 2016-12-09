@@ -8,6 +8,7 @@
 
         public int OrderId { get; set; }
         public virtual Order Order { get; set; }
+        public decimal Amount { get; set; }
     }
 
     public enum TransactionStatus

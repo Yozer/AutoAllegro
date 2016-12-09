@@ -59,9 +59,9 @@ namespace AutoAllegro.Controllers
 
             if (refresh)
             {
-                await LoginToAllegro();
-                await _allegroService.UpdateAuctionFees(auction);
-                await _dbContext.SaveChangesAsync();
+                await LoginToAllegro().ConfigureAwait(continueOnCapturedContext: false);
+                await _allegroService.UpdateAuctionFees(auction).ConfigureAwait(continueOnCapturedContext: false);
+                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
             }
 
             // possible bottleneck

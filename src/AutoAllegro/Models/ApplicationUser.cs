@@ -11,5 +11,6 @@ namespace AutoAllegro.Models
         public string AllegroKey { get; set; }
         public string AllegroUserName { get; set; }
         public string AllegroHashedPass { get; set; }
+        public long AllegroJournalStart { get; set; }
     }
 }
