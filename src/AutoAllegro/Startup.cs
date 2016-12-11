@@ -153,11 +153,8 @@ namespace AutoAllegro
 
         private void InitAllegroProcessor(IServiceProvider serviceProvider)
         {
-            using (var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
-            {
-                var allegroProcessor = serviceScope.ServiceProvider.GetService<AllegroProcessor>();
-                allegroProcessor.Init();
-            }
+            var allegroProcessor = serviceProvider.GetService<AllegroProcessor>();
+            allegroProcessor.Init();
         }
     }
 

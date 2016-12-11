@@ -32,14 +32,15 @@ namespace AutoAllegro.Services
             _serviceProvider = serviceProvider;
         }
 
-        public ApplicationDbContext GetDbContext()
+        public IServiceScope GetScope()
         {
-            return _serviceProvider.GetService<ApplicationDbContext>();
+            return _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
         }
         public void Init()
         {
-            using (var db = GetDbContext())
+            using (var scope = GetScope())
             {
+                var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
                 var users = from user in db.Users.Include(t => t.Auctions)
                     from auction in user.Auctions
                     where auction.IsMonitored
@@ -82,8 +83,9 @@ namespace AutoAllegro.Services
         public void Process(string userId, long journalStart)
         {
             var allegroService = _serviceProvider.GetService<IAllegroService>();
-            using (var db = GetDbContext())
+            using (var scope = GetScope())
             {
+                var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
 
                 if (journalStart == 0)
                 {

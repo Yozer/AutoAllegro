@@ -151,7 +151,7 @@ namespace AutoAllegro.Controllers
             Func<AllegroCredentials> getUser = () =>
             {
                 var user = _userManager.GetUserAsync(User).Result;
-                return new AllegroCredentials (user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey);
+                return new AllegroCredentials (user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
             };
 
             return _allegroService.Login(GetUserId(), getUser);

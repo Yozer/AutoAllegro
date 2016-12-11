@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 
-namespace AutoAllegro.Data.Migrations
+namespace AutoAllegro.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20161127152054_RenameColumn")]
-    partial class RenameColumn
+    [Migration("20161211193057_initial")]
+    partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -74,8 +74,6 @@ namespace AutoAllegro.Data.Migrations
                     b.Property<string>("Phone2");
 
                     b.Property<string>("PostCode");
-
-                    b.Property<string>("UserBirthDate");
 
                     b.Property<string>("UserLogin");
 
@@ -177,6 +175,8 @@ namespace AutoAllegro.Data.Migrations
 
                     b.Property<string>("LastName");
 
+                    b.Property<string>("MessageToSeller");
+
                     b.Property<string>("PostCode");
 
                     b.HasKey("Id");
@@ -190,6 +190,8 @@ namespace AutoAllegro.Data.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<long>("AllegroTransactionId");
+
+                    b.Property<decimal>("Amount");
 
                     b.Property<int>("OrderId");
 
@@ -213,6 +215,8 @@ namespace AutoAllegro.Data.Migrations
                     b.Property<int>("AccessFailedCount");
 
                     b.Property<string>("AllegroHashedPass");
+
+                    b.Property<long>("AllegroJournalStart");
 
                     b.Property<string>("AllegroKey");
 
