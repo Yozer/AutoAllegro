@@ -20,7 +20,7 @@ namespace AutoAllegro.Models
         public virtual Auction Auction { get; set; }
         public int BuyerId { get; set; }
         public virtual Buyer Buyer { get; set; }
-        public int ShippingAddressId { get; set; }
+        public int? ShippingAddressId { get; set; }
         public virtual ShippingAddress ShippingAddress { get; set; }
 
     }

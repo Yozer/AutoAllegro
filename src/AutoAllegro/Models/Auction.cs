@@ -15,6 +15,7 @@ namespace AutoAllegro.Models
         public int Converter { get; set; }
         public decimal Fee { get; set; }
         public decimal OpenCost { get; set; }
+        public bool IsVirtualItem { get; set; }
 
         public string UserId { get; set; }
         public virtual User User { get; set; }

@@ -33,6 +33,8 @@ namespace AutoAllegro.Migrations
 
                     b.Property<bool>("IsMonitored");
 
+                    b.Property<bool>("IsVirtualItem");
+
                     b.Property<decimal>("OpenCost");
 
                     b.Property<decimal>("PricePerItem");
@@ -144,7 +146,7 @@ namespace AutoAllegro.Migrations
 
                     b.Property<int>("Quantity");
 
-                    b.Property<int>("ShippingAddressId");
+                    b.Property<int?>("ShippingAddressId");
 
                     b.HasKey("Id");
 
@@ -413,8 +415,7 @@ namespace AutoAllegro.Migrations
 
                     b.HasOne("AutoAllegro.Models.ShippingAddress", "ShippingAddress")
                         .WithOne("Order")
-                        .HasForeignKey("AutoAllegro.Models.Order", "ShippingAddressId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("AutoAllegro.Models.Order", "ShippingAddressId");
                 });
 
             modelBuilder.Entity("AutoAllegro.Models.Transaction", b =>

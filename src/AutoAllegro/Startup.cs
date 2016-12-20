@@ -79,7 +79,11 @@ namespace AutoAllegro
             services.AddTransient<IAllegroService, AllegroService>();
             services.AddAutoMapper(cf =>
             {
-                cf.CreateMap<Order, OrderViewModel>().AfterMap((order, model) => model.TotalPayment = order.Quantity*order.Auction.PricePerItem).ReverseMap();
+                cf.CreateMap<Order, OrderViewModel>().AfterMap((order, model) =>
+                {
+                    model.TotalPayment = order.Quantity*order.Auction.PricePerItem;
+                    model.VirtualItem = order.Auction.IsVirtualItem;
+                }).ReverseMap();
                 cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
             });
 

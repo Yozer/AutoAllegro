@@ -48,7 +48,7 @@
                         {
                             <tr>
                                 <td><a asp-action="Order" asp-route-id="@order.Id">@order.Buyer.UserLogin</a></td>
-                                <td>@order.Buyer.UserLogin</td>
+                                <td>@order.Buyer.Email</td>
                                 <td>@order.OrderDate</td>
                                 <td>@order.Quantity</td>
                                 <td>@Html.DisplayFor(x => order.TotalPayment)</td>
@@ -101,7 +101,7 @@
                             <div class="col-sm-offset-2 col-sm-10">
                                 <div class="checkbox">
                                     <label>
-                                        <input name="non_material_checkbox" type="checkbox"> Przedmiot niematerialny
+                                        <input asp-for="@Model.IsVirtualItem">Przedmiot niematerialny
                                     </label>
                                 </div>
                             </div>

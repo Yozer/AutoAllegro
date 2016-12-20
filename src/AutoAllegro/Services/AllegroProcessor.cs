@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using AutoAllegro.Data;
 using AutoAllegro.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using System.Net.Sockets;
-using System.ServiceModel;
 using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
 using Hangfire;
@@ -32,7 +28,7 @@ namespace AutoAllegro.Services
             _serviceProvider = serviceProvider;
         }
 
-        public IServiceScope GetScope()
+        private IServiceScope GetScope()
         {
             return _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
         }
@@ -41,48 +37,45 @@ namespace AutoAllegro.Services
             using (var scope = GetScope())
             {
                 var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
-                var users = from user in db.Users.Include(t => t.Auctions)
-                    from auction in user.Auctions
-                    where auction.IsMonitored
-                    select user;
+                var auctions = from auction in db.Auctions
+                            where auction.IsMonitored
+                            select auction;
 
-                foreach (var user in users)
+                foreach (var auction in auctions)
                 {
-                    foreach (var auction in user.Auctions)
-                    {
-                        StartProcessor(user, auction);
-                    }
+                    StartProcessor(auction);
                 }
             }
         }
 
-        public void StartProcessor(User user, Auction auction)
+        public void StartProcessor(Auction auction)
         {
-            var auctions = _users.GetOrAdd(user.Id, t => new ConcurrentDictionary<long, int>());
+            var auctions = _users.GetOrAdd(auction.UserId, t => new ConcurrentDictionary<long, int>());
             auctions.TryAdd(auction.AllegroAuctionId, auction.Id);
 
             if (auctions.Count == 1)
             {
-                _backgroundJob.Schedule(() => Process(user.Id, user.AllegroJournalStart), Interval);
+                _backgroundJob.Schedule(() => Process(auction.UserId, 0), Interval);
             }
         }
 
-        public void StopProcessor(User user, Auction auction)
+        public void StopProcessor(Auction auction)
         {
-            var auctions = _users.GetOrAdd(user.Id, t => new ConcurrentDictionary<long, int>());
+            var auctions = _users.GetOrAdd(auction.UserId, t => new ConcurrentDictionary<long, int>());
             int removed;
             auctions.TryRemove(auction.AllegroAuctionId, out removed);
 
             if (auctions.Count == 0)
             {
                 ConcurrentDictionary<long, int> dummy;
-                _users.TryRemove(user.Id, out dummy);
+                _users.TryRemove(auction.UserId, out dummy);
             }
         }
 
         public void Process(string userId, long journalStart)
         {
             var allegroService = _serviceProvider.GetService<IAllegroService>();
+
             using (var scope = GetScope())
             {
                 var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
@@ -121,7 +114,10 @@ namespace AutoAllegro.Services
                 // fetch buyer data
                 Buyer buyer = db.Buyers.FirstOrDefault(t => t.AllegroUserId == dealsStruct.dealBuyerId);
                 if (buyer == null)
+                {
                     buyer = allegroService.FetchBuyerData(dealsStruct.dealItemId, dealsStruct.dealBuyerId);
+                    db.Buyers.Add(buyer);
+                }
 
                 Order order = null;
 
@@ -134,7 +130,8 @@ namespace AutoAllegro.Services
                         Buyer = buyer,
                         OrderDate = dealsStruct.dealEventTime.ToDateTime(), // probably not true date
                         OrderStatus = OrderStatus.Created,
-                        Quantity = dealsStruct.dealQuantity
+                        Quantity = dealsStruct.dealQuantity,
+                        ShippingAddress = null
                     };
 
                     db.Orders.Add(order);
@@ -171,9 +168,14 @@ namespace AutoAllegro.Services
                 db.Events.Add(e);
 
                 journalStart = dealsStruct.dealEventId;
+                db.SaveChanges();
             }
 
+            var user = new User { Id = userId, AllegroJournalStart = journalStart };
+            db.Users.Attach(user);
+            db.Entry(user).Property(x => x.AllegroJournalStart).IsModified = true;
             db.SaveChanges();
+
         }
 
         private AllegroCredentials GetAllegroCredentials(ApplicationDbContext db, string id)

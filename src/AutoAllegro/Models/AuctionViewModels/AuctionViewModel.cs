@@ -20,5 +20,6 @@ namespace AutoAllegro.Models.AuctionViewModels
         public IList<OrderViewModel> Orders { get; set; }
         public PaginationView PaginationSettings { get; set; }
         public bool IsMonitored { get; set; }
+        public bool IsVirtualItem { get; set; }
     }
 }

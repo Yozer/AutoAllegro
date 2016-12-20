@@ -117,6 +117,7 @@ namespace AutoAllegro.Migrations
                     EndDate = table.Column<DateTime>(nullable: false),
                     Fee = table.Column<decimal>(nullable: false),
                     IsMonitored = table.Column<bool>(nullable: false),
+                    IsVirtualItem = table.Column<bool>(nullable: false),
                     OpenCost = table.Column<decimal>(nullable: false),
                     PricePerItem = table.Column<decimal>(nullable: false),
                     Title = table.Column<string>(nullable: true),
@@ -231,7 +232,7 @@ namespace AutoAllegro.Migrations
                     OrderDate = table.Column<DateTime>(nullable: false),
                     OrderStatus = table.Column<int>(nullable: false),
                     Quantity = table.Column<int>(nullable: false),
-                    ShippingAddressId = table.Column<int>(nullable: false)
+                    ShippingAddressId = table.Column<int>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -253,7 +254,7 @@ namespace AutoAllegro.Migrations
                         column: x => x.ShippingAddressId,
                         principalTable: "SendAddresses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

@@ -237,6 +237,18 @@ namespace AutoAllegro.Services
                 }
             });
         }
+
+        public void Buy(long id, float price)
+        {
+            var response = _servicePort.doBidItemAsync(new doBidItemRequest
+            {
+                sessionHandle = _sessionKey,
+                bidBuyNow = 1,
+                bidItId = id,
+                bidQuantity = 1,
+                bidUserPrice = price
+            }).Result;
+        }
     }
 
     public class AllegroCredentials

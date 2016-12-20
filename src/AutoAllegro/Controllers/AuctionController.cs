@@ -24,13 +24,15 @@ namespace AutoAllegro.Controllers
         private readonly IAllegroService _allegroService;
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
+        private readonly AllegroProcessor _allegroProcessor;
 
-        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper)
+        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper, AllegroProcessor allegroProcessor)
         {
             _dbContext = dbContext;
             _userManager = userManager;
             _allegroService = allegroService;
             _mapper = mapper;
+            _allegroProcessor = allegroProcessor;
         }
         public async Task<IActionResult> Index(int? page)
         {
@@ -59,9 +61,9 @@ namespace AutoAllegro.Controllers
 
             if (refresh)
             {
-                await LoginToAllegro().ConfigureAwait(continueOnCapturedContext: false);
-                await _allegroService.UpdateAuctionFees(auction).ConfigureAwait(continueOnCapturedContext: false);
-                await _dbContext.SaveChangesAsync().ConfigureAwait(continueOnCapturedContext: false);
+                await LoginToAllegro();
+                await _allegroService.UpdateAuctionFees(auction);
+                await _dbContext.SaveChangesAsync();
             }
 
             // possible bottleneck
@@ -71,7 +73,7 @@ namespace AutoAllegro.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Auction(Auction updatedAuction)
+        public async Task<IActionResult> Auction(AuctionViewModel updatedAuction)
         {
             if (!ModelState.IsValid)
                 return RedirectToAction(nameof(Index));
@@ -80,7 +82,13 @@ namespace AutoAllegro.Controllers
             if (auction == null)
                 return RedirectToAction(nameof(Index));
 
+            if(updatedAuction.IsMonitored)
+                _allegroProcessor.StartProcessor(auction);
+            else
+                _allegroProcessor.StopProcessor(auction);
+
             auction.IsMonitored = updatedAuction.IsMonitored;
+            auction.IsVirtualItem = updatedAuction.IsVirtualItem;
 
             await _dbContext.SaveChangesAsync();
             return RedirectToAction(nameof(Auction), new {id = auction.Id});
@@ -132,7 +140,7 @@ namespace AutoAllegro.Controllers
                     Converter = 1,
                     CreationDate = t.StartDate,
                     EndDate = t.EndDate,
-                    IsMonitored = true,
+                    IsMonitored = false,
                     PricePerItem = t.Price,
                     Title = t.Name,
                     UserId = GetUserId()
@@ -169,7 +177,7 @@ namespace AutoAllegro.Controllers
         }
         private Task<Auction> GetUserAuctionWithOrders(int id)
         {
-            return (from auction in _dbContext.Auctions.Include(t => t.Orders)
+            return (from auction in _dbContext.Auctions.Include(t => t.Orders).ThenInclude(t => t.Buyer)
                     where auction.UserId == GetUserId() && auction.Id == id
                     select auction).FirstOrDefaultAsync();
         }
@@ -183,7 +191,7 @@ namespace AutoAllegro.Controllers
 
         private Task<Order> GetUserOrder(int id)
         {
-            return (from order in _dbContext.Orders.Include(t => t.Buyer).Include(t => t.ShippingAddress)
+            return (from order in _dbContext.Orders.Include(t => t.Buyer).Include(t => t.ShippingAddress).Include(t => t.Auction)
                     where order.Id == id && order.Auction.User.Id == GetUserId()
                     select order).FirstOrDefaultAsync();
         }

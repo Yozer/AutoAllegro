@@ -13,5 +13,6 @@ namespace AutoAllegro.Models.AuctionViewModels
         public DateTime OrderDate { get; set; }
         public ShippingAddress ShippingAddress { get; set; }
         public Buyer Buyer { get; set; }
+        public bool VirtualItem { get; set; }
     }
 }

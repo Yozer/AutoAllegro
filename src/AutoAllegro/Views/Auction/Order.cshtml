@@ -55,13 +55,15 @@
                     </table>
                 </div>
             </div>
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Dane do wysyłki</h3>
-                </div>
-                <div class="panel-body">
-                    <table class="table">
-                        <tbody>
+            @if (Model.ShippingAddress != null)
+            {
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Dane do wysyłki</h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table">
+                            <tbody>
                             <tr>
                                 <td>Imię i nazwisko</td>
                                 <td>@Model.ShippingAddress.FirstName @Model.ShippingAddress.LastName</td>
@@ -74,10 +76,11 @@
                                 <td>Miasto</td>
                                 <td>@Model.ShippingAddress.City @Model.ShippingAddress.PostCode</td>
                             </tr>
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
         <div class="col-md-6">
             <div class="panel panel-default">
@@ -86,17 +89,26 @@
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
-                    <a href="#" class="list-group-item">Lorem ipsum dolor.</a>
-                    <a href="#" class="list-group-item">Dapibus ac facilisis in</a>
+                        @if (Model.VirtualItem)
+                        {
+                            <a href="#" class="list-group-item">Zobacz kody</a>
+                            <a href="#" class="list-group-item">Wygeneruj dodatkowy kod</a>
+                            <a href="#" class="list-group-item">Zwolnij kody</a>
+                        }
+                        else
+                        {
+                            <a href="#" class="list-group-item">Wygeneruj przesyłkę</a>
+                            <a href="#" class="list-group-item">Sprawdź status paczki</a>
+                        }
                     </div>
                 </div>
             </div>
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Dane przesyłki</h3>
+                    <h3 class="panel-title">Wiadomość do kupującego</h3>
                 </div>
                 <div class="panel-body">
-                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Culpa suscipit quidem provident iusto quod aperiam ex ratione, quis, necessitatibus, voluptates repellendus delectus commodi adipisci! Minus tempore quam quos magni facilis eaque dolores, quis quasi odit, qui sit perspiciatis laborum maxime?</p>
+                    <p>@(Model.ShippingAddress?.MessageToSeller ?? "Brak wiadomości")</p>
                 </div>
             </div>
         </div>
