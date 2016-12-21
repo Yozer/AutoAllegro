@@ -77,15 +77,7 @@ namespace AutoAllegro
 
             // add allegro service
             services.AddTransient<IAllegroService, AllegroService>();
-            services.AddAutoMapper(cf =>
-            {
-                cf.CreateMap<Order, OrderViewModel>().AfterMap((order, model) =>
-                {
-                    model.TotalPayment = order.Quantity*order.Auction.PricePerItem;
-                    model.VirtualItem = order.Auction.IsVirtualItem;
-                }).ReverseMap();
-                cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
-            });
+            services.AddAutoMapper(ConfigureAutoMapper);
 
             services.AddSingleton<AllegroProcessor>();
             services.AddHangfire(t => t.UseMemoryStorage());
@@ -159,6 +151,16 @@ namespace AutoAllegro
         {
             var allegroProcessor = serviceProvider.GetService<AllegroProcessor>();
             allegroProcessor.Init();
+        }
+
+        public static void ConfigureAutoMapper(IMapperConfigurationExpression cf)
+        {
+            cf.CreateMap<Order, OrderViewModel>().AfterMap((order, model) =>
+            {
+                model.TotalPayment = order.Quantity * order.Auction.PricePerItem;
+                model.VirtualItem = order.Auction.IsVirtualItem;
+            }).ReverseMap();
+            cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
         }
     }
 
