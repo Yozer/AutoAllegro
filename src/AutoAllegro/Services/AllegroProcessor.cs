@@ -168,14 +168,11 @@ namespace AutoAllegro.Services
                 db.Events.Add(e);
 
                 journalStart = dealsStruct.dealEventId;
+
+                var user = new User { Id = userId, AllegroJournalStart = journalStart };
+                db.Entry(user).Property(x => x.AllegroJournalStart).IsModified = true;
                 db.SaveChanges();
             }
-
-            var user = new User { Id = userId, AllegroJournalStart = journalStart };
-            db.Users.Attach(user);
-            db.Entry(user).Property(x => x.AllegroJournalStart).IsModified = true;
-            db.SaveChanges();
-
         }
 
         private AllegroCredentials GetAllegroCredentials(ApplicationDbContext db, string id)
