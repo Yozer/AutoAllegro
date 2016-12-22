@@ -71,21 +71,6 @@ namespace AutoAllegro.Controllers
             viewModel.Paginate(page, pageSize, c => c.Orders);
             return View(viewModel);
         }
-        
-
-        abstract class Decorator
-        {
-            protected void bleblev() { }
-            protected abstract string dos();
-        }
-
-        class ble : Decorator
-        {
-            protected sealed override string dos()
-            {
-                throw new NotImplementedException();
-            }
-        }
 
         [HttpPost]
         public async Task<IActionResult> Auction(AuctionViewModel updatedAuction)
