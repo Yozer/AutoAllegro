@@ -15,7 +15,7 @@ namespace AutoAllegro.Services
     public class AllegroService : IAllegroService
     {
         private const int CountryCode = 1;
-        private static readonly TimeSpan WebApiKeyExpirationTime = TimeSpan.FromMinutes(55);
+        public TimeSpan WebApiKeyExpirationTime = TimeSpan.FromMinutes(55);
 
         private readonly IMemoryCache _memoryCache;
         private readonly servicePort _servicePort;
@@ -23,17 +23,14 @@ namespace AutoAllegro.Services
         private string _sessionKey;
         public bool IsLogged => _sessionKey != null;
 
-        public AllegroService(IMemoryCache memoryCache)
+        public AllegroService(IMemoryCache memoryCache, servicePort servicePort)
         {
             _memoryCache = memoryCache;
-            _servicePort = new servicePortClient();
+            _servicePort = servicePort;
         }
 
         public async Task Login(string userId, Func<AllegroCredentials> getAllegroCredentials)
         {
-            if(IsLogged)
-                throw new InvalidOperationException();
-
             if (_memoryCache.TryGetValue(userId, out _sessionKey))
                 return;
 
@@ -96,18 +93,20 @@ namespace AutoAllegro.Services
                 response = _servicePort.doGetSiteJournalDealsAsync(new doGetSiteJournalDealsRequest
                 {
                     sessionId = _sessionKey,
-                    journalStart = journalStart,
+                    journalStart = journalStart
                     
                 }).Result.siteJournalDeals;
 
                 foreach (var dealsStruct in response)
                     yield return dealsStruct;
 
-            } while (response.Length >= 100);
+            } while (response.Length == 100);
         }
 
         public Buyer FetchBuyerData(long dealItemId, long dealBuyerId)
         {
+            ThrowIfNotLogged();
+
             var response = _servicePort.doGetPostBuyDataAsync(new doGetPostBuyDataRequest
             {
                 sessionHandle = _sessionKey,
@@ -130,8 +129,10 @@ namespace AutoAllegro.Services
             };
         }
 
-        public Transaction GetTransactionDetalis(long dealTransactionId, Order order)
+        public Transaction GetTransactionDetails(long dealTransactionId, Order order)
         {
+            ThrowIfNotLogged();
+
             var response = _servicePort.doGetPostBuyFormsDataForSellersAsync(new doGetPostBuyFormsDataForSellersRequest
             {
                 sessionId = _sessionKey,
@@ -165,6 +166,7 @@ namespace AutoAllegro.Services
                 throw new InvalidOperationException("Not logged in");
         }
 
+        [Obsolete]
         public Task<doNewAuctionExtResponse> AddFakeAdd()
         {
            return _servicePort.doNewAuctionExtAsync(new doNewAuctionExtRequest
@@ -237,7 +239,7 @@ namespace AutoAllegro.Services
                 }
             });
         }
-
+        [Obsolete]
         public void Buy(long id, float price)
         {
             var response = _servicePort.doBidItemAsync(new doBidItemRequest

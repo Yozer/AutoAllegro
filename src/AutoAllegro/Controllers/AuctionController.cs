@@ -146,7 +146,6 @@ namespace AutoAllegro.Controllers
                 .Select(_allegroService.UpdateAuctionFees).ToList();
 
             await Task.WhenAll(auctions);
-            var tmp = _dbContext.Auctions.ToList();
             _dbContext.Auctions.AddRange(auctions.Select(t => t.Result));
 
             await _dbContext.SaveChangesAsync();

@@ -15,6 +15,6 @@ namespace AutoAllegro.Services.Interfaces
         Task<Auction> UpdateAuctionFees(Auction auction);
         IEnumerable<SiteJournalDealsStruct> FetchJournal(long journalStart);
         Buyer FetchBuyerData(long dealItemId, long dealBuyerId);
-        Transaction GetTransactionDetalis(long dealTransactionId, Order order);
+        Transaction GetTransactionDetails(long dealTransactionId, Order order);
     }
 }

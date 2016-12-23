@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Hangfire.MemoryStorage;
+using SoaAllegroService;
 
 namespace AutoAllegro
 {
@@ -77,6 +78,8 @@ namespace AutoAllegro
 
             // add allegro service
             services.AddTransient<IAllegroService, AllegroService>();
+            services.AddTransient<servicePort, servicePortClient>();
+
             services.AddAutoMapper(ConfigureAutoMapper);
 
             services.AddSingleton<IAllegroProcessor, AllegroProcessor>();

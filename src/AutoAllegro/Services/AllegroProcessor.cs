@@ -145,7 +145,7 @@ namespace AutoAllegro.Services
                 else if (dealsStruct.dealEventType == (int) EventType.TransactionCreated)
                 {
                     order = db.Orders.First(t => t.AllegroDealId == dealsStruct.dealId);
-                    Transaction transaction = allegroService.GetTransactionDetalis(dealsStruct.dealTransactionId, order);
+                    Transaction transaction = allegroService.GetTransactionDetails(dealsStruct.dealTransactionId, order);
                     db.Transactions.Add(transaction);
                 }
                 else if (dealsStruct.dealEventType == (int) EventType.TransactionCanceled)
