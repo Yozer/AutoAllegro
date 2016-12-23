@@ -24,9 +24,9 @@ namespace AutoAllegro.Controllers
         private readonly IAllegroService _allegroService;
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
-        private readonly AllegroProcessor _allegroProcessor;
+        private readonly IAllegroProcessor _allegroProcessor;
 
-        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper, AllegroProcessor allegroProcessor)
+        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper, IAllegroProcessor allegroProcessor)
         {
             _dbContext = dbContext;
             _userManager = userManager;
@@ -82,12 +82,15 @@ namespace AutoAllegro.Controllers
             if (auction == null)
                 return RedirectToAction(nameof(Index));
 
-            if(updatedAuction.IsMonitored)
-                _allegroProcessor.StartProcessor(auction);
-            else
-                _allegroProcessor.StopProcessor(auction);
 
-            auction.IsMonitored = updatedAuction.IsMonitored;
+            if (updatedAuction.IsMonitored != auction.IsMonitored)
+            {
+                auction.IsMonitored = updatedAuction.IsMonitored;
+                if (updatedAuction.IsMonitored)
+                    _allegroProcessor.StartProcessor(auction);
+                else
+                    _allegroProcessor.StopProcessor(auction);
+            }
             auction.IsVirtualItem = updatedAuction.IsVirtualItem;
 
             await _dbContext.SaveChangesAsync();
@@ -97,15 +100,11 @@ namespace AutoAllegro.Controllers
         public async Task<IActionResult> Order(int id)
         {
             if (!ModelState.IsValid)
-            {
                 return RedirectToAction(nameof(Index));
-            }
 
             var order = await GetUserOrder(id);
             if (order == null)
-            {
                 return RedirectToAction(nameof(Index));
-            }
 
             var viewModel = _mapper.Map<OrderViewModel>(order);
             return View(viewModel);
@@ -133,14 +132,13 @@ namespace AutoAllegro.Controllers
 
             await LoginToAllegro();
             var auctions = model.Auctions
-                .Where(t => t.IsMonitored)
+                .Where(t => t.ShouldBeSaved)
                 .Select(t => new Auction
                 {
                     AllegroAuctionId = t.Id,
                     Converter = 1,
                     CreationDate = t.StartDate,
                     EndDate = t.EndDate,
-                    IsMonitored = false,
                     PricePerItem = t.Price,
                     Title = t.Name,
                     UserId = GetUserId()
@@ -148,6 +146,7 @@ namespace AutoAllegro.Controllers
                 .Select(_allegroService.UpdateAuctionFees).ToList();
 
             await Task.WhenAll(auctions);
+            var tmp = _dbContext.Auctions.ToList();
             _dbContext.Auctions.AddRange(auctions.Select(t => t.Result));
 
             await _dbContext.SaveChangesAsync();

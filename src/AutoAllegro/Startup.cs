@@ -79,7 +79,7 @@ namespace AutoAllegro
             services.AddTransient<IAllegroService, AllegroService>();
             services.AddAutoMapper(ConfigureAutoMapper);
 
-            services.AddSingleton<AllegroProcessor>();
+            services.AddSingleton<IAllegroProcessor, AllegroProcessor>();
             services.AddHangfire(t => t.UseMemoryStorage());
         }
 
@@ -149,7 +149,7 @@ namespace AutoAllegro
 
         private void InitAllegroProcessor(IServiceProvider serviceProvider)
         {
-            var allegroProcessor = serviceProvider.GetService<AllegroProcessor>();
+            var allegroProcessor = serviceProvider.GetService<IAllegroProcessor>();
             allegroProcessor.Init();
         }
 

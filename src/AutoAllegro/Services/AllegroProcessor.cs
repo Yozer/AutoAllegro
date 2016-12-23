@@ -4,16 +4,16 @@ using AutoAllegro.Data;
 using AutoAllegro.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
+using AutoAllegro.Helpers.Extensions;
 
 using UsersContainer = System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentDictionary<long, int>>;
 
 namespace AutoAllegro.Services
 {
-    public class AllegroProcessor
+    public class AllegroProcessor : IAllegroProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
@@ -50,6 +50,9 @@ namespace AutoAllegro.Services
 
         public void StartProcessor(Auction auction)
         {
+            if(!auction.IsMonitored)
+                throw new InvalidOperationException($"Auction monitoring is disabled for {auction.Id}");
+
             var auctions = _users.GetOrAdd(auction.UserId, t => new ConcurrentDictionary<long, int>());
             auctions.TryAdd(auction.AllegroAuctionId, auction.Id);
 
@@ -61,6 +64,9 @@ namespace AutoAllegro.Services
 
         public void StopProcessor(Auction auction)
         {
+            if (auction.IsMonitored)
+                throw new InvalidOperationException($"Auction monitoring is enabled for {auction.Id}");
+
             var auctions = _users.GetOrAdd(auction.UserId, t => new ConcurrentDictionary<long, int>());
             int removed;
             auctions.TryRemove(auction.AllegroAuctionId, out removed);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoAllegro.Controllers;
@@ -31,6 +32,7 @@ namespace AutoAllegro.Tests.Controlers
         private readonly IAllegroService _allegroService;
         private readonly string _userId = "TestUserId";
         private readonly string _userId2 = "TestUserId2";
+        private readonly IAllegroProcessor _allegroProcessor;
 
         public AuctionControlerTests()
         {
@@ -53,6 +55,7 @@ namespace AutoAllegro.Tests.Controlers
 
             services.AddTransient(t => Substitute.For<IAllegroService>());
             services.AddAutoMapper(Startup.ConfigureAutoMapper);
+            services.AddSingleton(t => Substitute.For<IAllegroProcessor>());
 
             _serviceProvider = services.BuildServiceProvider();
 
@@ -60,8 +63,9 @@ namespace AutoAllegro.Tests.Controlers
             _userManager = _serviceProvider.GetRequiredService<UserManager<User>>();
             _dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
             _allegroService = _serviceProvider.GetRequiredService<IAllegroService>();
+            _allegroProcessor = _serviceProvider.GetRequiredService<IAllegroProcessor>();
             var mapper = _serviceProvider.GetRequiredService<IMapper>();
-            _controler = new AuctionController(_dbContext, _userManager, _allegroService, mapper, new AllegroProcessor(null, null));
+            _controler = new AuctionController(_dbContext, _userManager, _allegroService, mapper, _allegroProcessor);
         }
 
         [Fact]
@@ -242,6 +246,349 @@ namespace AutoAllegro.Tests.Controlers
             Assert.Equal("Index", redirect.ActionName);
         }
 
+        [Fact]
+        public async Task AuctionPost_ShouldRedirectToIndex_ForModelError()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+            _controler.ModelState.AddModelError("error", "some error");
+
+            // act
+            IActionResult result = await _controler.Auction(null);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+        [Fact]
+        public async Task AuctionPost_ShouldRedirectToIndex_ForNotExistingAuction()
+        {
+            // arange
+            PopulateHttpContext(_userId2);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Auction(new AuctionViewModel {Id = 6});
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Fact]
+        public async Task AuctionPost_ShouldRedirectToIndex_ForAuctionThatBelongsToDifferentUser()
+        {
+            // arange
+            PopulateHttpContext(_userId2);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Auction(new AuctionViewModel {Id = 1});
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Fact]
+        public async Task AuctionPost_ShouldDisableMonitoring_ForAuction1()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Auction(new AuctionViewModel { Id = 1, IsMonitored = false, IsVirtualItem = true});
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Auction auction = _dbContext.Auctions.Single(t => t.Id == 1);
+
+            Assert.False(auction.IsMonitored);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(1, redirect.RouteValues["id"]);
+            _allegroProcessor.Received(1).StopProcessor(Arg.Is<Auction>(t => t.Id == 1 && !t.IsMonitored));
+            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
+        }
+
+        [Fact]
+        public async Task AuctionPost_ShouldEnableMonitoringAndDisableVirtualItem_ForAuction2()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Auction(new AuctionViewModel { Id = 2, IsMonitored = true, IsVirtualItem = false });
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Auction auction = _dbContext.Auctions.Single(t => t.Id == 2);
+
+            Assert.False(auction.IsVirtualItem);
+            Assert.True(auction.IsMonitored);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(2, redirect.RouteValues["id"]);
+            _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
+            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
+        }
+
+        [Fact]
+        public async Task AuctionPost_ShouldNotChangeMonitoringSetting_ForAuction4()
+        {
+            // arange
+            PopulateHttpContext(_userId2);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Auction(new AuctionViewModel { Id = 4, IsMonitored = false, IsVirtualItem = false });
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Auction auction = _dbContext.Auctions.Single(t => t.Id == 4);
+
+            Assert.False(auction.IsMonitored);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(4, redirect.RouteValues["id"]);
+            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
+            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
+        }
+
+        [Fact]
+        public async Task Order_ShouldRedirectToIndex_ForModelError()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+            _controler.ModelState.AddModelError("error", "some error");
+
+            // act
+            IActionResult result = await _controler.Order(0);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Fact]
+        public async Task Order_ShouldRedirectToIndex_ForNotExistingOrder()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Order(-1);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Fact]
+        public async Task Order_ShouldRedirectToIndex_ForNotUserOrder()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Order(3);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Fact]
+        public async Task Order_ShouldReturnOrderView_ForOrder1()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Order(2);
+
+            // assert
+            Assert.IsType<ViewResult>(result);
+            Assert.IsType<OrderViewModel>(((ViewResult)result).Model);
+
+            ViewResult view = (ViewResult)result;
+            OrderViewModel model = (OrderViewModel) view.Model;
+
+            Assert.Equal(2, model.Id);
+            Assert.Equal(2, model.Quantity);
+            Assert.Equal(2*619m, model.TotalPayment);
+            Assert.Equal(new DateTime(1991, 12, 11, 12, 55, 22), model.OrderDate);
+            Assert.Equal(OrderStatus.Paid, model.OrderStatus);
+            Assert.Equal(1, model.Buyer.Id);
+            Assert.True(model.VirtualItem);
+            Assert.Equal(1, model.ShippingAddress.Id);
+            Assert.Equal("Some addr", model.ShippingAddress.Address);
+            Assert.Equal("Some city", model.ShippingAddress.City);
+            Assert.Equal("First name", model.ShippingAddress.FirstName);
+            Assert.Equal("Last name", model.ShippingAddress.LastName);
+            Assert.Equal("Some msg", model.ShippingAddress.MessageToSeller);
+            Assert.Equal("33-300", model.ShippingAddress.PostCode);
+        }
+
+        [Fact]
+        public async Task Add_ShouldFetch_TwoNewAuctions()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+            _allegroService.GetNewAuctions().Returns(Task.FromResult(new List<NewAuction>
+            {
+                new NewAuction
+                {
+                    Id = 1261,
+                    StartDate = new DateTime(2012, 12, 3),
+                    EndDate = new DateTime(2013, 5, 3),
+                    Name = "test addd",
+                    Price = 55.1m
+                },
+                new NewAuction
+                {
+                    Id = 1263,
+                    StartDate = new DateTime(2015, 12, 3),
+                    EndDate = new DateTime(2016, 5, 3),
+                    Name = "test addd2",
+                    Price = 551.1m
+                },
+                new NewAuction { Id = 111 },
+                new NewAuction { Id = 7731 }
+            }));
+            
+
+            // act
+            IActionResult result = await _controler.Add(true);
+
+            // assert
+            Assert.IsType<ViewResult>(result);
+            Assert.IsType<AddViewModel>(((ViewResult)result).Model);
+
+            AddViewModel model = (AddViewModel) ((ViewResult) result).Model;
+
+            Assert.Equal(2, model.Auctions.Count);
+            Assert.Equal(1261, model.Auctions[0].Id);
+            Assert.Equal(1263, model.Auctions[1].Id);
+            await _allegroService.Received(1).Login(_userId, Arg.Any<Func<AllegroCredentials>>());
+            await _allegroService.Received(1).GetNewAuctions();
+        }
+        [Fact]
+        public async Task AddPost_ShouldRedirectToIndex_ForModelError()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+            _controler.ModelState.AddModelError("error", "some error");
+
+            // act
+            IActionResult result = await _controler.Add(new AddViewModel());
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+        [Fact]
+        public async Task AddPost_ShouldSaveAndUpdateFees_ForOneSelectedAuciton()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+            _allegroService.UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261)).Returns(t => t.Arg<Auction>())
+                .AndDoes(t =>
+                {
+                    Auction auction = t.Arg<Auction>();
+                    auction.Fee = 1.0m;
+                    auction.OpenCost = 52m;
+                });
+
+            var model = new AddViewModel
+            {
+                Auctions = new List<NewAuction>
+                {
+                    new NewAuction
+                    {
+                        Id = 1261,
+                        StartDate = new DateTime(2012, 12, 3),
+                        EndDate = new DateTime(2013, 5, 3),
+                        Name = "test addd",
+                        Price = 55.1m,
+                        ShouldBeSaved = true
+                    },
+                    new NewAuction
+                    {
+                        Id = 1263,
+                        StartDate = new DateTime(2015, 12, 3),
+                        EndDate = new DateTime(2016, 5, 3),
+                        Name = "test addd2",
+                        Price = 551.1m,
+                        ShouldBeSaved = false
+                    }
+                }
+            };
+
+            // act
+            IActionResult result = await _controler.Add(model);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = (RedirectToActionResult) result;
+            Auction ad = _dbContext.Auctions.Single(t => t.AllegroAuctionId == 1261);
+
+            Assert.Equal(1, ad.Converter);
+            Assert.Equal(new DateTime(2012, 12, 3), ad.CreationDate);
+            Assert.Equal(new DateTime(2013, 5, 3), ad.EndDate);
+            Assert.False(ad.IsMonitored);
+            Assert.False(ad.IsVirtualItem);
+            Assert.Equal(55.1m, ad.PricePerItem);
+            Assert.Equal("test addd", ad.Title);
+            Assert.Equal(_userId, ad.UserId);
+            Assert.Equal(1m, ad.Fee);
+            Assert.Equal(52m, ad.OpenCost);
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+
+            await _allegroService.Received(1).Login(_userId, Arg.Any<Func<AllegroCredentials>>());
+            await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
+        }
+
+        [Fact]
+        public async Task Add_ShouldNotFetch()
+        {
+            // arange
+            PopulateHttpContext(_userId);
+            CreateFakeData();
+
+            // act
+            IActionResult result = await _controler.Add(false);
+
+            // assert
+            Assert.IsType<ViewResult>(result);
+            Assert.IsType<AddViewModel>(((ViewResult)result).Model);
+            await _allegroService.DidNotReceiveWithAnyArgs().GetNewAuctions();
+        }
         private void PopulateHttpContext(string userId)
         {
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId) };
@@ -259,7 +606,6 @@ namespace AutoAllegro.Tests.Controlers
 
             _dbContext.Auctions.Add(new Auction
             {
-                Id = 1,
                 UserId = _userId,
                 AllegroAuctionId = 111,
                 CreationDate = new DateTime(2002, 12, 3, 5, 4, 2),
@@ -272,10 +618,8 @@ namespace AutoAllegro.Tests.Controlers
                 IsVirtualItem = true,
                 Converter = 1
             });
-
             _dbContext.Auctions.Add(new Auction
             {
-                Id = 2,
                 UserId = _userId,
                 AllegroAuctionId = 7731,
                 CreationDate = new DateTime(1994, 12, 3, 5, 4, 2),
@@ -291,7 +635,6 @@ namespace AutoAllegro.Tests.Controlers
 
             _dbContext.Auctions.Add(new Auction
             {
-                Id = 3,
                 UserId = _userId2,
                 AllegroAuctionId = 333,
                 CreationDate = new DateTime(2005, 12, 3, 5, 4, 2),
@@ -306,7 +649,6 @@ namespace AutoAllegro.Tests.Controlers
 
             _dbContext.Auctions.Add(new Auction
             {
-                Id = 4,
                 UserId = _userId2,
                 AllegroAuctionId = 247,
                 CreationDate = new DateTime(2004, 12, 3, 5, 4, 3),
@@ -322,7 +664,6 @@ namespace AutoAllegro.Tests.Controlers
             // buyers
             _dbContext.Buyers.Add(new Buyer
             {
-                Id = 1,
                 Email = "buyer1@gmail.com",
                 Address = "Address1",
                 AllegroUserId = 123,
@@ -335,7 +676,6 @@ namespace AutoAllegro.Tests.Controlers
             });
             _dbContext.Buyers.Add(new Buyer
             {
-                Id = 2,
                 Email = "buyer2@gmail.com",
                 Address = "Address2",
                 AllegroUserId = 124,
@@ -348,7 +688,6 @@ namespace AutoAllegro.Tests.Controlers
             });
             _dbContext.Buyers.Add(new Buyer
             {
-                Id = 3,
                 Email = "buyer3@gmail.com",
                 Address = "Address3",
                 AllegroUserId = 125,
@@ -362,7 +701,6 @@ namespace AutoAllegro.Tests.Controlers
 
             _dbContext.Orders.Add(new Order
             {
-                Id = 1,
                 AuctionId = 1,
                 BuyerId = 1,
                 OrderDate = new DateTime(1993, 12, 11, 14, 55, 22),
@@ -371,16 +709,24 @@ namespace AutoAllegro.Tests.Controlers
             });
             _dbContext.Orders.Add(new Order
             {
-                Id = 2,
                 AuctionId = 2,
                 BuyerId = 1,
                 OrderDate = new DateTime(1991, 12, 11, 12, 55, 22),
                 OrderStatus = OrderStatus.Paid,
-                Quantity = 2
+                Quantity = 2,
+                ShippingAddress = new ShippingAddress
+                {
+                    Id = 1,
+                    Address = "Some addr",
+                    City = "Some city",
+                    FirstName = "First name",
+                    LastName = "Last name",
+                    MessageToSeller = "Some msg",
+                    PostCode = "33-300"
+                }
             });
             _dbContext.Orders.Add(new Order
             {
-                Id = 3,
                 AuctionId = 3,
                 BuyerId = 2,
                 OrderDate = new DateTime(1995, 12, 5, 12, 33, 22),
@@ -389,7 +735,6 @@ namespace AutoAllegro.Tests.Controlers
             });
             _dbContext.Orders.Add(new Order
             {
-                Id = 4,
                 AuctionId = 1,
                 BuyerId = 3,
                 OrderDate = new DateTime(2222, 3, 5, 12, 33, 22),
@@ -398,7 +743,6 @@ namespace AutoAllegro.Tests.Controlers
             });
             _dbContext.Orders.Add(new Order
             {
-                Id = 5,
                 AuctionId = 4,
                 BuyerId = 3,
                 OrderDate = new DateTime(2012, 3, 3, 12, 33, 11),

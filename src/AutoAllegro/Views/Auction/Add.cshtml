@@ -42,7 +42,7 @@
                                 <td>@auction.EndDate</td>
                                 <td>@Html.DisplayFor(x => auction.Price)</td>
                                 <td>
-                                    <input asp-for="@Model.Auctions[i].IsMonitored"/>
+                                    <input asp-for="@Model.Auctions[i].ShouldBeSaved"/>
                                 </td>
 
                                 @Html.HiddenFor(_ => Model.Auctions[i].Id)

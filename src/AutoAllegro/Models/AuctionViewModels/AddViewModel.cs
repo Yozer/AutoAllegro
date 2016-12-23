@@ -22,6 +22,6 @@ namespace AutoAllegro.Models.AuctionViewModels
         [CurrencyFormat]
         public decimal Price { get; set; }
 
-        public bool IsMonitored { get; set; }
+        public bool ShouldBeSaved { get; set; }
     }
 }
