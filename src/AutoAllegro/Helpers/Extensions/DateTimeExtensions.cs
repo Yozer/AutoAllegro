@@ -9,5 +9,10 @@ namespace AutoAllegro.Helpers.Extensions
         {
             return UnixDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
         }
+
+        public static long FromDateTime(this DateTime dateTime)
+        {
+            return (long) DateTime.UtcNow.Subtract(UnixDateTime).TotalSeconds;
+        }
     }
 }

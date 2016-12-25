@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoAllegro.Helpers.Extensions;
+using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using Microsoft.Extensions.Caching.Memory;
 using NSubstitute;
@@ -13,6 +16,7 @@ namespace AutoAllegro.Tests.Services
 {
     public class AllegroServiceTests
     {
+        private const string _session = "session";
         private readonly AllegroService _allegroService;
         private readonly servicePort _servicePort;
         private readonly MemoryCache _memoryCache;
@@ -41,10 +45,7 @@ namespace AutoAllegro.Tests.Services
         public async Task Login_ShouldLogin_WhenNoSessionIsAvailable()
         {
             // arrange
-            _servicePort.doLoginEncAsync(Arg.Is<doLoginEncRequest>(t => VerifyLoginRequest(t))).Returns(Task.FromResult(new doLoginEncResponse
-            {
-                sessionHandlePart = "session"
-            }));
+            MockLogin();
 
             // act
             await _allegroService.Login("userId", () => _allegroCredentials);
@@ -54,14 +55,12 @@ namespace AutoAllegro.Tests.Services
             await _servicePort.ReceivedWithAnyArgs(1).doLoginEncAsync(null);
             await _servicePort.ReceivedWithAnyArgs(1).doQuerySysStatusAsync(null);
         }
+
         [Fact]
         public async Task Login_ShouldGetSessionFromCache_WhenAlreadyLogged()
         {
             // arrange
-            _servicePort.doLoginEncAsync(Arg.Is<doLoginEncRequest>(t => VerifyLoginRequest(t))).Returns(Task.FromResult(new doLoginEncResponse
-            {
-                sessionHandlePart = "session"
-            }));
+            MockLogin();
 
             // act
             await _allegroService.Login("userId", () => _allegroCredentials);
@@ -77,10 +76,7 @@ namespace AutoAllegro.Tests.Services
         public async Task Login_ShouldLogin_WhenCachedSessionHasExpired()
         {
             // arrange
-            _servicePort.doLoginEncAsync(Arg.Is<doLoginEncRequest>(t => VerifyLoginRequest(t))).Returns(Task.FromResult(new doLoginEncResponse
-            {
-                sessionHandlePart = "session"
-            }));
+            MockLogin();
 
             // act
             await _allegroService.Login("userId", () => _allegroCredentials);
@@ -91,6 +87,43 @@ namespace AutoAllegro.Tests.Services
             Assert.True(_allegroService.IsLogged);
             await _servicePort.ReceivedWithAnyArgs(2).doLoginEncAsync(null);
             await _servicePort.ReceivedWithAnyArgs(2).doQuerySysStatusAsync(null);
+        }
+
+        [Fact]
+        public async Task GetNewAuctions_ShouldReturnNewAuctions()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            _servicePort.doGetMySellItemsAsync(Arg.Is<doGetMySellItemsRequest>(t => t.sessionId == _session))
+                .Returns(new doGetMySellItemsResponse
+                {
+                    sellItemsList = new[]
+                    {
+                        new SellItemStruct
+                        {
+                            itemId = 2,
+                            itemTitle = "name1",
+                            itemStartTime = new DateTime(2011, 2, 3).FromDateTime(),
+                            itemEndTime = new DateTime(2022, 5, 7).FromDateTime(),
+                            itemPrice = new[] {new ItemPriceStruct {priceValue = 5.23f}}
+                        },
+                        new SellItemStruct
+                        {
+                            itemId = 3,
+                            itemTitle = "name2",
+                            itemStartTime = new DateTime(2012, 2, 3).FromDateTime(),
+                            itemEndTime = new DateTime(2023, 5, 7).FromDateTime(),
+                            itemPrice = new[] {new ItemPriceStruct {priceValue = 5.25f}}
+                        }
+                    }
+                });
+
+            // act
+            List<NewAuction> result = await _allegroService.GetNewAuctions();
+
+            // assert
+            Assert.Equal(2, result.Count);
         }
 
         [Fact]
@@ -132,6 +165,18 @@ namespace AutoAllegro.Tests.Services
             var exception = Assert.Throws<InvalidOperationException>(() => _allegroService.GetTransactionDetails(0, null));
             // assert
             Assert.Equal("Not logged in", exception.Message);
+        }
+
+        private async Task Login()
+        {
+            await _allegroService.Login("userId", () => _allegroCredentials);
+        }
+        private void MockLogin()
+        {
+            _servicePort.doLoginEncAsync(Arg.Is<doLoginEncRequest>(t => VerifyLoginRequest(t))).Returns(Task.FromResult(new doLoginEncResponse
+            {
+                sessionHandlePart = _session
+            }));
         }
         private bool VerifyLoginRequest(doLoginEncRequest request)
         {
