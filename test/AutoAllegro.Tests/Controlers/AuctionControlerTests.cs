@@ -59,7 +59,7 @@ namespace AutoAllegro.Tests.Controlers
 
             _serviceProvider = services.BuildServiceProvider();
 
-            // init controler
+            // init controller
             _userManager = _serviceProvider.GetRequiredService<UserManager<User>>();
             _dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
             _allegroService = _serviceProvider.GetRequiredService<IAllegroService>();
@@ -71,7 +71,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Index_ShouldRetunAuctionList_ForLoggedUser()
         {
-            // arange
+            // arrange
             CreateFakeData();
             PopulateHttpContext(_userId);
 
@@ -104,7 +104,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Index_ShouldRetunAuctionList_ForDifferentLoggedUser()
         {
-            // arange
+            // arrange
             CreateFakeData();
             PopulateHttpContext(_userId2);
 
@@ -138,7 +138,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Auction_ShouldRedirectToIndex_ForNotExistingAuction()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
@@ -155,7 +155,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Auction_ShouldReturnAuctionAndOrders_ForExistingAuction1()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
@@ -200,7 +200,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Auction_ShouldRefreshFees_ForExistingAuction1()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
             _allegroService.Login(_userId, Arg.Any<Func<AllegroCredentials>>()).Returns(Task.FromResult(true));
@@ -231,7 +231,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Auction_ShouldRedirectToIndex_ForModelError()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
             _controler.ModelState.AddModelError("error", "some error");
@@ -249,7 +249,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task AuctionPost_ShouldRedirectToIndex_ForModelError()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
             _controler.ModelState.AddModelError("error", "some error");
@@ -266,7 +266,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task AuctionPost_ShouldRedirectToIndex_ForNotExistingAuction()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId2);
             CreateFakeData();
 
@@ -300,7 +300,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task AuctionPost_ShouldDisableMonitoring_ForAuction1()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
@@ -322,7 +322,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task AuctionPost_ShouldEnableMonitoringAndDisableVirtualItem_ForAuction2()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
@@ -345,7 +345,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task AuctionPost_ShouldNotChangeMonitoringSetting_ForAuction4()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId2);
             CreateFakeData();
 
@@ -385,7 +385,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Order_ShouldRedirectToIndex_ForNotExistingOrder()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
@@ -402,7 +402,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Order_ShouldRedirectToIndex_ForNotUserOrder()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
@@ -419,7 +419,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Order_ShouldReturnOrderView_ForOrder1()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
@@ -452,7 +452,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Add_ShouldFetch_TwoNewAuctions()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
             _allegroService.GetNewAuctions().Returns(Task.FromResult(new List<NewAuction>
@@ -496,7 +496,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task AddPost_ShouldRedirectToIndex_ForModelError()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
             _controler.ModelState.AddModelError("error", "some error");
@@ -513,7 +513,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task AddPost_ShouldSaveAndUpdateFees_ForOneSelectedAuciton()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
             _allegroService.UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261)).Returns(t => t.Arg<Auction>())
@@ -577,7 +577,7 @@ namespace AutoAllegro.Tests.Controlers
         [Fact]
         public async Task Add_ShouldNotFetch()
         {
-            // arange
+            // arrange
             PopulateHttpContext(_userId);
             CreateFakeData();
 
