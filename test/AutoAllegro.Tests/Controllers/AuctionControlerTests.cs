@@ -4,68 +4,36 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoAllegro.Controllers;
-using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features.Authentication;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit;
 
-namespace AutoAllegro.Tests.Controlers
+namespace AutoAllegro.Tests.Controllers
 {
-    public class AuctionControlerTests
+    public class AuctionControllerTests : DatabaseMock
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly AuctionController _controler;
-
-        private readonly ApplicationDbContext _dbContext;
-        private readonly UserManager<User> _userManager;
         private readonly IAllegroService _allegroService;
-        private readonly string _userId = "TestUserId";
-        private readonly string _userId2 = "TestUserId2";
         private readonly IAllegroProcessor _allegroProcessor;
+        private readonly IMapper _mapper;
 
-        public AuctionControlerTests()
+        public AuctionControllerTests()
         {
-            // initialize mocks
-            var efServiceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
-            var services = new ServiceCollection();
-            services.AddOptions();
-            services.AddDbContext<ApplicationDbContext>(b => b.UseInMemoryDatabase().UseInternalServiceProvider(efServiceProvider));
+            Services.AddTransient(t => Substitute.For<IAllegroService>());
+            Services.AddSingleton(t => Substitute.For<IAllegroProcessor>());
 
-            services.AddIdentity<User, IdentityRole>()
-                    .AddEntityFrameworkStores<ApplicationDbContext>();
-
-            // IHttpContextAccessor is required for SignInManager, and UserManager
-            var authHandler = Substitute.For<IAuthenticationHandler>();
-            authHandler.AuthenticateAsync(null).ReturnsForAnyArgs(x => Task.FromResult(0)).AndDoes(t => t.Arg<AuthenticateContext>().NotAuthenticated());
-
-            var context = new DefaultHttpContext();
-            context.Features.Set<IHttpAuthenticationFeature>(new HttpAuthenticationFeature { Handler = authHandler });
-            services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = context });
-
-            services.AddTransient(t => Substitute.For<IAllegroService>());
-            services.AddAutoMapper(Startup.ConfigureAutoMapper);
-            services.AddSingleton(t => Substitute.For<IAllegroProcessor>());
-
-            _serviceProvider = services.BuildServiceProvider();
+            ServiceProvider = Services.BuildServiceProvider();
 
             // init controller
-            _userManager = _serviceProvider.GetRequiredService<UserManager<User>>();
-            _dbContext = _serviceProvider.GetRequiredService<ApplicationDbContext>();
-            _allegroService = _serviceProvider.GetRequiredService<IAllegroService>();
-            _allegroProcessor = _serviceProvider.GetRequiredService<IAllegroProcessor>();
-            var mapper = _serviceProvider.GetRequiredService<IMapper>();
-            _controler = new AuctionController(_dbContext, _userManager, _allegroService, mapper, _allegroProcessor);
+            _allegroService = ServiceProvider.GetRequiredService<IAllegroService>();
+            _allegroProcessor = ServiceProvider.GetRequiredService<IAllegroProcessor>();
+            _mapper = ServiceProvider.GetRequiredService<IMapper>();
         }
 
         [Fact]
@@ -73,10 +41,15 @@ namespace AutoAllegro.Tests.Controlers
         {
             // arrange
             CreateFakeData();
-            PopulateHttpContext(_userId);
 
             // act
-            IActionResult result = await _controler.Index(null);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Index(null);
+            }
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -102,14 +75,19 @@ namespace AutoAllegro.Tests.Controlers
             Assert.Equal(619m, auctions[1].PricePerItem);
         }
         [Fact]
-        public async Task Index_ShouldRetunAuctionList_ForDifferentLoggedUser()
+        public async Task Index_ShouldReturnAuctionList_ForDifferentLoggedUser()
         {
             // arrange
             CreateFakeData();
-            PopulateHttpContext(_userId2);
 
             // act
-            IActionResult result = await _controler.Index(null);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId2, controller, scope);
+                result = await controller.Index(null);
+            }
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -139,11 +117,16 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Auction_ShouldRedirectToIndex_ForNotExistingAuction()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Auction(3, null, false);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(3, null, false);
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -156,11 +139,16 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Auction_ShouldReturnAuctionAndOrders_ForExistingAuction1()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Auction(1, null, false);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(1, null, false);
+            }
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -201,9 +189,9 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Auction_ShouldRefreshFees_ForExistingAuction1()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
-            _allegroService.Login(_userId, Arg.Any<Func<AllegroCredentials>>()).Returns(Task.FromResult(true));
+            _allegroService.IsLoginRequired(UserId).Returns(true);
+            _allegroService.Login(UserId, Arg.Any<AllegroCredentials>()).Returns(Task.FromResult(true));
             _allegroService.UpdateAuctionFees(Arg.Any<Auction>()).Returns(t => t.Arg<Auction>())
                 .AndDoes(t =>
                 {
@@ -214,7 +202,13 @@ namespace AutoAllegro.Tests.Controlers
 
 
             // act
-            IActionResult result = await _controler.Auction(1, null, true);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(1, null, true);
+            }
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -222,8 +216,8 @@ namespace AutoAllegro.Tests.Controlers
             AuctionViewModel model = (AuctionViewModel)view.Model;
 
             await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.Id == 1));
-            await _allegroService.Received(1).Login(_userId, Arg.Is<Func<AllegroCredentials>>(t =>
-                t.Invoke().ApiKey == "allegroKey1" && t.Invoke().JournalStart == 14 && t.Invoke().Pass == "hashPass1" && t.Invoke().UserName == "username1"));
+            await _allegroService.Received(1).Login(UserId, Arg.Is<AllegroCredentials>(t =>
+                t.ApiKey == "allegroKey1" && t.JournalStart == 14 && t.Pass == "hashPass1" && t.UserName == "username1"));
             Assert.Equal(1.0m, model.Fee);
             Assert.Equal(52.0m, model.OpenCost);
         }
@@ -232,12 +226,17 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Auction_ShouldRedirectToIndex_ForModelError()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
-            _controler.ModelState.AddModelError("error", "some error");
 
             // act
-            IActionResult result = await _controler.Auction(0, null, false);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                controller.ModelState.AddModelError("error", "some error");
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(0, null, false);
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -250,12 +249,17 @@ namespace AutoAllegro.Tests.Controlers
         public async Task AuctionPost_ShouldRedirectToIndex_ForModelError()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
-            _controler.ModelState.AddModelError("error", "some error");
 
             // act
-            IActionResult result = await _controler.Auction(null);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                controller.ModelState.AddModelError("error", "some error");
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(null);
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -267,11 +271,16 @@ namespace AutoAllegro.Tests.Controlers
         public async Task AuctionPost_ShouldRedirectToIndex_ForNotExistingAuction()
         {
             // arrange
-            PopulateHttpContext(_userId2);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Auction(new AuctionViewModel {Id = 6});
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId2, controller, scope);
+                result = await controller.Auction(new AuctionViewModel { Id = 6});
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -284,11 +293,16 @@ namespace AutoAllegro.Tests.Controlers
         public async Task AuctionPost_ShouldRedirectToIndex_ForAuctionThatBelongsToDifferentUser()
         {
             // arange
-            PopulateHttpContext(_userId2);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Auction(new AuctionViewModel {Id = 1});
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId2, controller, scope);
+                result = await controller.Auction(new AuctionViewModel { Id = 1 });
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -301,79 +315,112 @@ namespace AutoAllegro.Tests.Controlers
         public async Task AuctionPost_ShouldDisableMonitoring_ForAuction1()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Auction(new AuctionViewModel { Id = 1, IsMonitored = false, IsVirtualItem = true});
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(new AuctionViewModel { Id = 1, IsMonitored = false, IsVirtualItem = true });
+            }
 
             // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Auction auction = _dbContext.Auctions.Single(t => t.Id == 1);
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
 
-            Assert.False(auction.IsMonitored);
-            Assert.Equal("Auction", redirect.ActionName);
-            Assert.Equal(1, redirect.RouteValues["id"]);
-            _allegroProcessor.Received(1).StopProcessor(Arg.Is<Auction>(t => t.Id == 1 && !t.IsMonitored));
-            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
+                Assert.IsType<RedirectToActionResult>(result);
+                RedirectToActionResult redirect = (RedirectToActionResult) result;
+                Auction auction = database.Auctions.Single(t => t.Id == 1);
+
+                Assert.False(auction.IsMonitored);
+                Assert.Equal("Auction", redirect.ActionName);
+                Assert.Equal(1, redirect.RouteValues["id"]);
+                _allegroProcessor.Received(1).StopProcessor(Arg.Is<Auction>(t => t.Id == 1 && !t.IsMonitored));
+                _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
+            }
         }
 
         [Fact]
         public async Task AuctionPost_ShouldEnableMonitoringAndDisableVirtualItem_ForAuction2()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Auction(new AuctionViewModel { Id = 2, IsMonitored = true, IsVirtualItem = false });
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(new AuctionViewModel { Id = 2, IsMonitored = true, IsVirtualItem = false });
+            }
 
             // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Auction auction = _dbContext.Auctions.Single(t => t.Id == 2);
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                Assert.IsType<RedirectToActionResult>(result);
+                RedirectToActionResult redirect = (RedirectToActionResult) result;
+                Auction auction = database.Auctions.Single(t => t.Id == 2);
 
-            Assert.False(auction.IsVirtualItem);
-            Assert.True(auction.IsMonitored);
-            Assert.Equal("Auction", redirect.ActionName);
-            Assert.Equal(2, redirect.RouteValues["id"]);
-            _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
-            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
+                Assert.False(auction.IsVirtualItem);
+                Assert.True(auction.IsMonitored);
+                Assert.Equal("Auction", redirect.ActionName);
+                Assert.Equal(2, redirect.RouteValues["id"]);
+                _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
+                _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
+            }
         }
 
         [Fact]
         public async Task AuctionPost_ShouldNotChangeMonitoringSetting_ForAuction4()
         {
             // arrange
-            PopulateHttpContext(_userId2);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Auction(new AuctionViewModel { Id = 4, IsMonitored = false, IsVirtualItem = false });
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId2, controller, scope);
+                result = await controller.Auction(new AuctionViewModel { Id = 4, IsMonitored = false, IsVirtualItem = false });
+            }
 
             // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Auction auction = _dbContext.Auctions.Single(t => t.Id == 4);
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                Assert.IsType<RedirectToActionResult>(result);
+                RedirectToActionResult redirect = (RedirectToActionResult) result;
+                Auction auction = database.Auctions.Single(t => t.Id == 4);
 
-            Assert.False(auction.IsMonitored);
-            Assert.Equal("Auction", redirect.ActionName);
-            Assert.Equal(4, redirect.RouteValues["id"]);
-            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
-            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
+                Assert.False(auction.IsMonitored);
+                Assert.Equal("Auction", redirect.ActionName);
+                Assert.Equal(4, redirect.RouteValues["id"]);
+                _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
+                _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
+            }
         }
 
         [Fact]
         public async Task Order_ShouldRedirectToIndex_ForModelError()
         {
             // arange
-            PopulateHttpContext(_userId);
             CreateFakeData();
-            _controler.ModelState.AddModelError("error", "some error");
 
             // act
-            IActionResult result = await _controler.Order(0);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                controller.ModelState.AddModelError("error", "some error");
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Auction(new AuctionViewModel { Id = 4, IsMonitored = false, IsVirtualItem = false });
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -386,11 +433,16 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Order_ShouldRedirectToIndex_ForNotExistingOrder()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Order(-1);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Order(-1);
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -403,11 +455,16 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Order_ShouldRedirectToIndex_ForNotUserOrder()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Order(3);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Order(3);
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -420,11 +477,16 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Order_ShouldReturnOrderView_ForOrder1()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Order(2);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Order(2);
+            }
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -453,8 +515,8 @@ namespace AutoAllegro.Tests.Controlers
         public async Task Add_ShouldFetch_TwoNewAuctions()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
+            _allegroService.IsLoginRequired(UserId).Returns(false);
             _allegroService.GetNewAuctions().Returns(Task.FromResult(new List<NewAuction>
             {
                 new NewAuction
@@ -476,10 +538,16 @@ namespace AutoAllegro.Tests.Controlers
                 new NewAuction { Id = 111 },
                 new NewAuction { Id = 7731 }
             }));
-            
+
 
             // act
-            IActionResult result = await _controler.Add(true);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Add(true);
+            }
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -490,19 +558,24 @@ namespace AutoAllegro.Tests.Controlers
             Assert.Equal(2, model.Auctions.Count);
             Assert.Equal(1261, model.Auctions[0].Id);
             Assert.Equal(1263, model.Auctions[1].Id);
-            await _allegroService.Received(1).Login(_userId, Arg.Any<Func<AllegroCredentials>>());
+            await _allegroService.DidNotReceiveWithAnyArgs().Login(null, Arg.Any<AllegroCredentials>());
             await _allegroService.Received(1).GetNewAuctions();
         }
         [Fact]
         public async Task AddPost_ShouldRedirectToIndex_ForModelError()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
-            _controler.ModelState.AddModelError("error", "some error");
 
             // act
-            IActionResult result = await _controler.Add(new AddViewModel());
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                controller.ModelState.AddModelError("error", "some error");
+                result = await controller.Add(new AddViewModel());
+            }
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -511,11 +584,11 @@ namespace AutoAllegro.Tests.Controlers
             Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
-        public async Task AddPost_ShouldSaveAndUpdateFees_ForOneSelectedAuciton()
+        public async Task AddPost_ShouldSaveAndUpdateFees_ForOneSelectedAuction()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
+            _allegroService.IsLoginRequired(UserId).Returns(true);
             _allegroService.UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261)).Returns(t => t.Arg<Auction>())
                 .AndDoes(t =>
                 {
@@ -550,207 +623,66 @@ namespace AutoAllegro.Tests.Controlers
             };
 
             // act
-            IActionResult result = await _controler.Add(model);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Add(model);
+            }
 
             // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            var redirect = (RedirectToActionResult) result;
-            Auction ad = _dbContext.Auctions.Single(t => t.AllegroAuctionId == 1261);
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                Assert.IsType<RedirectToActionResult>(result);
+                var redirect = (RedirectToActionResult) result;
+                Auction ad = database.Auctions.Single(t => t.AllegroAuctionId == 1261);
 
-            Assert.Equal(1, ad.Converter);
-            Assert.Equal(new DateTime(2012, 12, 3), ad.CreationDate);
-            Assert.Equal(new DateTime(2013, 5, 3), ad.EndDate);
-            Assert.False(ad.IsMonitored);
-            Assert.False(ad.IsVirtualItem);
-            Assert.Equal(55.1m, ad.PricePerItem);
-            Assert.Equal("test addd", ad.Title);
-            Assert.Equal(_userId, ad.UserId);
-            Assert.Equal(1m, ad.Fee);
-            Assert.Equal(52m, ad.OpenCost);
-            Assert.Null(redirect.ControllerName);
-            Assert.Equal("Index", redirect.ActionName);
+                Assert.Equal(1, ad.Converter);
+                Assert.Equal(new DateTime(2012, 12, 3), ad.CreationDate);
+                Assert.Equal(new DateTime(2013, 5, 3), ad.EndDate);
+                Assert.False(ad.IsMonitored);
+                Assert.False(ad.IsVirtualItem);
+                Assert.Equal(55.1m, ad.PricePerItem);
+                Assert.Equal("test addd", ad.Title);
+                Assert.Equal(UserId, ad.UserId);
+                Assert.Equal(1m, ad.Fee);
+                Assert.Equal(52m, ad.OpenCost);
+                Assert.Null(redirect.ControllerName);
+                Assert.Equal("Index", redirect.ActionName);
 
-            await _allegroService.Received(1).Login(_userId, Arg.Any<Func<AllegroCredentials>>());
-            await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
+                await _allegroService.Received(1).Login(UserId, Arg.Any<AllegroCredentials>());
+                await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
+            }
         }
 
         [Fact]
         public async Task Add_ShouldNotFetch()
         {
             // arrange
-            PopulateHttpContext(_userId);
             CreateFakeData();
 
             // act
-            IActionResult result = await _controler.Add(false);
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                result = await controller.Add(false);
+            }
 
             // assert
             Assert.IsType<ViewResult>(result);
             Assert.IsType<AddViewModel>(((ViewResult)result).Model);
             await _allegroService.DidNotReceiveWithAnyArgs().GetNewAuctions();
         }
-        private void PopulateHttpContext(string userId)
+        private void PopulateHttpContext(string userId, AuctionController controller, IServiceScope scope)
         {
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId) };
-            var httpContext = _serviceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext;
+            var httpContext = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext;
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-            _controler.ControllerContext.HttpContext = httpContext;
-        }
-        private void CreateFakeData()
-        {
-            var userManager = _serviceProvider.GetRequiredService<UserManager<User>>();
-            userManager.CreateAsync(new User {Id = _userId, UserName = "Test", Email = "test@wp.pl",
-                AllegroUserName = "username1", AllegroHashedPass = "hashPass1", AllegroKey = "allegroKey1", AllegroJournalStart = 14}, "Pass@word1").Wait();
-            userManager.CreateAsync(new User { Id = _userId2, UserName = "Test2", Email = "test2@gmail.com",
-                AllegroUserName = "username2", AllegroHashedPass = "hashPass2", AllegroKey = "allegroKey2", AllegroJournalStart = 14 }, "Pass@word13").Wait();
-
-            _dbContext.Auctions.Add(new Auction
-            {
-                UserId = _userId,
-                AllegroAuctionId = 111,
-                CreationDate = new DateTime(2002, 12, 3, 5, 4, 2),
-                EndDate = new DateTime(2011, 5, 4, 5, 6, 6),
-                Fee = 50.0m,
-                Title = "test ad",
-                OpenCost = 51.23m,
-                PricePerItem = 8.99m,
-                IsMonitored = true,
-                IsVirtualItem = true,
-                Converter = 1
-            });
-            _dbContext.Auctions.Add(new Auction
-            {
-                UserId = _userId,
-                AllegroAuctionId = 7731,
-                CreationDate = new DateTime(1994, 12, 3, 5, 4, 2),
-                EndDate = new DateTime(1998, 5, 4, 5, 6, 6),
-                Fee = 513,
-                Title = "test ad2",
-                OpenCost = 634,
-                PricePerItem = 619m,
-                IsMonitored = false,
-                IsVirtualItem = true,
-                Converter = 5
-            });
-
-            _dbContext.Auctions.Add(new Auction
-            {
-                UserId = _userId2,
-                AllegroAuctionId = 333,
-                CreationDate = new DateTime(2005, 12, 3, 5, 4, 2),
-                EndDate = new DateTime(2006, 5, 4, 5, 6, 6),
-                Fee = 5,
-                Title = "test ad3",
-                OpenCost = 5.23m,
-                PricePerItem = 88.99m,
-                IsMonitored = true,
-                IsVirtualItem = false,
-            });
-
-            _dbContext.Auctions.Add(new Auction
-            {
-                UserId = _userId2,
-                AllegroAuctionId = 247,
-                CreationDate = new DateTime(2004, 12, 3, 5, 4, 3),
-                EndDate = new DateTime(2007, 5, 4, 2, 3, 6),
-                Fee = 7,
-                Title = "test ad4",
-                OpenCost = 9.23m,
-                PricePerItem = 18.99m,
-                IsMonitored = false,
-                IsVirtualItem = false
-            });
-
-            // buyers
-            _dbContext.Buyers.Add(new Buyer
-            {
-                Email = "buyer1@gmail.com",
-                Address = "Address1",
-                AllegroUserId = 123,
-                City = "CityBuyer1",
-                FirstName = "Jacek",
-                LastName = "Wojnicz",
-                Phone = "141-141-2",
-                PostCode = "33-114",
-                UserLogin = "Pierdola"
-            });
-            _dbContext.Buyers.Add(new Buyer
-            {
-                Email = "buyer2@gmail.com",
-                Address = "Address2",
-                AllegroUserId = 124,
-                City = "CityBuyer2",
-                FirstName = "Marcin",
-                LastName = "Nalepa",
-                Phone = "997",
-                PostCode = "33-300",
-                UserLogin = "Leszczu"
-            });
-            _dbContext.Buyers.Add(new Buyer
-            {
-                Email = "buyer3@gmail.com",
-                Address = "Address3",
-                AllegroUserId = 125,
-                City = "CityBuyer3",
-                FirstName = "Tomasz",
-                LastName = "Mniszek",
-                Phone = "516-512-666",
-                PostCode = "11-111",
-                UserLogin = "Tomus"
-            });
-
-            _dbContext.Orders.Add(new Order
-            {
-                AuctionId = 1,
-                BuyerId = 1,
-                OrderDate = new DateTime(1993, 12, 11, 14, 55, 22),
-                OrderStatus = OrderStatus.Send,
-                Quantity = 4
-            });
-            _dbContext.Orders.Add(new Order
-            {
-                AuctionId = 2,
-                BuyerId = 1,
-                OrderDate = new DateTime(1991, 12, 11, 12, 55, 22),
-                OrderStatus = OrderStatus.Paid,
-                Quantity = 2,
-                ShippingAddress = new ShippingAddress
-                {
-                    Id = 1,
-                    Address = "Some addr",
-                    City = "Some city",
-                    FirstName = "First name",
-                    LastName = "Last name",
-                    MessageToSeller = "Some msg",
-                    PostCode = "33-300"
-                }
-            });
-            _dbContext.Orders.Add(new Order
-            {
-                AuctionId = 3,
-                BuyerId = 2,
-                OrderDate = new DateTime(1995, 12, 5, 12, 33, 22),
-                OrderStatus = OrderStatus.Done,
-                Quantity = 1
-            });
-            _dbContext.Orders.Add(new Order
-            {
-                AuctionId = 1,
-                BuyerId = 3,
-                OrderDate = new DateTime(2222, 3, 5, 12, 33, 22),
-                OrderStatus = OrderStatus.Created,
-                Quantity = 66
-            });
-            _dbContext.Orders.Add(new Order
-            {
-                AuctionId = 4,
-                BuyerId = 3,
-                OrderDate = new DateTime(2012, 3, 3, 12, 33, 11),
-                OrderStatus = OrderStatus.Done,
-                Quantity = 3
-            });
-
-            _dbContext.SaveChanges();
+            controller.ControllerContext.HttpContext = httpContext;
         }
     }
 }

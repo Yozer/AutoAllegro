@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using AutoAllegro.Data;
 using AutoAllegro.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using AutoAllegro.Helpers.Extensions;
 
-using UsersContainer = System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentDictionary<long, int>>;
+using UsersContainer = System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Generic.Dictionary<long, int>>;
 
 namespace AutoAllegro.Services
 {
@@ -53,10 +54,13 @@ namespace AutoAllegro.Services
             if(!auction.IsMonitored)
                 throw new InvalidOperationException($"Auction monitoring is disabled for {auction.Id}");
 
-            var auctions = _users.GetOrAdd(auction.UserId, t => new ConcurrentDictionary<long, int>());
-            auctions.TryAdd(auction.AllegroAuctionId, auction.Id);
+            bool newUserToMonitor = false;
+            var auctions = _users.GetOrAdd(auction.UserId, t => new Dictionary<long, int>());
 
-            if (auctions.Count == 1)
+            bool shouldStartNewJob = auctions.Count == 0;
+            auctions[auction.AllegroAuctionId] = auction.Id;
+
+            if (shouldStartNewJob)
             {
                 _backgroundJob.Schedule(() => Process(auction.UserId, 0), Interval);
             }
@@ -67,13 +71,12 @@ namespace AutoAllegro.Services
             if (auction.IsMonitored)
                 throw new InvalidOperationException($"Auction monitoring is enabled for {auction.Id}");
 
-            var auctions = _users.GetOrAdd(auction.UserId, t => new ConcurrentDictionary<long, int>());
-            int removed;
-            auctions.TryRemove(auction.AllegroAuctionId, out removed);
+            var auctions = _users.GetOrAdd(auction.UserId, t => new Dictionary<long, int>());
+            auctions.Remove(auction.AllegroAuctionId);
 
             if (auctions.Count == 0)
             {
-                ConcurrentDictionary<long, int> dummy;
+                Dictionary<long, int> dummy;
                 _users.TryRemove(auction.UserId, out dummy);
             }
         }
@@ -84,21 +87,34 @@ namespace AutoAllegro.Services
 
             using (var scope = GetScope())
             {
-                var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
-
-                if (journalStart == 0)
+                try
                 {
-                    var allegroCredentials = GetAllegroCredentials(db, userId);
-                    journalStart = allegroCredentials.JournalStart;
-                    allegroService.Login(userId, () => allegroCredentials).Wait();
-                }
-                else
-                {
-                    allegroService.Login(userId, () => GetAllegroCredentials(db, userId)).Wait();
-                }
+                    var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
 
-                ProcessJournal(db, allegroService, userId, ref journalStart);
-                //SendCodes();
+
+                    if (journalStart == 0)
+                    {
+                        var allegroCredentials = GetAllegroCredentials(db, userId);
+                        journalStart = allegroCredentials.JournalStart;
+                        allegroService.Login(userId, allegroCredentials).Wait();
+                    }
+                    else
+                    {
+                        if (allegroService.IsLoginRequired(userId))
+                        {
+                            var allegroCredentials = GetAllegroCredentials(db, userId);
+                            allegroService.Login(userId, allegroCredentials).Wait();
+                        }
+                    }
+
+                    ProcessJournal(db, allegroService, userId, ref journalStart);
+                    //SendCodes();
+                }
+                catch (Exception)
+                {
+                    // exception shoudn't prevent us from next schedule()
+                    // should be exception that throws _allegroService (web error)
+                }
             }
 
             if (_users.ContainsKey(userId))
@@ -176,6 +192,7 @@ namespace AutoAllegro.Services
                 journalStart = dealsStruct.dealEventId;
 
                 var user = new User { Id = userId, AllegroJournalStart = journalStart };
+                db.Users.Attach(user);
                 db.Entry(user).Property(x => x.AllegroJournalStart).IsModified = true;
                 db.SaveChanges();
             }

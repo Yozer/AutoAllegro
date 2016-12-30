@@ -152,15 +152,14 @@ namespace AutoAllegro.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private Task LoginToAllegro()
+        private async Task LoginToAllegro()
         {
-            Func<AllegroCredentials> getUser = () =>
+            if (_allegroService.IsLoginRequired(GetUserId()))
             {
-                var user = _userManager.GetUserAsync(User).Result;
-                return new AllegroCredentials (user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
-            };
-
-            return _allegroService.Login(GetUserId(), getUser);
+                var user = await _userManager.GetUserAsync(User);
+                var allegroCredentials = new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
+                await _allegroService.Login(GetUserId(), allegroCredentials);
+            }
         }
 
         private string GetUserId()

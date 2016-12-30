@@ -10,7 +10,8 @@ namespace AutoAllegro.Services.Interfaces
 {
     public interface IAllegroService
     {
-        Task Login(string userId, Func<AllegroCredentials> getAllegroCredentials);
+        bool IsLoginRequired(string userId);
+        Task Login(string userId, AllegroCredentials getAllegroCredentials);
         Task<List<NewAuction>> GetNewAuctions();
         Task<Auction> UpdateAuctionFees(Auction auction);
         IEnumerable<SiteJournalDealsStruct> FetchJournal(long journalStart);

@@ -18,9 +18,10 @@ namespace AutoAllegro.Services
 
         private readonly IMemoryCache _memoryCache;
         private readonly servicePort _servicePort;
-
         private string _sessionKey;
-        public bool IsLogged => _sessionKey != null;
+        private string _userId;
+
+        public bool IsLogged => !IsLoginRequired(_userId);
 
         public AllegroService(IMemoryCache memoryCache, servicePort servicePort)
         {
@@ -28,12 +29,18 @@ namespace AutoAllegro.Services
             _servicePort = servicePort;
         }
 
-        public async Task Login(string userId, Func<AllegroCredentials> getAllegroCredentials)
+        public bool IsLoginRequired(string userId)
         {
+            _userId = userId;
+            return _userId == null || !_memoryCache.TryGetValue(userId, out _sessionKey);
+        }
+
+        public async Task Login(string userId, AllegroCredentials credentials)
+        {
+            _userId = userId;
             if (_memoryCache.TryGetValue(userId, out _sessionKey))
                 return;
 
-            var credentials = await Task.Run(getAllegroCredentials);
             var sysStatus = await _servicePort.doQuerySysStatusAsync(new doQuerySysStatusRequest(1, CountryCode, credentials.ApiKey));
             var loginResult = await _servicePort.doLoginEncAsync(new doLoginEncRequest
             {

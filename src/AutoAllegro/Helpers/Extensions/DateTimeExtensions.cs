@@ -12,7 +12,7 @@ namespace AutoAllegro.Helpers.Extensions
 
         public static long FromDateTime(this DateTime dateTime)
         {
-            return (long) DateTime.UtcNow.Subtract(UnixDateTime).TotalSeconds;
+            return (long)dateTime.ToUniversalTime().Subtract(UnixDateTime).TotalSeconds;
         }
     }
 }

@@ -48,7 +48,7 @@ namespace AutoAllegro.Tests.Services
             MockLogin();
 
             // act
-            await _allegroService.Login("userId", () => _allegroCredentials);
+            await _allegroService.Login("userId", _allegroCredentials);
 
             // assert
             Assert.True(_allegroService.IsLogged);
@@ -63,11 +63,12 @@ namespace AutoAllegro.Tests.Services
             MockLogin();
 
             // act
-            await _allegroService.Login("userId", () => _allegroCredentials);
+            await _allegroService.Login("userId", _allegroCredentials);
             Thread.Sleep(500);
-            await _allegroService.Login("userId", () => { throw new EmptyException(); });
+            await _allegroService.Login("userId", null);
 
             // assert
+            Assert.False(_allegroService.IsLoginRequired("userId"));
             Assert.True(_allegroService.IsLogged);
             await _servicePort.ReceivedWithAnyArgs(1).doLoginEncAsync(null);
             await _servicePort.ReceivedWithAnyArgs(1).doQuerySysStatusAsync(null);
@@ -79,9 +80,11 @@ namespace AutoAllegro.Tests.Services
             MockLogin();
 
             // act
-            await _allegroService.Login("userId", () => _allegroCredentials);
+            await _allegroService.Login("userId", _allegroCredentials);
             Thread.Sleep(1200);
-            await _allegroService.Login("userId", () => _allegroCredentials);
+            Assert.False(_allegroService.IsLogged);
+            Assert.True(_allegroService.IsLoginRequired("userId"));
+            await _allegroService.Login("userId", _allegroCredentials);
 
             // assert
             Assert.True(_allegroService.IsLogged);
@@ -169,7 +172,7 @@ namespace AutoAllegro.Tests.Services
 
         private async Task Login()
         {
-            await _allegroService.Login("userId", () => _allegroCredentials);
+            await _allegroService.Login("userId", _allegroCredentials);
         }
         private void MockLogin()
         {
