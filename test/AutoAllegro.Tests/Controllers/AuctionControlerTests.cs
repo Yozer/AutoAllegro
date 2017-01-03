@@ -11,6 +11,7 @@ using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit;
@@ -30,7 +31,9 @@ namespace AutoAllegro.Tests.Controllers
 
             ServiceProvider = Services.BuildServiceProvider();
 
-            // init controller
+            InitDatabase();
+
+                // init controller
             _allegroService = ServiceProvider.GetRequiredService<IAllegroService>();
             _allegroProcessor = ServiceProvider.GetRequiredService<IAllegroProcessor>();
             _mapper = ServiceProvider.GetRequiredService<IMapper>();
@@ -166,7 +169,7 @@ namespace AutoAllegro.Tests.Controllers
             Assert.True(model.IsVirtualItem);
             Assert.Equal(2, model.Orders.Count);
 
-            Assert.Equal(1, model.Orders[0].Id);
+            Assert.Equal(1, model.Orders[0].AuctionId);
             Assert.Equal(4, model.Orders[0].Quantity);
             Assert.Equal(4 * 8.99m, model.Orders[0].TotalPayment);
             Assert.Equal(new DateTime(1993, 12, 11, 14, 55, 22), model.Orders[0].OrderDate);
@@ -175,7 +178,7 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("buyer1@gmail.com", model.Orders[0].Buyer.Email);
             Assert.Equal("Pierdola", model.Orders[0].Buyer.UserLogin);
 
-            Assert.Equal(4, model.Orders[1].Id);
+            Assert.Equal(1, model.Orders[1].AuctionId);
             Assert.Equal(66, model.Orders[1].Quantity);
             Assert.Equal(66 * 8.99m, model.Orders[1].TotalPayment);
             Assert.Equal(new DateTime(2222, 3, 5, 12, 33, 22), model.Orders[1].OrderDate);
@@ -455,15 +458,20 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Order_ShouldRedirectToIndex_ForNotUserOrder()
         {
             // arrange
+            int orderId;
             CreateFakeData();
-
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                orderId = database.Orders.First(t => t.Auction.UserId == UserId2).Id;
+            }
             // act
             IActionResult result;
             using (var scope = CreateScope())
             {
                 var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
                 PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Order(3);
+                result = await controller.Order(orderId);
             }
 
             // assert
@@ -477,7 +485,13 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Order_ShouldReturnOrderView_ForOrder1()
         {
             // arrange
+            int orderId;
             CreateFakeData();
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                orderId = database.Orders.First(t => t.AllegroDealId == 2).Id;
+            }
 
             // act
             IActionResult result;
@@ -485,7 +499,7 @@ namespace AutoAllegro.Tests.Controllers
             {
                 var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
                 PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Order(2);
+                result = await controller.Order(orderId);
             }
 
             // assert
@@ -495,7 +509,7 @@ namespace AutoAllegro.Tests.Controllers
             ViewResult view = (ViewResult)result;
             OrderViewModel model = (OrderViewModel) view.Model;
 
-            Assert.Equal(2, model.Id);
+            Assert.Equal(orderId, model.Id);
             Assert.Equal(2, model.Quantity);
             Assert.Equal(2*619m, model.TotalPayment);
             Assert.Equal(new DateTime(1991, 12, 11, 12, 55, 22), model.OrderDate);

@@ -5,6 +5,7 @@ using AutoAllegro.Data;
 using AutoAllegro.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.ServiceModel;
 using AutoAllegro.Models;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,7 +55,6 @@ namespace AutoAllegro.Services
             if(!auction.IsMonitored)
                 throw new InvalidOperationException($"Auction monitoring is disabled for {auction.Id}");
 
-            bool newUserToMonitor = false;
             var auctions = _users.GetOrAdd(auction.UserId, t => new Dictionary<long, int>());
 
             bool shouldStartNewJob = auctions.Count == 0;
@@ -110,10 +110,17 @@ namespace AutoAllegro.Services
                     ProcessJournal(db, allegroService, userId, ref journalStart);
                     //SendCodes();
                 }
-                catch (Exception)
+                catch (TimeoutException timeProblem)
                 {
-                    // exception shoudn't prevent us from next schedule()
-                    // should be exception that throws _allegroService (web error)
+                    //Console.WriteLine("The service operation timed out. " + timeProblem.Message);
+                }
+                catch (FaultException unknownFault)
+                {
+                    //Console.WriteLine("An unknown exception was received. " + unknownFault.Message);
+                }
+                catch (CommunicationException commProblem)
+                {
+                    //Console.WriteLine("There was a communication problem. " + commProblem.Message + commProblem.StackTrace);
                 }
             }
 
@@ -162,7 +169,8 @@ namespace AutoAllegro.Services
                 {
                     order = db.Orders.First(t => t.AllegroDealId == dealsStruct.dealId);
                     Transaction transaction = allegroService.GetTransactionDetails(dealsStruct.dealTransactionId, order);
-                    db.Transactions.Add(transaction);
+                    order.Transactions.Add(transaction);
+                    db.SaveChanges();
                 }
                 else if (dealsStruct.dealEventType == (int) EventType.TransactionCanceled)
                 {
@@ -191,9 +199,11 @@ namespace AutoAllegro.Services
 
                 journalStart = dealsStruct.dealEventId;
 
-                var user = new User { Id = userId, AllegroJournalStart = journalStart };
-                db.Users.Attach(user);
-                db.Entry(user).Property(x => x.AllegroJournalStart).IsModified = true;
+                //var user = new User { Id = userId, AllegroJournalStart = journalStart };
+                //db.Users.Attach(user);
+                //db.Entry(user).Property(x => x.AllegroJournalStart).IsModified = true;
+                var user = db.Users.First(t => t.Id == userId);
+                user.AllegroJournalStart = journalStart;
                 db.SaveChanges();
             }
         }

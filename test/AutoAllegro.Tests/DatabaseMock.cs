@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -24,10 +25,17 @@ namespace AutoAllegro.Tests
         protected DatabaseMock()
         {
             // initialize mocks
-            var efServiceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
+            //var efServiceProvider = new ServiceCollection().AddEntityFrameworkSqlite().BuildServiceProvider();
             Services = new ServiceCollection();
             Services.AddOptions();
-            Services.AddDbContext<ApplicationDbContext>(b => b.UseInMemoryDatabase().UseInternalServiceProvider(efServiceProvider));
+
+            var connectionStringBuilder =
+                    new SqliteConnectionStringBuilder { DataSource = ":memory:" };
+            var connectionString = connectionStringBuilder.ToString();
+            var connection = new SqliteConnection(connectionString);
+
+
+            Services.AddDbContext<ApplicationDbContext>(b => b.UseSqlite(connection));
 
             Services.AddIdentity<User, IdentityRole>()
                     .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -57,6 +65,16 @@ namespace AutoAllegro.Tests
         {
             return scope.ServiceProvider.GetService<UserManager<User>>();
         }
+
+        protected void InitDatabase()
+        {
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                database.Database.OpenConnection();
+                database.Database.EnsureCreated();
+            }
+        }
         protected virtual void CreateFakeData()
         {
             using (var scope = CreateScope())
@@ -85,7 +103,7 @@ namespace AutoAllegro.Tests
                     AllegroJournalStart = 16
                 }, "Pass@word13").Wait();
 
-                database.Auctions.Add(new Auction
+                var auction1 = new Auction
                 {
                     UserId = UserId,
                     AllegroAuctionId = 111,
@@ -98,8 +116,8 @@ namespace AutoAllegro.Tests
                     IsMonitored = true,
                     IsVirtualItem = true,
                     Converter = 1
-                });
-                database.Auctions.Add(new Auction
+                };
+                var auction2 = new Auction
                 {
                     UserId = UserId,
                     AllegroAuctionId = 7731,
@@ -112,9 +130,8 @@ namespace AutoAllegro.Tests
                     IsMonitored = false,
                     IsVirtualItem = true,
                     Converter = 5
-                });
-
-                database.Auctions.Add(new Auction
+                };
+                var auction3 = new Auction
                 {
                     UserId = UserId2,
                     AllegroAuctionId = 333,
@@ -126,9 +143,8 @@ namespace AutoAllegro.Tests
                     PricePerItem = 88.99m,
                     IsMonitored = true,
                     IsVirtualItem = false,
-                });
-
-                database.Auctions.Add(new Auction
+                };
+                var auction4 = new Auction
                 {
                     UserId = UserId2,
                     AllegroAuctionId = 247,
@@ -140,10 +156,15 @@ namespace AutoAllegro.Tests
                     PricePerItem = 18.99m,
                     IsMonitored = false,
                     IsVirtualItem = false
-                });
+                };
+
+                database.Auctions.Add(auction1);
+                database.Auctions.Add(auction2);
+                database.Auctions.Add(auction3);
+                database.Auctions.Add(auction4);
 
                 // buyers
-                database.Buyers.Add(new Buyer
+                var buyer1 = new Buyer
                 {
                     Email = "buyer1@gmail.com",
                     Address = "Address1",
@@ -154,8 +175,8 @@ namespace AutoAllegro.Tests
                     Phone = "141-141-2",
                     PostCode = "33-114",
                     UserLogin = "Pierdola"
-                });
-                database.Buyers.Add(new Buyer
+                };
+                var buyer2 = new Buyer
                 {
                     Email = "buyer2@gmail.com",
                     Address = "Address2",
@@ -166,8 +187,8 @@ namespace AutoAllegro.Tests
                     Phone = "997",
                     PostCode = "33-300",
                     UserLogin = "Leszczu"
-                });
-                database.Buyers.Add(new Buyer
+                };
+                var buyer3 = new Buyer
                 {
                     Email = "buyer3@gmail.com",
                     Address = "Address3",
@@ -178,20 +199,25 @@ namespace AutoAllegro.Tests
                     Phone = "516-512-666",
                     PostCode = "11-111",
                     UserLogin = "Tomus"
-                });
+                };
+                database.Buyers.Add(buyer1);
+                database.Buyers.Add(buyer2);
+                database.Buyers.Add(buyer3);
 
                 database.Orders.Add(new Order
                 {
-                    AuctionId = 1,
-                    BuyerId = 1,
+                    AllegroDealId = 1,
+                    Auction = auction1,
+                    Buyer = buyer1,
                     OrderDate = new DateTime(1993, 12, 11, 14, 55, 22),
                     OrderStatus = OrderStatus.Send,
                     Quantity = 4
                 });
                 database.Orders.Add(new Order
                 {
-                    AuctionId = 2,
-                    BuyerId = 1,
+                    AllegroDealId = 2,
+                    Auction = auction2,
+                    Buyer = buyer1,
                     OrderDate = new DateTime(1991, 12, 11, 12, 55, 22),
                     OrderStatus = OrderStatus.Paid,
                     Quantity = 2,
@@ -208,24 +234,27 @@ namespace AutoAllegro.Tests
                 });
                 database.Orders.Add(new Order
                 {
-                    AuctionId = 3,
-                    BuyerId = 2,
+                    AllegroDealId = 3,
+                    Auction = auction3,
+                    Buyer = buyer2,
                     OrderDate = new DateTime(1995, 12, 5, 12, 33, 22),
                     OrderStatus = OrderStatus.Done,
                     Quantity = 1
                 });
                 database.Orders.Add(new Order
                 {
-                    AuctionId = 1,
-                    BuyerId = 3,
+                    AllegroDealId = 4,
+                    Auction = auction1,
+                    Buyer = buyer3,
                     OrderDate = new DateTime(2222, 3, 5, 12, 33, 22),
                     OrderStatus = OrderStatus.Created,
                     Quantity = 66
                 });
                 database.Orders.Add(new Order
                 {
-                    AuctionId = 4,
-                    BuyerId = 3,
+                    AllegroDealId = 5,
+                    Auction = auction4,
+                    Buyer = buyer3,
                     OrderDate = new DateTime(2012, 3, 3, 12, 33, 11),
                     OrderStatus = OrderStatus.Done,
                     Quantity = 3

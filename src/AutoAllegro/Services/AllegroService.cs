@@ -149,7 +149,6 @@ namespace AutoAllegro.Services
             {
                 TransactionStatus = TransactionStatus.Created,
                 Amount = Convert.ToDecimal(response.postBuyFormPaymentAmount),
-                Order = order,
                 AllegroTransactionId = dealTransactionId
             };
 
