@@ -3,11 +3,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AutoAllegro.Models.AccountViewModels
 {
-    public class RegisterViewModel
+    public class ResetPasswordViewModel
     {
         [Required(ErrorMessage = "Pole e-mail jest wymagane.")]
         [EmailAddress(ErrorMessage = "Niepoprawny e-mail")]
-        [Display(Name = "Email")]
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Pole hasło jest wymagane")]
@@ -20,5 +19,7 @@ namespace AutoAllegro.Models.AccountViewModels
         [Display(Name = "Potwierdź hasło")]
         [Compare("Password", ErrorMessage = "Hasła się nie zgadzają.")]
         public string ConfirmPassword { get; set; }
+
+        public string Code { get; set; }
     }
 }

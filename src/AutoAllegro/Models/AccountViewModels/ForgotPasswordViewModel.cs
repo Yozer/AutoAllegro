@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace AutoAllegro.Models.AccountViewModels
 {
     public class ForgotPasswordViewModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Pole e-mail jest wymagane.")]
+        [EmailAddress(ErrorMessage = "Niepoprawny e-mail")]
         public string Email { get; set; }
     }
 }

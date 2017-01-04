@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace AutoAllegro.Models.AccountViewModels
 {
     public class LoginViewModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Pole e-mail jest wymagane.")]
+        [EmailAddress(ErrorMessage = "Niepoprawny e-mail")]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Pole hasło jest wymagane")]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 

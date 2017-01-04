@@ -1,4 +1,4 @@
-﻿@model IndexViewModel
+﻿@model AutoAllegro.Models.ManageViewModels.IndexViewModel
 @{
     ViewData["Title"] = "Ustawienia";
 }
@@ -14,14 +14,7 @@
             <div>
                 <div class="list-group">
                     <a asp-controller="Manage" asp-action="AllegroSettings" class="list-group-item">Ustawienia allegro</a>
-                    @if (Model.HasPassword)
-                    {
-                        <a asp-controller="Manage" asp-action="ChangePassword" class="list-group-item">Zmień hasło</a>
-                    }
-                    else
-                    {
-                        <a asp-controller="Manage" asp-action="SetPassword" class="list-group-item">Utwórz hasło</a>
-                    }
+                    <a asp-controller="Manage" asp-action="ChangePassword" class="list-group-item">Zmień hasło</a>
                 </div>
             </div>
         </div>
