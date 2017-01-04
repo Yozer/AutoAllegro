@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
+using AutoAllegro.Models.ManageViewModels;
 using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
@@ -168,6 +169,7 @@ namespace AutoAllegro
                 model.VirtualItem = order.Auction.IsVirtualItem;
             }).ReverseMap();
             cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
+            cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().ReverseMap();
         }
     }
 

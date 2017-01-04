@@ -19,9 +19,12 @@ namespace AutoAllegro.Services
             return Task.Run(() =>
             {
                 var message = new MimeMessage();
+                if (displayName == string.Empty)
+                    displayName = null;
+
                 message.From.Add(new MailboxAddress(displayName ?? "AutoAllegro", _settings.Mail));
                 message.To.Add(new MailboxAddress(to));
-                if (replyTo != null)
+                if (!string.IsNullOrEmpty(replyTo))
                 {
                     message.ReplyTo.Add(new MailboxAddress(displayName ?? "AutoAllegro", replyTo));
                 }

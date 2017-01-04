@@ -30,6 +30,8 @@ namespace AutoAllegro.Models.AuctionViewModels
     public enum AuctionMessageId
     {
         [Display(Name = "Zanim włączysz opcję \"Wirtualny przedmiot\" ustaw dane do wysyłki maili w ustawieniach konta.")]
-        CannotSetVirtualItem
+        CannotSetVirtualItem,
+        [Display(Name = "Ustawienia zapisane pomyślnie.")]
+        Success
     }
 }

@@ -97,7 +97,7 @@ namespace AutoAllegro.Controllers
             auction.IsVirtualItem = updatedAuction.IsVirtualItem;
 
             await _dbContext.SaveChangesAsync();
-            return RedirectToAction(nameof(Auction), new {id = auction.Id, settingsTabActive = true});
+            return RedirectToAction(nameof(Auction), new {id = auction.Id, settingsTabActive = true, message = AuctionMessageId.Success});
         }
 
         public async Task<IActionResult> Order(int id)

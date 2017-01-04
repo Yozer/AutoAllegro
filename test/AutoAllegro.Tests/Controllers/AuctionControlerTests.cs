@@ -375,6 +375,7 @@ namespace AutoAllegro.Tests.Controllers
                 Assert.Equal("Auction", redirect.ActionName);
                 Assert.Equal(2, redirect.RouteValues["id"]);
                 Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+                Assert.Equal(AuctionMessageId.Success, redirect.RouteValues["message"]);
                 _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
                 _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
             }
@@ -444,6 +445,7 @@ namespace AutoAllegro.Tests.Controllers
                 Assert.Equal("Auction", redirect.ActionName);
                 Assert.Equal(4, redirect.RouteValues["id"]);
                 Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+                Assert.Equal(AuctionMessageId.Success, redirect.RouteValues["message"]);
                 _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
                 _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
             }

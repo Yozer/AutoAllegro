@@ -105,29 +105,17 @@
                             <div class="col-sm-offset-2 col-sm-10">
                                 <div class="checkbox">
                                     <label>
-                                        <input asp-for="@Model.IsVirtualItem">Przedmiot niematerialny
+                                        <input id="non_material_checkbox" asp-for="@Model.IsVirtualItem">Przedmiot niematerialny
                                     </label>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="non-material-wrapper" class="hidden">
+                        <div id="non-material-wrapper" class="@(Model.IsVirtualItem ? string.Empty : "hidden")">
                             <div class="form-group">
-                                <label for="non_material_message" class="col-sm-2">Wiadomość dla kupujących</label>
-                                <div class="col-sm-10">
-                                    <textarea class="form-control" name="non_material_message" id="non_material_message" rows="6" placeholder="Wpisz swoją wiadomość..."></textarea>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="codes_list" class="col-sm-2">Lista kodów</label>
+                                <label for="codes_list" class="col-sm-2">Dodaj nowe kody</label>
                                 <div class="col-sm-10">
                                     <textarea class="form-control" name="codes_list" id="codes_list" rows="6" placeholder="Wprowadź każdy kod w nowej linii..."></textarea>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="codes_to_send" class="col-sm-2">Liczba kodów do wysłania</label>
-                                <div class="col-sm-10">
-                                    <input type="number" id="codes_to_send" name="codes_to_send">
                                 </div>
                             </div>
                         </div>

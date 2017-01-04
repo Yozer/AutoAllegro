@@ -8,13 +8,17 @@
         <div class="col-md-12">
             <div class="jumbotron">
                 <h1>@ViewData["Title"]</h1>
-                <p class="text-success">@ViewData["StatusMessage"]</p>                
+                @if (Model.Message != null)
+                {
+                    <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
+                }
             </div>
         
             <div>
                 <div class="list-group">
                     <a asp-controller="Manage" asp-action="AllegroSettings" class="list-group-item">Ustawienia allegro</a>
                     <a asp-controller="Manage" asp-action="ChangePassword" class="list-group-item">Zmień hasło</a>
+                    <a asp-controller="Manage" asp-action="VirtualItemSettings" class="list-group-item">Ustawienia wysyłki przedmiotów wirtualnych</a>
                 </div>
             </div>
         </div>

@@ -58,8 +58,9 @@ namespace AutoAllegro
                 await userManager.CreateAsync(user, configuration[defaultAdminPassword]);
             }
         }
-        private static async Task InsertTestData(IServiceProvider serviceProvider)
+        private static Task InsertTestData(IServiceProvider serviceProvider)
         {
+            return Task.CompletedTask;
             //await AddOrUpdateAsync(serviceProvider, g => g.GenreId, Genres.Select(genre => genre.Value));
             //await AddOrUpdateAsync(serviceProvider, a => a.ArtistId, Artists.Select(artist => artist.Value));
             //await AddOrUpdateAsync(serviceProvider, a => a.AlbumId, albums);
