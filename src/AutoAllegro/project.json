@@ -40,11 +40,13 @@
     "Microsoft.VisualStudio.Web.CodeGenerators.Mvc": "1.1.0-preview4-final",
     "Microsoft.AspNetCore.Mvc.TagHelpers": "1.1.0",
     "AutoMapper": "5.2.0",
-    "AutoMapper.Extensions.Microsoft.DependencyInjection": "1.1.2",
-    "Hangfire.Core": "1.6.7",
-    "Hangfire.AspNetCore": "1.6.7",
     "Hangfire.MemoryStorage.Core": "1.4.0",
-    "Microsoft.Extensions.DependencyInjection": "1.1.0"
+    "Microsoft.Extensions.DependencyInjection": "1.1.0",
+    "Microsoft.Extensions.Options.ConfigurationExtensions": "1.1.0",
+    "AutoMapper.Extensions.Microsoft.DependencyInjection": "1.1.0",
+    "Hangfire.AspNetCore": "1.6.8",
+    "Hangfire.Core": "1.6.8",
+    "MailKit": "1.10.1"
   },
   "tools": {
     "Microsoft.VisualStudio.Web.CodeGeneration.Tools": {

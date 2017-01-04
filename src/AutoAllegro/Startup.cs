@@ -14,7 +14,6 @@ using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Hangfire.MemoryStorage;
@@ -74,7 +73,7 @@ namespace AutoAllegro
             services.AddMemoryCache();
 
             // Add application services.
-            services.AddTransient<IEmailSender, AuthMessageSender>();
+            services.AddTransient<IEmailSender, EmailSender>();
 
             // add allegro service
             services.AddTransient<IAllegroService, AllegroService>();
@@ -84,6 +83,10 @@ namespace AutoAllegro
 
             services.AddSingleton<IAllegroProcessor, AllegroProcessor>();
             services.AddHangfire(t => t.UseMemoryStorage());
+
+            // Register the IConfiguration instance which MyOptions binds against.
+            services.AddOptions();
+            services.Configure<EmailSettings>(Configuration.GetSection("Email"));
         }
 
         public void ConfigureDevelopment(IApplicationBuilder app, ILoggerFactory loggerFactory)
