@@ -12,5 +12,7 @@ namespace AutoAllegro.Models
         public string AllegroUserName { get; set; }
         public string AllegroHashedPass { get; set; }
         public long AllegroJournalStart { get; set; }
+        public int? VirtualItemSettingsId { get; set; }
+        public virtual VirtualItemSettings VirtualItemSettings { get; set; }
     }
 }

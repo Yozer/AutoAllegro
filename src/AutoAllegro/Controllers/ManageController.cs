@@ -39,7 +39,7 @@ namespace AutoAllegro.Controllers
         {
             ViewData["StatusMessage"] =
                 message == ManageMessageId.ChangePasswordSuccess ? "Twoje hasło zostało zmienione."
-                : message == ManageMessageId.ChangeAllegroSettings ? "Dane dostępowe do Allegro zostały zmienione pomyślnie.";
+                : message == ManageMessageId.ChangeAllegroSettings ? "Dane dostępowe do Allegro zostały zmienione pomyślnie."
                 : message == ManageMessageId.Error ? "Wystąpił błąd."
                 : string.Empty;
 

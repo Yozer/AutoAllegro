@@ -10,7 +10,7 @@ using AutoAllegro.Models;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using AutoAllegro.Helpers.Extensions;
-
+using Microsoft.Extensions.Logging;
 using UsersContainer = System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Generic.Dictionary<long, int>>;
 
 namespace AutoAllegro.Services
@@ -22,12 +22,14 @@ namespace AutoAllegro.Services
         // https://mgmccarthy.wordpress.com/2016/11/07/using-hangfire-to-schedule-jobs-in-asp-net-core/
         private readonly IBackgroundJobClient _backgroundJob;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<AllegroProcessor> _logger;
         private readonly UsersContainer _users = new UsersContainer();
 
-        public AllegroProcessor(IBackgroundJobClient backgroundJob, IServiceProvider serviceProvider)
+        public AllegroProcessor(IBackgroundJobClient backgroundJob, IServiceProvider serviceProvider, ILogger<AllegroProcessor> logger)
         {
             _backgroundJob = backgroundJob;
             _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         private IServiceScope GetScope()
@@ -83,12 +85,13 @@ namespace AutoAllegro.Services
 
         public void Process(string userId, long journalStart)
         {
-            var allegroService = _serviceProvider.GetService<IAllegroService>();
 
             using (var scope = GetScope())
             {
                 try
                 {
+                    var allegroService = scope.ServiceProvider.GetService<IAllegroService>();
+                    var emailService = scope.ServiceProvider.GetService<IEmailSender>();
                     var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
 
 
@@ -108,24 +111,74 @@ namespace AutoAllegro.Services
                     }
 
                     ProcessJournal(db, allegroService, userId, ref journalStart);
-                    //SendCodes();
+                    SendCodes(db, emailService, userId);
                 }
-                catch (TimeoutException timeProblem)
+                catch (TimeoutException e)
                 {
-                    //Console.WriteLine("The service operation timed out. " + timeProblem.Message);
+                    _logger.LogError(1, e, "The service operation timed out.");
                 }
-                catch (FaultException unknownFault)
+                catch (FaultException e)
                 {
-                    //Console.WriteLine("An unknown exception was received. " + unknownFault.Message);
+                    _logger.LogError(1, e, "An unknown exception was received.");
                 }
-                catch (CommunicationException commProblem)
+                catch (CommunicationException e)
                 {
-                    //Console.WriteLine("There was a communication problem. " + commProblem.Message + commProblem.StackTrace);
+                    _logger.LogError(1, e, "There was a communication problem.");
                 }
             }
 
             if (_users.ContainsKey(userId))
                 _backgroundJob.Schedule(() => Process(userId, journalStart), Interval);
+        }
+
+        private void SendCodes(ApplicationDbContext db, IEmailSender emailService, string userId)
+        {
+            var ordersToSend = (from order in db.Orders
+                where order.Auction.IsMonitored && order.Auction.IsVirtualItem && order.OrderStatus == OrderStatus.Paid && order.Auction.UserId == userId
+                select new
+                {
+                    Order = order,
+                    order.Auction.Converter,
+                    order.Auction.User.VirtualItemSettings,
+                    order.Buyer.FirstName,
+                    order.Buyer.LastName,
+                    order.Buyer.Email
+                }).ToList();
+
+            foreach (var item in ordersToSend)
+            {
+                int codesCountToSent = item.Order.Quantity * item.Converter;
+                _logger.LogInformation($"Sending {codesCountToSent} codes to orderId: {item.Order.Id}");
+                var codes = db.GameCodes.Where(t => t.AuctionId == item.Order.AuctionId && t.Order == null).Take(codesCountToSent).ToList();
+
+                if (codes.Count < codesCountToSent)
+                {
+                    _logger.LogWarning($"Not enough codes in database ({codes.Count}) to send to order: {item.Order.Id}");
+                    continue;
+                }
+
+                string codesStr = string.Join("<br>", codes.Select(t => t.Code));
+                var virtualItemSettings = item.VirtualItemSettings;
+                string body = virtualItemSettings.MessageTemplate
+                    .Replace("{FIRST_NAME}", item.FirstName)
+                    .Replace("{LAST_NAME}", item.LastName)
+                    .Replace("{ITEM}", codesStr);
+
+                try
+                {
+                    emailService.SendEmailAsync(item.Email, virtualItemSettings.MessageSubject, body, virtualItemSettings.ReplyTo, virtualItemSettings.DisplayName);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(1, e, $"Error during sending codes for order {item.Order.Id}");
+                    continue;
+                }
+
+                _logger.LogInformation($"Sent codes for orderId {item.Order.Id} successfully.");
+                codes.ForEach(t => t.Order = item.Order);
+                item.Order.OrderStatus = OrderStatus.Done; // skip send, because email is delivered instantly
+                db.SaveChanges();
+            }
         }
 
         private void ProcessJournal(ApplicationDbContext db, IAllegroService allegroService, string userId, ref long journalStart)
