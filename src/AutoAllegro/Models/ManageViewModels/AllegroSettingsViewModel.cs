@@ -15,8 +15,8 @@ namespace AutoAllegro.Models.ManageViewModels
         public string Login { get; set; }
 
 
-        [Required(ErrorMessage = "Pole hasło jest wymagane.")]
-        [Display(Name = "Hasło")]           
+        [Required(ErrorMessage = "Pole hash hasła jest wymagane.")]
+        [Display(Name = "Hash hasła")]           
         public string HashPassword { get; set; }
     }
 }
