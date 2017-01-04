@@ -40,7 +40,7 @@ namespace AutoAllegro.Tests.Controllers
         }
 
         [Fact]
-        public async Task Index_ShouldRetunAuctionList_ForLoggedUser()
+        public async Task Index_ShouldReturnAuctionList_ForLoggedUser()
         {
             // arrange
             CreateFakeData();
@@ -128,7 +128,7 @@ namespace AutoAllegro.Tests.Controllers
             {
                 var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
                 PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(3, null, false);
+                result = await controller.Auction(3, null, false, null, false);
             }
 
             // assert
@@ -150,7 +150,7 @@ namespace AutoAllegro.Tests.Controllers
             {
                 var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
                 PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(1, null, false);
+                result = await controller.Auction(1, null, false, null, false);
             }
 
             // assert
@@ -210,7 +210,7 @@ namespace AutoAllegro.Tests.Controllers
             {
                 var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
                 PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(1, null, true);
+                result = await controller.Auction(1, null, true, null, false);
             }
 
             // assert
@@ -238,7 +238,7 @@ namespace AutoAllegro.Tests.Controllers
                 var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
                 controller.ModelState.AddModelError("error", "some error");
                 PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(0, null, false);
+                result = await controller.Auction(0, null, false, null, false);
             }
 
             // assert
@@ -341,6 +341,7 @@ namespace AutoAllegro.Tests.Controllers
                 Assert.False(auction.IsMonitored);
                 Assert.Equal("Auction", redirect.ActionName);
                 Assert.Equal(1, redirect.RouteValues["id"]);
+                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
                 _allegroProcessor.Received(1).StopProcessor(Arg.Is<Auction>(t => t.Id == 1 && !t.IsMonitored));
                 _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
             }
@@ -373,8 +374,46 @@ namespace AutoAllegro.Tests.Controllers
                 Assert.True(auction.IsMonitored);
                 Assert.Equal("Auction", redirect.ActionName);
                 Assert.Equal(2, redirect.RouteValues["id"]);
+                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
                 _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
                 _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
+            }
+        }
+
+        [Fact]
+        public async Task AuctionPost_ShouldNotAllowToSelectVirtualItem_ForAuction3()
+        {
+            // arrange
+            Auction ad;
+            CreateFakeData();
+
+            // act
+            IActionResult result;
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                ad = database.Auctions.First(t => t.AllegroAuctionId == 333);
+                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId2, controller, scope);
+                result = await controller.Auction(new AuctionViewModel { Id = ad.Id, IsMonitored = true, IsVirtualItem = true });
+            }
+
+            // assert
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                Assert.IsType<RedirectToActionResult>(result);
+                RedirectToActionResult redirect = (RedirectToActionResult)result;
+                Auction auction = database.Auctions.Single(t => t.Id == ad.Id);
+
+                Assert.False(auction.IsVirtualItem);
+                Assert.True(auction.IsMonitored);
+                Assert.Equal("Auction", redirect.ActionName);
+                Assert.Equal(ad.Id, redirect.RouteValues["id"]);
+                Assert.Equal(AuctionMessageId.CannotSetVirtualItem, redirect.RouteValues["message"]);
+                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+                _allegroProcessor.DidNotReceiveWithAnyArgs().StartProcessor(null);
+                _allegroProcessor.DidNotReceiveWithAnyArgs().StopProcessor(null);
             }
         }
 
@@ -404,6 +443,7 @@ namespace AutoAllegro.Tests.Controllers
                 Assert.False(auction.IsMonitored);
                 Assert.Equal("Auction", redirect.ActionName);
                 Assert.Equal(4, redirect.RouteValues["id"]);
+                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
                 _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
                 _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
             }

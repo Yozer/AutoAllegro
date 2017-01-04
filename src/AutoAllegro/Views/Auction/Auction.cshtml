@@ -8,7 +8,7 @@
     <div class="row">
         <div class="col-md-12">
             <div class="jumbotron">
-                <h1>@Model.Title</h1>
+                <h1>@Model.Title</h1>   
                 <div class="row">
                     <div class="col-md-8">
                         <p><strong>Prowizja od sprzedaży:</strong> @Html.DisplayFor(x => x.Fee)</p>
@@ -26,12 +26,12 @@
     <div class="row">
         <div class="col-md-12">
             <ul id="panel-nav" class="nav nav-justified nav-tabs" role="tablist">
-                <li role="presentation" class="active"><a href="#buyers" aria-controls="buyers" role="tab" data-toggle="tab">Zamówienia</a></li>
-                <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Ustawienia</a></li>
+                <li role="presentation"  class="@(!Model.SettingsTabActive ? "active" : string.Empty)"><a href="#buyers" aria-controls="buyers" role="tab" data-toggle="tab">Zamówienia</a></li>
+                <li role="presentation" class="@(Model.SettingsTabActive ? "active" : string.Empty)"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Ustawienia</a></li>
             </ul>
 
             <div class="tab-content">
-                <div role="tabpanel" class="tab-pane active" id="buyers">
+                <div role="tabpanel" class="@($"tab-pane {(!Model.SettingsTabActive ? "active" : string.Empty)}")" id="buyers">
                     <table class="table table-hover ">
                         <thead>
                         <tr>
@@ -52,7 +52,7 @@
                                 <td>@order.OrderDate</td>
                                 <td>@order.Quantity</td>
                                 <td>@Html.DisplayFor(x => order.TotalPayment)</td>
-                                <td>@order.OrderStatus</td>
+                                <td>@Html.DisplayFor(t => order.OrderStatus)</td>
                             </tr>
                         }
                         </tbody>
@@ -72,7 +72,11 @@
                     </div>
                 </div>
 
-                <div role="tabpanel" class="tab-pane" id="settings">
+                <div role="tabpanel" class="@($"tab-pane {(Model.SettingsTabActive ? "active" : string.Empty)}")" id="settings">
+                    @if (Model.Message != null)
+                    {
+                        <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
+                    }
                     <form asp-action="Auction" class="form-horizontal">
                         @Html.HiddenFor(t => t.Id)
 

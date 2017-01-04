@@ -49,7 +49,7 @@ namespace AutoAllegro.Controllers
         }
 
 
-        public async Task<IActionResult> Auction(int id, int? page, bool refresh)
+        public async Task<IActionResult> Auction(int id, int? page, bool refresh, AuctionMessageId? message, bool settingsTabActive)
         {
             if (!ModelState.IsValid)
                 return RedirectToAction(nameof(Index));
@@ -68,6 +68,8 @@ namespace AutoAllegro.Controllers
 
             // possible bottleneck
             var viewModel = _mapper.Map<AuctionViewModel>(auction);
+            viewModel.Message = message;
+            viewModel.SettingsTabActive = settingsTabActive;
             viewModel.Paginate(page, pageSize, c => c.Orders);
             return View(viewModel);
         }
@@ -81,7 +83,8 @@ namespace AutoAllegro.Controllers
             var auction = await GetUserAuction(updatedAuction.Id);
             if (auction == null)
                 return RedirectToAction(nameof(Index));
-
+            else if (updatedAuction.IsVirtualItem && auction.User.VirtualItemSettingsId == null)
+                return RedirectToAction(nameof(Auction), new { id = auction.Id, message = AuctionMessageId.CannotSetVirtualItem, settingsTabActive = true });
 
             if (updatedAuction.IsMonitored != auction.IsMonitored)
             {
@@ -94,7 +97,7 @@ namespace AutoAllegro.Controllers
             auction.IsVirtualItem = updatedAuction.IsVirtualItem;
 
             await _dbContext.SaveChangesAsync();
-            return RedirectToAction(nameof(Auction), new {id = auction.Id});
+            return RedirectToAction(nameof(Auction), new {id = auction.Id, settingsTabActive = true});
         }
 
         public async Task<IActionResult> Order(int id)
@@ -181,7 +184,7 @@ namespace AutoAllegro.Controllers
 
         private Task<Auction> GetUserAuction(int id)
         {
-            return (from auction in _dbContext.Auctions
+            return (from auction in _dbContext.Auctions.Include(t => t.User)
                     where auction.Id == id && auction.UserId == GetUserId()
                     select auction).FirstOrDefaultAsync();
         }

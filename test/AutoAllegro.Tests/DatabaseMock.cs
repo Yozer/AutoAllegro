@@ -90,7 +90,14 @@ namespace AutoAllegro.Tests
                     AllegroUserName = "username1",
                     AllegroHashedPass = "hashPass1",
                     AllegroKey = "allegroKey1",
-                    AllegroJournalStart = 14
+                    AllegroJournalStart = 14,
+                    VirtualItemSettings = new VirtualItemSettings
+                    {
+                        DisplayName = "x",
+                        MessageSubject = "x",
+                        MessageTemplate = "x",
+                        ReplyTo = "x"
+                    }
                 }, "Pass@word1").Wait();
                 userManager.CreateAsync(new User
                 {

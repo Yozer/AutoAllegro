@@ -75,7 +75,7 @@ namespace AutoAllegro.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Błędna próba zalogowania.");
                     return View(model);
                 }
             }

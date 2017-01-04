@@ -19,7 +19,7 @@
                         <p><strong>Email:</strong> @Model.Buyer.Email</p>
                         <p><strong>Cena:</strong> @Html.DisplayFor(t => t.TotalPayment)</p>
                         <p><strong>Sztuk:</strong> @Model.Quantity</p>
-                        <p><strong>Status:</strong> @Model.OrderStatus</p>
+                        <p><strong>Status:</strong> @Html.DisplayFor(t => t.OrderStatus)</p>
                     </div>
                 </div>
                 <p><a class="btn btn-primary btn-lg">Zobacz na allegro</a></p>

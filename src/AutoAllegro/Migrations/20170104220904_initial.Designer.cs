@@ -9,7 +9,7 @@ using AutoAllegro.Models;
 namespace AutoAllegro.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20161220153931_initial")]
+    [Migration("20170104220904_initial")]
     partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -119,7 +119,7 @@ namespace AutoAllegro.Migrations
 
                     b.Property<string>("Code");
 
-                    b.Property<int>("OrderId");
+                    b.Property<int?>("OrderId");
 
                     b.HasKey("Id");
 
@@ -255,6 +255,8 @@ namespace AutoAllegro.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256);
 
+                    b.Property<int?>("VirtualItemSettingsId");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
@@ -264,7 +266,27 @@ namespace AutoAllegro.Migrations
                         .IsUnique()
                         .HasName("UserNameIndex");
 
+                    b.HasIndex("VirtualItemSettingsId");
+
                     b.ToTable("AspNetUsers");
+                });
+
+            modelBuilder.Entity("AutoAllegro.Models.VirtualItemSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("DisplayName");
+
+                    b.Property<string>("MessageSubject");
+
+                    b.Property<string>("MessageTemplate");
+
+                    b.Property<string>("ReplyTo");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("VirtualItemSettings");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityRole", b =>
@@ -398,8 +420,7 @@ namespace AutoAllegro.Migrations
 
                     b.HasOne("AutoAllegro.Models.Order", "Order")
                         .WithMany("GameCodes")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("OrderId");
                 });
 
             modelBuilder.Entity("AutoAllegro.Models.Order", b =>
@@ -425,6 +446,13 @@ namespace AutoAllegro.Migrations
                         .WithMany("Transactions")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("AutoAllegro.Models.User", b =>
+                {
+                    b.HasOne("AutoAllegro.Models.VirtualItemSettings", "VirtualItemSettings")
+                        .WithMany()
+                        .HasForeignKey("VirtualItemSettingsId");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityRoleClaim<string>", b =>

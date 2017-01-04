@@ -52,7 +52,8 @@ namespace AutoAllegro
                 user = new User
                 {
                     UserName = configuration[defaultAdminUserName], Email = configuration[defaultAdminPassword],
-                    AllegroKey = configuration[allegroKey], AllegroUserName = configuration[allegroUserName], AllegroHashedPass = configuration[allegroPassword]
+                    AllegroKey = configuration[allegroKey], AllegroUserName = configuration[allegroUserName], AllegroHashedPass = configuration[allegroPassword],
+                    EmailConfirmed = true
                 };
                 await userManager.CreateAsync(user, configuration[defaultAdminPassword]);
             }
