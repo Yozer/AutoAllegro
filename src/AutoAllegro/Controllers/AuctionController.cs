@@ -110,9 +110,6 @@ namespace AutoAllegro.Controllers
 
         public async Task<IActionResult> Order(int id)
         {
-            if (!ModelState.IsValid)
-                return RedirectToAction(nameof(Index));
-
             var order = await GetUserOrder(id);
             if (order == null)
                 return RedirectToAction(nameof(Index));
@@ -208,6 +205,9 @@ namespace AutoAllegro.Controllers
             var auctionTitle = await (from ad in _dbContext.Auctions
                                       where id == ad.Id && ad.UserId == GetUserId() && ad.IsVirtualItem
                                       select ad.Title).FirstOrDefaultAsync();
+            if(auctionTitle == null)
+                return RedirectToAction(nameof(Index));
+
             var model = new AddCodesViewModel
             {
                 AuctionId = id,
@@ -237,6 +237,8 @@ namespace AutoAllegro.Controllers
                                 where model.AuctionId == ad.Id && ad.UserId == GetUserId() && ad.IsVirtualItem
                                 select ad).FirstOrDefaultAsync();
 
+            if (auction == null)
+                return RedirectToAction(nameof(Index));
             auction.GameCodes.AddRange(codes);
             await _dbContext.SaveChangesAsync();
 
