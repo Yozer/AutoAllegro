@@ -114,6 +114,8 @@ namespace AutoAllegro.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<DateTime>("AddDate");
+
                     b.Property<int>("AuctionId");
 
                     b.Property<string>("Code");

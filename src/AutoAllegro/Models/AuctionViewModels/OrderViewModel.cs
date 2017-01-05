@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using AutoAllegro.Helpers.Attributes;
 
 namespace AutoAllegro.Models.AuctionViewModels
@@ -15,5 +16,6 @@ namespace AutoAllegro.Models.AuctionViewModels
         public Buyer Buyer { get; set; }
         public bool VirtualItem { get; set; }
         public int AuctionId { get; set; }
+        public List<CodeViewModel> GameCodes { get; set; } = new List<CodeViewModel>();
     }
 }

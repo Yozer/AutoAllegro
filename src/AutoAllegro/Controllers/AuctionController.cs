@@ -169,7 +169,7 @@ namespace AutoAllegro.Controllers
             {
                 AuctionId = id,
                 Title = auction.Title,
-                Codes = _mapper.Map<IList<CodeViewModel>>(auction.GameCodes),
+                Codes = _mapper.Map<IList<CodeViewModel>>(auction.GameCodes.Where(t => t.OrderId == null).OrderByDescending(t => t.AddDate).ThenBy(t => t.Id)),
                 Message = message
             };
             model.Paginate(page, pageSize, t => t.Codes);
@@ -178,20 +178,20 @@ namespace AutoAllegro.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteCode(CodeViewModel model)
+        public async Task<IActionResult> DeleteCode(int id)
         {
             if(!ModelState.IsValid)
-                return RedirectToAction(nameof(Codes), new { id = model.AuctionId });
+                return RedirectToAction(nameof(Index));
 
-            var code = await _dbContext.GameCodes.Include(t => t.Auction).FirstOrDefaultAsync(t => t.Id == model.Id);
-            if (code.Auction.UserId != GetUserId())
-            {
-                return RedirectToAction(nameof(Codes), new {id = model.AuctionId, message = CodeViewMessage.ErrorNoAccess});
-            }
+            var code = await _dbContext.GameCodes.Include(t => t.Auction).FirstOrDefaultAsync(t => t.Id == id);
+            if (code?.Auction?.UserId != GetUserId())
+                return RedirectToAction(nameof(Index));
+            else if(code.OrderId != null)
+                return RedirectToAction(nameof(Codes), new { id = code.AuctionId, message = CodeViewMessage.ErrorCodeSold });
 
             _dbContext.Entry(code).State = EntityState.Deleted;
             await _dbContext.SaveChangesAsync();
-            return RedirectToAction(nameof(Codes), new { id = model.AuctionId, message = CodeViewMessage.SuccessDelete });
+            return RedirectToAction(nameof(Codes), new { id = code.AuctionId, message = CodeViewMessage.SuccessDelete });
         }
         private async Task LoginToAllegro()
         {
@@ -229,7 +229,7 @@ namespace AutoAllegro.Controllers
 
         private Task<Order> GetUserOrder(int id)
         {
-            return (from order in _dbContext.Orders.Include(t => t.Buyer).Include(t => t.ShippingAddress).Include(t => t.Auction)
+            return (from order in _dbContext.Orders.Include(t => t.Buyer).Include(t => t.ShippingAddress).Include(t => t.Auction).Include(t => t.GameCodes)
                     where order.Id == id && order.Auction.User.Id == GetUserId()
                     select order).FirstOrDefaultAsync();
         }

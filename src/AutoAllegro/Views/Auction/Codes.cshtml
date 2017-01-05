@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = Model.Codes;
+    ViewData["Title"] = Model.Title;
     ViewData["bodyClass"] = "auctions-list auction";
 }
 @model CodesViewModel
@@ -13,13 +13,13 @@
                 <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
             }
             <p><a asp-action="AddCodes" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Dodaj nowe</a></p>
+            <p><a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Powrót do aukcji</a></p>
             <hr />
             <table class="table table-hover table-bordered">
                 <thead>
                 <tr>
-                    <th>Kod</th>
                     <th>Data dodania</th>
-                    <th>Zamówienie</th>
+                    <th>Kod</th>
                     <th>Usuń</th>
                 </tr>
                 </thead>
@@ -27,24 +27,12 @@
                 @foreach (CodeViewModel code in Model.Codes)
                 {
                     <tr>
+                        <td>@code.AddDate.ToString("dd MMMM yyyy")</td>
                         <td>@code.Code</td>
-                        <td>@Html.DisplayFor(t => code.AddDate)</td>
-                        @if (code.OrderId == null)
-                        {
-                            <td>-</td>
-                        }
-                        else
-                        {
-                            <td><a asp-action="Order" asp-route-id="@code.OrderId.Value">@code.OrderId.Value</a></td>
-                        }
                         <td>
                             <form asp-controller="Auction" asp-action="DeleteCode" method="post" class="navbar-right">
-                                @Html.HiddenFor(t => code.Id)
-                                <div class="form-group">
-                                    <div class="col-sm-10 col-sm-offset-2">
-                                        <button type="submit" class="btn btn-success">Usuń</button>
-                                    </div>
-                                </div>
+                                <input type="hidden" name="id" value="@code.Id" />
+                                <button type="submit" class="btn btn-danger">Usuń</button>
                             </form>
                         </td>
                     </tr>

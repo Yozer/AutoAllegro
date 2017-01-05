@@ -308,6 +308,7 @@ namespace AutoAllegro.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    AddDate = table.Column<DateTime>(nullable: false),
                     AuctionId = table.Column<int>(nullable: false),
                     Code = table.Column<string>(nullable: true),
                     OrderId = table.Column<int>(nullable: true)

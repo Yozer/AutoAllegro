@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using AutoAllegro.Models.HelperModels;
 
@@ -14,20 +13,11 @@ namespace AutoAllegro.Models.AuctionViewModels
         public CodeViewMessage? Message { get; set; }
     }
 
-    public class CodeViewModel
-    {
-        public int Id { get; set; }
-        public string Code { get; set; }
-        public DateTime AddDate { get; set; }
-        public int? OrderId { get; set; }
-        public int AuctionId { get; set; }
-    }
-
     public enum CodeViewMessage
     {
-        [Display(Name = "Błąd! Prawdopodobnie nie masz dostępu")]
-        ErrorNoAccess,
-        [Display(Name = "Kod usunięty pomyślnie")]
+        [Display(Name = "Błąd! Kod już sprzedany.")]
+        ErrorCodeSold,
+        [Display(Name = "Kod usunięty pomyślnie.")]
         SuccessDelete
     }
 }

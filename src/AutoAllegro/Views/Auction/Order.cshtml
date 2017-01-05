@@ -9,20 +9,21 @@
     <div class="row">
         <div class="col-md-12">
             <div class="jumbotron">
-                <h1>Order: #@Model.Id</h1>
+                <h1>Zamówienie nr: #@Model.Id</h1>
                 <div class="row">
-                    <div class="col-md-8">
-                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quibusdam quae eos dolorum expedita, id tenetur inventore ut sed, facere odit eveniet nesciunt et. Possimus enim, itaque, at consectetur voluptatem mollitia.</p>
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <p><strong>Login:</strong> @Model.Buyer.UserLogin</p>
                         <p><strong>Email:</strong> @Model.Buyer.Email</p>
                         <p><strong>Cena:</strong> @Html.DisplayFor(t => t.TotalPayment)</p>
+                    </div>
+                    <div class="col-md-6">
                         <p><strong>Sztuk:</strong> @Model.Quantity</p>
                         <p><strong>Status:</strong> @Html.DisplayFor(t => t.OrderStatus)</p>
+                        <p><strong>Data zamówienia:</strong> @Html.DisplayFor(t => t.OrderDate)</p>
                     </div>
                 </div>
                 <p><a class="btn btn-primary btn-lg">Zobacz na allegro</a></p>
+                <p><a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Przejdź do aukcji</a></p>
             </div>
         </div>
     </div>
@@ -49,7 +50,11 @@
                         </tr>
                         <tr>
                             <td>Miasto</td>
-                            <td>@Model.Buyer.City @Model.Buyer.PostCode</td>
+                            <td>@Model.Buyer.City</td>
+                        </tr>
+                        <tr>
+                            <td>Kod pocztowy</td>
+                            <td>@Model.Buyer.PostCode</td>
                         </tr>
                         </tbody>
                     </table>
@@ -74,7 +79,11 @@
                             </tr>
                             <tr>
                                 <td>Miasto</td>
-                                <td>@Model.ShippingAddress.City @Model.ShippingAddress.PostCode</td>
+                                <td>@Model.ShippingAddress.City</td>
+                            </tr>
+                            <tr>
+                                <td>Kod pocztowy</td>
+                                <td>@Model.ShippingAddress.PostCode</td>
                             </tr>
                             </tbody>
                         </table>
@@ -91,7 +100,11 @@
                     <div class="list-group">
                         @if (Model.VirtualItem)
                         {
-                            <a href="#" class="list-group-item">Zobacz kody</a>
+                            @if (Model.GameCodes.Count > 0)
+                                    {
+                                 //tutaj jakiś modal
+                                 <a class="list-group-item">Zobacz kody</a>
+                             }
                             <a href="#" class="list-group-item">Wygeneruj dodatkowy kod</a>
                             <a href="#" class="list-group-item">Zwolnij kody</a>
                         }
