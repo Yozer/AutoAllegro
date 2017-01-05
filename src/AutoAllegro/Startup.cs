@@ -170,6 +170,7 @@ namespace AutoAllegro
             }).ReverseMap();
             cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
             cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().ReverseMap();
+            cf.CreateMap<CodeViewModel, GameCode>().ReverseMap();
         }
     }
 

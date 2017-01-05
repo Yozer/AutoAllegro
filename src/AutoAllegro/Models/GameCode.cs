@@ -1,9 +1,12 @@
-﻿namespace AutoAllegro.Models
+﻿using System;
+
+namespace AutoAllegro.Models
 {
     public class GameCode
     {
         public int Id { get; set; }
         public string Code { get; set; }
+        public DateTime AddDate { get; set; }
 
         public int AuctionId { get; set; }
         public virtual Auction Auction { get; set; }

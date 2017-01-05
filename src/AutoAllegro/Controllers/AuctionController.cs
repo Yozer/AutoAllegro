@@ -155,6 +155,44 @@ namespace AutoAllegro.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        public async Task<IActionResult> Codes(int id, int? page, CodeViewMessage? message)
+        {
+            const int pageSize = 25;
+            var auction = await (from ad in _dbContext.Auctions.Include(t => t.GameCodes)
+                                where ad.UserId == GetUserId() && ad.Id == id && ad.IsVirtualItem
+                                select ad).FirstOrDefaultAsync();
+
+            if (auction == null)
+                return RedirectToAction(nameof(Index));
+
+            var model = new CodesViewModel
+            {
+                AuctionId = id,
+                Title = auction.Title,
+                Codes = _mapper.Map<IList<CodeViewModel>>(auction.GameCodes),
+                Message = message
+            };
+            model.Paginate(page, pageSize, t => t.Codes);
+
+            return View(model);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCode(CodeViewModel model)
+        {
+            if(!ModelState.IsValid)
+                return RedirectToAction(nameof(Codes), new { id = model.AuctionId });
+
+            var code = await _dbContext.GameCodes.Include(t => t.Auction).FirstOrDefaultAsync(t => t.Id == model.Id);
+            if (code.Auction.UserId != GetUserId())
+            {
+                return RedirectToAction(nameof(Codes), new {id = model.AuctionId, message = CodeViewMessage.ErrorNoAccess});
+            }
+
+            _dbContext.Entry(code).State = EntityState.Deleted;
+            await _dbContext.SaveChangesAsync();
+            return RedirectToAction(nameof(Codes), new { id = model.AuctionId, message = CodeViewMessage.SuccessDelete });
+        }
         private async Task LoginToAllegro()
         {
             if (_allegroService.IsLoginRequired(GetUserId()))
@@ -196,4 +234,6 @@ namespace AutoAllegro.Controllers
                     select order).FirstOrDefaultAsync();
         }
     }
+
+
 }
