@@ -162,6 +162,7 @@ namespace AutoAllegro.Services
                 string body = virtualItemSettings.MessageTemplate
                     .Replace("{FIRST_NAME}", item.FirstName)
                     .Replace("{LAST_NAME}", item.LastName)
+                    .Replace("{QUANTITY}", item.Order.Quantity.ToString())
                     .Replace("{ITEM}", codesStr);
 
                 try
