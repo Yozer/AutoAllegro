@@ -8,7 +8,11 @@
     <div class="row">
         <div class="col-md-12">
             <div class="jumbotron">
-                <h1>@Model.Title</h1>   
+                @if (Model.Message != null)
+                {
+                    <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
+                }
+                <h1>@Model.Title</h1>
                 <div class="row">
                     <div class="col-md-8">
                         <p><strong>Prowizja od sprzedaży:</strong> @Html.DisplayFor(x => x.Fee)</p>
@@ -17,12 +21,18 @@
                     <div class="col-md-4">
                         <p><strong>Cena za sztukę:</strong> @Html.DisplayFor(x => x.PricePerItem)</p>
                         <p><strong>Koniec:</strong> @Model.EndDate</p>
+                        @if (Model.IsVirtualItem)
+                        {
+                            <p><strong>Liczba wolnych kodów:</strong> @Model.FreeCodesCount</p>
+                        }
                     </div>
                 </div>
-                <p><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-refresh="true" class="btn btn-primary btn-lg">Synchronizuj opłaty</a></p>
+                <p><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-refresh="true" class="btn btn-primary btn-lg">Synchronizuj opłaty</a>
+                </p>
                 @if (Model.IsVirtualItem)
                 {
-                    <p><a asp-action="Codes" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Zarządzaj kodami</a></p>
+                    <p><a asp-action="Codes" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Zarządzaj kodami</a>
+                    </p>
                 }
             </div>
         </div>
@@ -77,10 +87,6 @@
                 </div>
 
                 <div role="tabpanel" class="@($"tab-pane {(Model.SettingsTabActive ? "active" : string.Empty)}")" id="settings">
-                    @if (Model.Message != null)
-                    {
-                        <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
-                    }
                     <form asp-action="Auction" class="form-horizontal">
                         @Html.HiddenFor(t => t.Id)
 
@@ -116,12 +122,7 @@
                         </div>
 
                         <div id="non-material-wrapper" class="@(Model.IsVirtualItem ? string.Empty : "hidden")">
-                            <div class="form-group">
-                                <label for="codes_list" class="col-sm-2">Dodaj nowe kody</label>
-                                <div class="col-sm-10">
-                                    <textarea class="form-control" name="codes_list" id="codes_list" rows="6" placeholder="Wprowadź każdy kod w nowej linii..."></textarea>
-                                </div>
-                            </div>
+                            <p><a asp-action="AddCodes" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Dodaj nowe kody</a></p>
                         </div>
 
                         <hr>

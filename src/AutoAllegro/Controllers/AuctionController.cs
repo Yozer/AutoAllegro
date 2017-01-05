@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Packaging;
 
 namespace AutoAllegro.Controllers
 {
@@ -55,9 +56,15 @@ namespace AutoAllegro.Controllers
                 return RedirectToAction(nameof(Index));
 
             const int pageSize = 25;
-            var auction = await GetUserAuctionWithOrders(id);
+            Auction auction = await (
+                from ad in _dbContext.Auctions.Include(t => t.Orders).ThenInclude(t => t.Buyer)
+                where ad.UserId == GetUserId() && ad.Id == id
+                select ad).FirstOrDefaultAsync();
+
             if (auction == null)
                 return RedirectToAction(nameof(Index));
+
+            int codesCount = await _dbContext.GameCodes.CountAsync(t => t.AuctionId == auction.Id && t.Order == null);
 
             if (refresh)
             {
@@ -71,6 +78,7 @@ namespace AutoAllegro.Controllers
             viewModel.Message = message;
             viewModel.SettingsTabActive = settingsTabActive;
             viewModel.Paginate(page, pageSize, c => c.Orders);
+            viewModel.FreeCodesCount = codesCount;
             return View(viewModel);
         }
 
@@ -97,7 +105,7 @@ namespace AutoAllegro.Controllers
             auction.IsVirtualItem = updatedAuction.IsVirtualItem;
 
             await _dbContext.SaveChangesAsync();
-            return RedirectToAction(nameof(Auction), new {id = auction.Id, settingsTabActive = true, message = AuctionMessageId.Success});
+            return RedirectToAction(nameof(Auction), new {id = auction.Id, settingsTabActive = true, message = AuctionMessageId.SuccessSaveSettings});
         }
 
         public async Task<IActionResult> Order(int id)
@@ -186,13 +194,55 @@ namespace AutoAllegro.Controllers
             var code = await _dbContext.GameCodes.Include(t => t.Auction).FirstOrDefaultAsync(t => t.Id == id);
             if (code?.Auction?.UserId != GetUserId())
                 return RedirectToAction(nameof(Index));
-            else if(code.OrderId != null)
+
+            if(code.OrderId != null)
                 return RedirectToAction(nameof(Codes), new { id = code.AuctionId, message = CodeViewMessage.ErrorCodeSold });
 
             _dbContext.Entry(code).State = EntityState.Deleted;
             await _dbContext.SaveChangesAsync();
             return RedirectToAction(nameof(Codes), new { id = code.AuctionId, message = CodeViewMessage.SuccessDelete });
         }
+
+        public async Task<IActionResult> AddCodes(int id)
+        {
+            var auctionTitle = await (from ad in _dbContext.Auctions
+                                      where id == ad.Id && ad.UserId == GetUserId() && ad.IsVirtualItem
+                                      select ad.Title).FirstOrDefaultAsync();
+            var model = new AddCodesViewModel
+            {
+                AuctionId = id,
+                Title = auctionTitle
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddCodes(AddCodesViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return RedirectToAction(nameof(Index));
+
+            var codes = model.Codes.Split(new[] {"\n"}, StringSplitOptions.RemoveEmptyEntries)
+                .Select(t => new GameCode
+                {
+                    Code = t.Trim(),
+                    AddDate = DateTime.Now
+                }).ToList();
+
+            if (codes.Count == 0)
+                return RedirectToAction(nameof(Index));
+
+            var auction = await (from ad in _dbContext.Auctions
+                                where model.AuctionId == ad.Id && ad.UserId == GetUserId() && ad.IsVirtualItem
+                                select ad).FirstOrDefaultAsync();
+
+            auction.GameCodes.AddRange(codes);
+            await _dbContext.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Auction), new { id = model.AuctionId, message = AuctionMessageId.SuccessAddCodes });
+        }
+
         private async Task LoginToAllegro()
         {
             if (_allegroService.IsLoginRequired(GetUserId()))
@@ -213,13 +263,6 @@ namespace AutoAllegro.Controllers
                     where auction.UserId == GetUserId()
                     select auction).ToListAsync();
         }
-        private Task<Auction> GetUserAuctionWithOrders(int id)
-        {
-            return (from auction in _dbContext.Auctions.Include(t => t.Orders).ThenInclude(t => t.Buyer)
-                    where auction.UserId == GetUserId() && auction.Id == id
-                    select auction).FirstOrDefaultAsync();
-        }
-
         private Task<Auction> GetUserAuction(int id)
         {
             return (from auction in _dbContext.Auctions.Include(t => t.User)
