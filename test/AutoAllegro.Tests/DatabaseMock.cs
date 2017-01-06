@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
@@ -278,6 +279,12 @@ namespace AutoAllegro.Tests
                     OrderDate = new DateTime(2012, 3, 3, 12, 33, 11),
                     OrderStatus = OrderStatus.Done,
                     Quantity = 3
+                });
+
+                database.AllegroRefundReasons.AddRange(new List<AllegroRefundReason>
+                {
+                    new AllegroRefundReason {Id = 1, Reason = "ble ble"},
+                    new AllegroRefundReason {Id = 2, Reason = "ble ble2"},
                 });
 
                 database.SaveChanges();

@@ -8,6 +8,7 @@ namespace AutoAllegro.Models
     {
         public int Id { get; set; }
         public long AllegroDealId { get; set; }
+        public int? AllegroRefundId { get; set; }
         public int Quantity { get; set; }
         public DateTime OrderDate { get; set; }
         public OrderStatus OrderStatus { get; set; }

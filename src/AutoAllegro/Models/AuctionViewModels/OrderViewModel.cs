@@ -18,6 +18,7 @@ namespace AutoAllegro.Models.AuctionViewModels
         public bool VirtualItem { get; set; }
         public int AuctionId { get; set; }
         public List<CodeViewModel> GameCodes { get; set; } = new List<CodeViewModel>();
+        public List<AllegroRefundReason> RefundReasons { get; set; }
         public OrderViewMessage? Message { get; set; }
     }
 
@@ -30,6 +31,8 @@ namespace AutoAllegro.Models.AuctionViewModels
         [Display(Name = "Błąd. Dla tej aukcji nie ma już dostępnych kodów. Dodaj nowe.")]
         GenerateCodeNoCodesAvailable,
         [Display(Name = "Błąd. Nie możesz anulować już anulowanego zamówienia.")]
-        OrderCancelFail
+        OrderCancelFail,
+        [Display(Name = "Błąd podczas wysyłania zwrotu prowizji do Allegro.")]
+        SendingRefundFailed
     }
 }

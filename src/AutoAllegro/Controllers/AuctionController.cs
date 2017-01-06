@@ -116,6 +116,7 @@ namespace AutoAllegro.Controllers
 
             var viewModel = _mapper.Map<OrderViewModel>(order);
             viewModel.Message = message;
+            viewModel.RefundReasons = await _dbContext.AllegroRefundReasons.ToListAsync();
             return View(viewModel);
         }
         public async Task<IActionResult> Add(bool? fetch)
@@ -264,21 +265,34 @@ namespace AutoAllegro.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelOrder(int id)
+        public async Task<IActionResult> CancelOrder(int id, int reasonId)
         {
             var order = await _dbContext.Orders.Include(t => t.Auction).Include(t => t.GameCodes).FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId());
-            if (order == null)
+            if (order == null || !await _dbContext.AllegroRefundReasons.AnyAsync(t => t.Id == reasonId))
                 return RedirectToAction(nameof(Index));
 
             if (order.OrderStatus != OrderStatus.Canceled)
             {
+
+                int refundId;
+
+                await LoginToAllegro();
+                try
+                {
+                    refundId = await _allegroService.SendRefund(order, reasonId);
+                }
+                catch (Exception e)
+                {
+                    return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.SendingRefundFailed });
+                }
+
+                order.AllegroRefundId = refundId;
+                order.OrderStatus = OrderStatus.Canceled;
                 foreach (var code in order.GameCodes)
                 {
                     code.Order = null;
                 }
 
-                // TODO zwrot prowizji tutaj zrobiæ!!!
-                order.OrderStatus = OrderStatus.Canceled;
                 await _dbContext.SaveChangesAsync();
                 return RedirectToAction(nameof(Order), new {id, message = OrderViewMessage.OrderCancelSuccess});
             }

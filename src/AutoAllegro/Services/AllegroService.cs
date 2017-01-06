@@ -164,7 +164,19 @@ namespace AutoAllegro.Services
 
             return transaction;
         }
+        public async Task<int> SendRefund(Order order, int reasonId)
+        {
+            ThrowIfNotLogged();
+            var response = await _servicePort.doSendRefundFormAsync(new doSendRefundFormRequest
+            {
+                reasonId = reasonId,
+                dealId = (int) order.AllegroDealId,
+                refundQuantity = order.Quantity,
+                sessionId = _sessionKey
+            });
 
+            return response.refundId;
+        }
         private void ThrowIfNotLogged()
         {
             if(!IsLogged)

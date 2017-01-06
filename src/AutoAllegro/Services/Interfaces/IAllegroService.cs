@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoAllegro.Models;
@@ -17,5 +16,6 @@ namespace AutoAllegro.Services.Interfaces
         IEnumerable<SiteJournalDealsStruct> FetchJournal(long journalStart);
         Buyer FetchBuyerData(long dealItemId, long dealBuyerId);
         Transaction GetTransactionDetails(long dealTransactionId, Order order);
+        Task<int> SendRefund(Order order, int reasonId);
     }
 }

@@ -14,6 +14,7 @@ namespace AutoAllegro.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<ShippingAddress> SendAddresses { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<AllegroRefundReason> AllegroRefundReasons{ get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoAllegro.Helpers.Extensions;
+using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using Microsoft.Extensions.Caching.Memory;
@@ -128,7 +129,20 @@ namespace AutoAllegro.Tests.Services
             // assert
             Assert.Equal(2, result.Count);
         }
+        [Fact]
+        public async Task SendRefund_ShouldSendRefund()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            _servicePort.doSendRefundFormAsync(null).ReturnsForAnyArgs(new doSendRefundFormResponse {refundId = 55});
+            // act
+            int result = await _allegroService.SendRefund(new Order {AllegroDealId = 5, Quantity = 3}, 4);
 
+            // assert
+            Assert.Equal(55, result);
+            await _servicePort.Received(1).doSendRefundFormAsync(Arg.Is<doSendRefundFormRequest>(t => t.dealId == 5 && t.reasonId == 4 && t.refundQuantity == 3));
+        }
         [Fact]
         public async Task GetNewAuctions_ShouldThrow_WhenNotLogged()
         {
@@ -166,6 +180,14 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange & act
             var exception = Assert.Throws<InvalidOperationException>(() => _allegroService.GetTransactionDetails(0, null));
+            // assert
+            Assert.Equal("Not logged in", exception.Message);
+        }
+        [Fact]
+        public async Task SendRefund_ShouldThrow_WhenNotLogged()
+        {
+            // arrange & act
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _allegroService.SendRefund(null, 0));
             // assert
             Assert.Equal("Not logged in", exception.Message);
         }

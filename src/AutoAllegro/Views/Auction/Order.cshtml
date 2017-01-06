@@ -125,7 +125,7 @@
                         }
                         @if (Model.OrderStatus != OrderStatus.Canceled)
                         {
-                            // tutaj też modale z potwierdzeniami czy na pewno chcesz to zrobić
+                            // tutaj też modale z potwierdzeniami czy na pewno chcesz to zrobić + lista gdzie można wybrać powód anulowania -> @Model.RefundReasons
                             <form asp-action="CancelOrder">
                                 @Html.HiddenFor(t => t.Id)
                                 <button type="submit" class="list-group-item">Anuluj zamówienie</button>

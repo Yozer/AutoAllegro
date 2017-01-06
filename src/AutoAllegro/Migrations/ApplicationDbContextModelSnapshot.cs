@@ -16,6 +16,18 @@ namespace AutoAllegro.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.0-rtm-22752");
 
+            modelBuilder.Entity("AutoAllegro.Models.AllegroRefundReason", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Reason");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AllegroRefundReasons");
+                });
+
             modelBuilder.Entity("AutoAllegro.Models.Auction", b =>
                 {
                     b.Property<int>("Id")
@@ -137,6 +149,8 @@ namespace AutoAllegro.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<long>("AllegroDealId");
+
+                    b.Property<int?>("AllegroRefundId");
 
                     b.Property<int>("AuctionId");
 

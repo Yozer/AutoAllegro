@@ -9,6 +9,19 @@ namespace AutoAllegro.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AllegroRefundReasons",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Reason = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AllegroRefundReasons", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Buyers",
                 columns: table => new
                 {
@@ -250,6 +263,7 @@ namespace AutoAllegro.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AllegroDealId = table.Column<long>(nullable: false),
+                    AllegroRefundId = table.Column<int>(nullable: true),
                     AuctionId = table.Column<int>(nullable: false),
                     BuyerId = table.Column<int>(nullable: false),
                     OrderDate = table.Column<DateTime>(nullable: false),
@@ -468,6 +482,9 @@ namespace AutoAllegro.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AllegroRefundReasons");
+
             migrationBuilder.DropTable(
                 name: "Events");
 
