@@ -48,10 +48,10 @@ namespace AutoAllegro.Tests
 
             _services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
-            _services.AddSingleton(t => Substitute.For<IAllegroService>());
-            _services.AddSingleton(t => Substitute.For<IEmailSender>());
-            _services.AddSingleton(t => Substitute.For<IBackgroundJobClient>());
-            _services.AddSingleton(t => Substitute.For<IAllegroProcessor>());
+            _services.AddTransient(t => Substitute.For<IAllegroService>());
+            _services.AddTransient(t => Substitute.For<IEmailSender>());
+            _services.AddTransient(t => Substitute.For<IBackgroundJobClient>());
+            _services.AddTransient(t => Substitute.For<IAllegroTransactionProcessor>());
 
 
             // IHttpContextAccessor is required for SignInManager, and UserManager

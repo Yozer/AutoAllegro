@@ -83,10 +83,13 @@ namespace AutoAllegro
             services.AddTransient<IAllegroService, AllegroService>();
             services.AddTransient<servicePort, servicePortClient>();
 
+            // processors
+            services.AddTransient<IAllegroTransactionProcessor, AllegroTransactionProcessor>();
+            services.AddTransient<IAllegroEmailProcessor, AllegroEmailProcessor>();
+
+            services.AddHangfire(t => t.UseMemoryStorage());
             services.AddAutoMapper(ConfigureAutoMapper);
 
-            services.AddSingleton<IAllegroProcessor, AllegroProcessor>();
-            services.AddHangfire(t => t.UseMemoryStorage());
 
             // Register the IConfiguration instance which MyOptions binds against.
             services.AddOptions();
@@ -192,8 +195,13 @@ namespace AutoAllegro
 
         private void InitAllegroProcessor(IServiceProvider serviceProvider)
         {
-            var allegroProcessor = serviceProvider.GetService<IAllegroProcessor>();
-            allegroProcessor.Init();
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var allegroProcessor = scope.ServiceProvider.GetService<IAllegroTransactionProcessor>();
+                allegroProcessor.Init();
+                var emailProcessor = scope.ServiceProvider.GetService<IAllegroEmailProcessor>();
+                emailProcessor.Init();
+            }
         }
 
         public static void ConfigureAutoMapper(IMapperConfigurationExpression cf)

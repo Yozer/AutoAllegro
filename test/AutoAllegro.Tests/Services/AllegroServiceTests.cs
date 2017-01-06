@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoAllegro.Helpers.Extensions;
@@ -9,6 +10,7 @@ using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using Microsoft.Extensions.Caching.Memory;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using SoaAllegroService;
 using Xunit;
 using Xunit.Sdk;
@@ -142,6 +144,56 @@ namespace AutoAllegro.Tests.Services
             // assert
             Assert.Equal(55, result);
             await _servicePort.Received(1).doSendRefundFormAsync(Arg.Is<doSendRefundFormRequest>(t => t.dealId == 5 && t.reasonId == 4 && t.refundQuantity == 3));
+        }
+        [Fact]
+        public async Task SendRefund_ShouldSendCancelRefund()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            _servicePort.doCancelRefundFormAsync(null).ReturnsForAnyArgs(new doCancelRefundFormResponse { cancellationResult = true });
+            // act
+            bool result = await _allegroService.CancelRefund(4);
+
+            // assert
+            Assert.True(result);
+            await _servicePort.Received(1).doCancelRefundFormAsync(Arg.Is<doCancelRefundFormRequest>(t => t.refundId == 4));
+        }
+        [Fact]
+        public async Task SendRefund_AllegroFailsToCancel()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            _servicePort.doCancelRefundFormAsync(null).ReturnsForAnyArgs(new doCancelRefundFormResponse { cancellationResult = false });
+            // act
+            bool result = await _allegroService.CancelRefund(4);
+
+            // assert
+            Assert.False(result);
+            await _servicePort.Received(1).doCancelRefundFormAsync(Arg.Is<doCancelRefundFormRequest>(t => t.refundId == 4));
+        }
+        [Fact]
+        public async Task SendRefund_AllegroFailsToCancelWithSoapException()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            _servicePort.doCancelRefundFormAsync(null).ThrowsForAnyArgs(new FaultException(new FaultReason("xx"), new FaultCode("xx", "ww"), "action"));
+            // act
+            bool result = await _allegroService.CancelRefund(4);
+
+            // assert
+            Assert.False(result);
+            await _servicePort.Received(1).doCancelRefundFormAsync(Arg.Is<doCancelRefundFormRequest>(t => t.refundId == 4));
+        }
+        [Fact]
+        public async Task CancelRefund_ShouldThrow_WhenNotLogged()
+        {
+            // arrange & act
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _allegroService.CancelRefund(1));
+            // assert
+            Assert.Equal("Not logged in", exception.Message);
         }
         [Fact]
         public async Task GetNewAuctions_ShouldThrow_WhenNotLogged()

@@ -25,9 +25,9 @@ namespace AutoAllegro.Controllers
         private readonly IAllegroService _allegroService;
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
-        private readonly IAllegroProcessor _allegroProcessor;
+        private readonly IAllegroTransactionProcessor _allegroProcessor;
 
-        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper, IAllegroProcessor allegroProcessor)
+        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper, IAllegroTransactionProcessor allegroProcessor)
         {
             _dbContext = dbContext;
             _userManager = userManager;
@@ -94,14 +94,7 @@ namespace AutoAllegro.Controllers
             else if (updatedAuction.IsVirtualItem && auction.User.VirtualItemSettingsId == null)
                 return RedirectToAction(nameof(Auction), new { id = auction.Id, message = AuctionMessageId.CannotSetVirtualItem, settingsTabActive = true });
 
-            if (updatedAuction.IsMonitored != auction.IsMonitored)
-            {
-                auction.IsMonitored = updatedAuction.IsMonitored;
-                if (updatedAuction.IsMonitored)
-                    _allegroProcessor.StartProcessor(auction);
-                else
-                    _allegroProcessor.StopProcessor(auction);
-            }
+            auction.IsMonitored = updatedAuction.IsMonitored;
             auction.IsVirtualItem = updatedAuction.IsVirtualItem;
 
             await _dbContext.SaveChangesAsync();

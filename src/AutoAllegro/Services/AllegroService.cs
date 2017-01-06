@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Threading.Tasks;
 using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
@@ -176,6 +177,22 @@ namespace AutoAllegro.Services
             });
 
             return response.refundId;
+        }
+        public async Task<bool> CancelRefund(int refundId)
+        {
+            ThrowIfNotLogged();
+            try
+            {
+                var response = await _servicePort.doCancelRefundFormAsync(new doCancelRefundFormRequest {sessionId = _sessionKey, refundId = refundId});
+                if(response.cancellationResult)
+                    return true;
+            }
+            catch (FaultException)
+            {
+                // this refund is finished user got warning
+            }
+
+            return false;
         }
         private void ThrowIfNotLogged()
         {

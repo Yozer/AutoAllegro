@@ -17,5 +17,6 @@ namespace AutoAllegro.Services.Interfaces
         Buyer FetchBuyerData(long dealItemId, long dealBuyerId);
         Transaction GetTransactionDetails(long dealTransactionId, Order order);
         Task<int> SendRefund(Order order, int reasonId);
+        Task<bool> CancelRefund(int refundId);
     }
 }

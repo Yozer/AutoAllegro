@@ -24,7 +24,7 @@ namespace AutoAllegro.Tests.Controllers
     public sealed class AuctionControllerTests : DatabaseMock
     {
         private readonly IAllegroService _allegroService;
-        private readonly IAllegroProcessor _allegroProcessor;
+        private readonly IAllegroTransactionProcessor _allegroProcessor;
         private readonly IMapper _mapper;
         private readonly ApplicationDbContext _db;
         private readonly UserManager<User> _userManager;
@@ -35,7 +35,7 @@ namespace AutoAllegro.Tests.Controllers
         {
             _scope = CreateScope();
             _allegroService = _scope.ServiceProvider.GetRequiredService<IAllegroService>();
-            _allegroProcessor = _scope.ServiceProvider.GetRequiredService<IAllegroProcessor>();
+            _allegroProcessor = _scope.ServiceProvider.GetRequiredService<IAllegroTransactionProcessor>();
             _mapper = _scope.ServiceProvider.GetRequiredService<IMapper>();
             _db = GetDatabase(_scope);
             _userManager = GetUserManager(_scope);
@@ -617,8 +617,6 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Auction", redirect.ActionName);
             Assert.Equal(1, redirect.RouteValues["id"]);
             Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
-            _allegroProcessor.Received(1).StopProcessor(Arg.Is<Auction>(t => t.Id == 1 && !t.IsMonitored));
-            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
         }
 
         [Fact]
@@ -641,8 +639,6 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(2, redirect.RouteValues["id"]);
             Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
             Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
-            _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
-            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
         }
 
         [Fact]
@@ -666,8 +662,6 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(ad.Id, redirect.RouteValues["id"]);
             Assert.Equal(AuctionMessageId.CannotSetVirtualItem, redirect.RouteValues["message"]);
             Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
-            _allegroProcessor.DidNotReceiveWithAnyArgs().StartProcessor(null);
-            _allegroProcessor.DidNotReceiveWithAnyArgs().StopProcessor(null);
         }
 
         [Fact]
@@ -689,8 +683,6 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(4, redirect.RouteValues["id"]);
             Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
             Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
-            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
-            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
         }
 
         [Fact]

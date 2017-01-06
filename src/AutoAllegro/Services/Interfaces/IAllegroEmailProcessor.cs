@@ -1,6 +1,6 @@
 ﻿namespace AutoAllegro.Services.Interfaces
 {
-    public interface IAllegroTransactionProcessor
+    public interface IAllegroEmailProcessor
     {
         void Process();
         void Init();
