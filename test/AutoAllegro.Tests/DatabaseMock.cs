@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
+using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features.Authentication;
@@ -16,7 +17,7 @@ namespace AutoAllegro.Tests
 {
     public abstract class DatabaseMock
     {
-        protected ServiceCollection Services;
+        private ServiceCollection _services;
         protected IServiceProvider ServiceProvider;
 
         protected const string UserId = "TestUserId";
@@ -24,32 +25,50 @@ namespace AutoAllegro.Tests
 
         protected DatabaseMock()
         {
-            // initialize mocks
-            //var efServiceProvider = new ServiceCollection().AddEntityFrameworkSqlite().BuildServiceProvider();
-            Services = new ServiceCollection();
-            Services.AddOptions();
+            ConfigureServices();
+
+            ServiceProvider = _services.BuildServiceProvider();
+            InitDatabase();
+        }
+
+        private void ConfigureServices()
+        {
+            _services = new ServiceCollection();
+            _services.AddOptions();
 
             var connectionStringBuilder =
-                    new SqliteConnectionStringBuilder { DataSource = ":memory:" };
+                new SqliteConnectionStringBuilder {DataSource = ":memory:"};
             var connectionString = connectionStringBuilder.ToString();
             var connection = new SqliteConnection(connectionString);
 
 
-            Services.AddDbContext<ApplicationDbContext>(b => b.UseSqlite(connection));
+            _services.AddDbContext<ApplicationDbContext>(b => b.UseSqlite(connection));
 
-            Services.AddIdentity<User, IdentityRole>()
-                    .AddEntityFrameworkStores<ApplicationDbContext>();
+            _services.AddIdentity<User, IdentityRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>();
+            _services.AddTransient(t => Substitute.For<IAllegroService>());
+            _services.AddSingleton(t => Substitute.For<IAllegroProcessor>());
+
 
             // IHttpContextAccessor is required for SignInManager, and UserManager
             var authHandler = Substitute.For<IAuthenticationHandler>();
             authHandler.AuthenticateAsync(null).ReturnsForAnyArgs(x => Task.FromResult(0)).AndDoes(t => t.Arg<AuthenticateContext>().NotAuthenticated());
 
             var context = new DefaultHttpContext();
-            context.Features.Set<IHttpAuthenticationFeature>(new HttpAuthenticationFeature { Handler = authHandler });
-            Services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = context });
+            context.Features.Set<IHttpAuthenticationFeature>(new HttpAuthenticationFeature {Handler = authHandler});
+            _services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor {HttpContext = context});
 
             // custom
-            Services.AddAutoMapper(Startup.ConfigureAutoMapper);
+            _services.AddAutoMapper(Startup.ConfigureAutoMapper);
+        }
+        private void InitDatabase()
+        {
+            using (var scope = CreateScope())
+            {
+                var database = GetDatabase(scope);
+                database.Database.OpenConnection();
+                database.Database.EnsureCreated();
+            }
         }
 
         protected IServiceScope CreateScope()
@@ -66,15 +85,6 @@ namespace AutoAllegro.Tests
             return scope.ServiceProvider.GetService<UserManager<User>>();
         }
 
-        protected void InitDatabase()
-        {
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                database.Database.OpenConnection();
-                database.Database.EnsureCreated();
-            }
-        }
         protected virtual void CreateFakeData()
         {
             using (var scope = CreateScope())

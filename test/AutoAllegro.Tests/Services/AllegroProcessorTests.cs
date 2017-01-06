@@ -30,13 +30,13 @@ namespace AutoAllegro.Tests.Services
             _scheduler = Substitute.For<IBackgroundJobClient>();
             _allegroService = Substitute.For<IAllegroService>();
             _emailService = Substitute.For<IEmailSender>();
-            Services.AddTransient(t => _emailService);
-            Services.AddTransient(t => _allegroService);
-            Services.AddTransient<IBackgroundJobClient>(t => _scheduler);
-            Services.AddSingleton<IAllegroProcessor, AllegroProcessor>();
+            //Services.AddTransient(t => _emailService);
+            //Services.AddTransient(t => _allegroService);
+            //Services.AddTransient<IBackgroundJobClient>(t => _scheduler);
+            //Services.AddSingleton<IAllegroProcessor, AllegroProcessor>();
 
-            ServiceProvider = Services.BuildServiceProvider();
-            InitDatabase();
+            //ServiceProvider = Services.BuildServiceProvider();
+            //InitDatabase();
             _processor = ServiceProvider.GetService<IAllegroProcessor>();
         }
 

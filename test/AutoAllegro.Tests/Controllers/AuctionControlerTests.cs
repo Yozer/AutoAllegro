@@ -4,12 +4,14 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoAllegro.Controllers;
+using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,41 +20,37 @@ using Xunit;
 
 namespace AutoAllegro.Tests.Controllers
 {
-    public class AuctionControllerTests : DatabaseMock
+    public sealed class AuctionControllerTests : DatabaseMock
     {
         private readonly IAllegroService _allegroService;
         private readonly IAllegroProcessor _allegroProcessor;
         private readonly IMapper _mapper;
+        private readonly ApplicationDbContext _db;
+        private readonly UserManager<User> _userManager;
+        private readonly AuctionController _controller;
+        private readonly IServiceScope _scope;
 
         public AuctionControllerTests()
         {
-            Services.AddTransient(t => Substitute.For<IAllegroService>());
-            Services.AddSingleton(t => Substitute.For<IAllegroProcessor>());
+            _scope = CreateScope();
+            _allegroService = _scope.ServiceProvider.GetRequiredService<IAllegroService>();
+            _allegroProcessor = _scope.ServiceProvider.GetRequiredService<IAllegroProcessor>();
+            _mapper = _scope.ServiceProvider.GetRequiredService<IMapper>();
+            _db = GetDatabase(_scope);
+            _userManager = GetUserManager(_scope);
 
-            ServiceProvider = Services.BuildServiceProvider();
-
-            InitDatabase();
-
-                // init controller
-            _allegroService = ServiceProvider.GetRequiredService<IAllegroService>();
-            _allegroProcessor = ServiceProvider.GetRequiredService<IAllegroProcessor>();
-            _mapper = ServiceProvider.GetRequiredService<IMapper>();
+            CreateFakeData();
+            _controller = new AuctionController(_db, _userManager, _allegroService, _mapper, _allegroProcessor);
         }
 
         [Fact]
         public async Task Index_ShouldReturnAuctionList_ForLoggedUser()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Index(null);
-            }
+            var result = await _controller.Index(null);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -81,16 +79,10 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Index_ShouldReturnAuctionList_ForDifferentLoggedUser()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId2);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.Index(null);
-            }
+            IActionResult result = await _controller.Index(null);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -120,16 +112,10 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Auction_ShouldRedirectToIndex_ForNotExistingAuction()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(3, null, false, null, false);
-            }
+            var result = await _controller.Auction(3, null, false, null, false);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -142,16 +128,10 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Auction_ShouldReturnAuctionAndOrders_ForExistingAuction1()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(1, null, false, null, false);
-            }
+            IActionResult result = await _controller.Auction(1, null, false, null, false);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -192,16 +172,10 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Codes_ShouldReturnFreeCodesList()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Codes(1, null, null);
-            }
+            IActionResult result = await _controller.Codes(1, null, null);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -220,16 +194,10 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Codes_ShouldRedirectToIndex_NotOurAd()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId2);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.Codes(1, null, null);
-            }
+            IActionResult result = await _controller.Codes(1, null, null);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -239,19 +207,11 @@ namespace AutoAllegro.Tests.Controllers
         public async Task DeleteCode_ShouldRedirectToIndex_NotOurAd()
         {
             // arrange
-            CreateFakeData();
-            GameCode code;
+            PopulateHttpContext(UserId2);
+            GameCode code = _db.Auctions.Include(t => t.GameCodes).First(t => t.AllegroAuctionId == 111).GameCodes.First();
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                code = database.Auctions.Include(t => t.GameCodes).First(t => t.AllegroAuctionId == 111).GameCodes.First();
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.DeleteCode(code.Id);
-            }
+            IActionResult result = await _controller.DeleteCode(code.Id);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -261,19 +221,11 @@ namespace AutoAllegro.Tests.Controllers
         public async Task DeleteCode_ShouldRedirectToIndex_CodeAlreadySold()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
+            GameCode code = _db.Auctions.Include(t => t.GameCodes).ThenInclude(t => t.Order).First(t => t.AllegroAuctionId == 111).GameCodes.First(t => t.OrderId != null);
 
             // act
-            IActionResult result;
-            GameCode code;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                code = database.Auctions.Include(t => t.GameCodes).ThenInclude(t => t.Order).First(t => t.AllegroAuctionId == 111).GameCodes.First(t => t.OrderId != null);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.DeleteCode(code.Id);
-            }
+            IActionResult result = await _controller.DeleteCode(code.Id);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -285,297 +237,221 @@ namespace AutoAllegro.Tests.Controllers
         [Fact]
         public async Task GetExtraCode_ShouldRedirectToIndex_NoCodesAvailable()
         {
-            using (var scope = CreateScope())
+            // arrange
+            PopulateHttpContext(UserId);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            var codes = _db.GameCodes.Where(t => t.Auction.AllegroAuctionId == 111 && t.Order == null);
+            foreach (GameCode code in codes)
             {
-                // arrange
-                CreateFakeData();
-                var database = GetDatabase(scope);
-                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
-                var codes = database.GameCodes.Where(t => t.Auction.AllegroAuctionId == 111 && t.Order == null);
-                foreach (GameCode code in codes)
-                {
-                    order.GameCodes.Add(code);
-                }
-                database.SaveChanges();
-
-                // act
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                IActionResult result = await controller.GetExtraCode(order.Id);
-
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult) result);
-                Assert.Equal("Order", redirect.ActionName);
-                Assert.Equal(order.Id, redirect.RouteValues["id"]);
-                Assert.Equal(OrderViewMessage.GenerateCodeNoCodesAvailable, redirect.RouteValues["message"]);
+                order.GameCodes.Add(code);
             }
+            _db.SaveChanges();
+
+            // act
+            IActionResult result = await _controller.GetExtraCode(order.Id);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult) result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.GenerateCodeNoCodesAvailable, redirect.RouteValues["message"]);
         }
         [Fact]
         public async Task GetExtraCode_ShouldRedirectToIndex_NotOurAd()
         {
-            using (var scope = CreateScope())
-            {
-                // arrange
-                CreateFakeData();
-                var database = GetDatabase(scope);
-                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            // arrange
+            PopulateHttpContext(UserId2);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
 
-                // act
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                IActionResult result = await controller.GetExtraCode(order.Id);
+            // act
+            IActionResult result = await _controller.GetExtraCode(order.Id);
 
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Index", redirect.ActionName);
-            }
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
         public async Task GetExtraCode_ShouldGenerateAdditionalCode()
         {
-            using (var scope = CreateScope())
-            {
-                // arrange
-                CreateFakeData();
-                var database = GetDatabase(scope);
-                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            // arrange
+            PopulateHttpContext(UserId);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
 
-                // act
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                IActionResult result = await controller.GetExtraCode(order.Id);
+            // act
+            IActionResult result = await _controller.GetExtraCode(order.Id);
 
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Order", redirect.ActionName);
-                Assert.Equal(order.Id, redirect.RouteValues["id"]);
-                Assert.Equal(OrderViewMessage.GenerateCodeSuccess, redirect.RouteValues["message"]);
-                order = database.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.GenerateCodeSuccess, redirect.RouteValues["message"]);
+            order = _db.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
 
-                Assert.Equal(2, order.GameCodes.Count);
-                Assert.Equal("yyy", order.GameCodes.ElementAt(0).Code);
-                Assert.Equal("xxx", order.GameCodes.ElementAt(1).Code);
-            }
+            Assert.Equal(2, order.GameCodes.Count);
+            Assert.Equal("yyy", order.GameCodes.ElementAt(0).Code);
+            Assert.Equal("xxx", order.GameCodes.ElementAt(1).Code);
         }
         [Fact]
         public async Task ReleaseCodes_ShouldRedirectToIndex_NotOurAd()
         {
-            using (var scope = CreateScope())
-            {
-                // arrange
-                CreateFakeData();
-                var database = GetDatabase(scope);
-                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            // arrange
+            PopulateHttpContext(UserId2);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
 
-                // act
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                IActionResult result = await controller.ReleaseCodes(order.Id);
+            // act
+            IActionResult result = await _controller.ReleaseCodes(order.Id);
 
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Index", redirect.ActionName);
-            }
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
         public async Task ReleaseCodes_ShouldReleaseAllCodes()
         {
-            using (var scope = CreateScope())
+            // arrange
+            PopulateHttpContext(UserId);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            var codes = _db.GameCodes.Where(t => t.Auction.AllegroAuctionId == 111 && t.Order == null);
+            foreach (GameCode code in codes)
             {
-                // arrange
-                CreateFakeData();
-                var database = GetDatabase(scope);
-                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
-                var codes = database.GameCodes.Where(t => t.Auction.AllegroAuctionId == 111 && t.Order == null);
-                foreach (GameCode code in codes)
-                {
-                    order.GameCodes.Add(code);
-                }
-                database.SaveChanges();
-
-                // act
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                IActionResult result = await controller.ReleaseCodes(order.Id);
-
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Order", redirect.ActionName);
-                Assert.Equal(order.Id, redirect.RouteValues["id"]);
-                Assert.Equal(OrderViewMessage.ReleaseCodesSuccess, redirect.RouteValues["message"]);
-
-                order = database.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
-                Assert.Equal(0, order.GameCodes.Count);
+                order.GameCodes.Add(code);
             }
+            _db.SaveChanges();
+
+            // act
+            IActionResult result = await _controller.ReleaseCodes(order.Id);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.ReleaseCodesSuccess, redirect.RouteValues["message"]);
+
+            order = _db.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            Assert.Equal(0, order.GameCodes.Count);
         }
         [Fact]
         public async Task DeleteCode_DeleteCodeSuccessfully()
         {
             // arrange
-            CreateFakeData();
-            GameCode code;
+            PopulateHttpContext(UserId);
+            GameCode code = _db.Auctions.Include(t => t.GameCodes).First(t => t.AllegroAuctionId == 111).GameCodes.First(t => t.OrderId == null);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                code = database.Auctions.Include(t => t.GameCodes).First(t => t.AllegroAuctionId == 111).GameCodes.First(t => t.OrderId == null);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.DeleteCode(code.Id);
+            IActionResult result = await _controller.DeleteCode(code.Id);
 
-
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult) result);
-                Assert.Equal("Codes", redirect.ActionName);
-                Assert.Equal(code.AuctionId, redirect.RouteValues["id"]);
-                Assert.Equal(CodeViewMessage.SuccessDelete, redirect.RouteValues["message"]);
-                code = database.GameCodes.FirstOrDefault(t => t.Id == code.Id);
-                Assert.Null(code);
-            }
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult) result);
+            Assert.Equal("Codes", redirect.ActionName);
+            Assert.Equal(code.AuctionId, redirect.RouteValues["id"]);
+            Assert.Equal(CodeViewMessage.SuccessDelete, redirect.RouteValues["message"]);
+            code = _db.GameCodes.FirstOrDefault(t => t.Id == code.Id);
+            Assert.Null(code);
         }
         [Fact]
         public async Task AddCodes_NotOurAd_ShouldRedirectToIndex()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId2);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.AddCodes(1);
+            var result = await _controller.AddCodes(1);
 
-
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Index", redirect.ActionName);
-            }
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
         public async Task AddCodes_ShouldReturnCorrectView()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.AddCodes(1);
+            var result = await _controller.AddCodes(1);
 
-
-                // assert
-                Assert.IsType<ViewResult>(result);
-                var model = (AddCodesViewModel)((ViewResult)result).Model;
-                Assert.Equal("test ad", model.Title);
-                Assert.Equal(1, model.AuctionId);
-            }
+            // assert
+            Assert.IsType<ViewResult>(result);
+            var model = (AddCodesViewModel)((ViewResult)result).Model;
+            Assert.Equal("test ad", model.Title);
+            Assert.Equal(1, model.AuctionId);
         }
         [Fact]
         public async Task AddCodes_NoCodesSpecified_RedirectToIndex()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
+            IActionResult result = await _controller.AddCodes(new AddCodesViewModel
             {
-                var database = GetDatabase(scope);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.AddCodes(new AddCodesViewModel
-                {
-                    Codes = string.Empty,
-                    AuctionId = 1
-                });
+                Codes = string.Empty,
+                AuctionId = 1
+            });
 
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Index", redirect.ActionName);
-            }
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
         public async Task AddCodes_NotOurAd_RedirectToIndex()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId2);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
+            IActionResult result = await _controller.AddCodes(new AddCodesViewModel
             {
-                var database = GetDatabase(scope);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.AddCodes(new AddCodesViewModel
-                {
-                    Codes = "code",
-                    AuctionId = 1
-                });
+                Codes = "code",
+                AuctionId = 1
+            });
 
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Index", redirect.ActionName);
-            }
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
         public async Task AddCodes_ShouldAddCodesSuccessfully()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
+            IActionResult result = await _controller.AddCodes(new AddCodesViewModel
             {
-                var database = GetDatabase(scope);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.AddCodes(new AddCodesViewModel
-                {
-                    Codes = " code\r\ncode2 \r\n",
-                    AuctionId = 1
-                });
+                Codes = " code\r\ncode2 \r\n",
+                AuctionId = 1
+            });
 
-                // assert
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = ((RedirectToActionResult)result);
-                Assert.Equal("Auction", redirect.ActionName);
-                Assert.Equal(1, redirect.RouteValues["id"]);
-                Assert.Equal(AuctionMessageId.SuccessAddCodes, redirect.RouteValues["message"]);
-                var codes = database.GameCodes.Where(t => t.AuctionId == 1 && t.Order == null).ToList();
-                Assert.Equal(3, codes.Count);
-                Assert.Equal(1, codes[0].AuctionId);
-                Assert.Equal("yyy", codes[0].Code);
-                Assert.Equal(1, codes[1].AuctionId);
-                Assert.Equal("code", codes[1].Code);
-                Assert.Equal(1, codes[2].AuctionId);
-                Assert.Equal("code2", codes[2].Code);
-            }
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(1, redirect.RouteValues["id"]);
+            Assert.Equal(AuctionMessageId.SuccessAddCodes, redirect.RouteValues["message"]);
+            var codes = _db.GameCodes.Where(t => t.AuctionId == 1 && t.Order == null).ToList();
+            Assert.Equal(3, codes.Count);
+            Assert.Equal(1, codes[0].AuctionId);
+            Assert.Equal("yyy", codes[0].Code);
+            Assert.Equal(1, codes[1].AuctionId);
+            Assert.Equal("code", codes[1].Code);
+            Assert.Equal(1, codes[2].AuctionId);
+            Assert.Equal("code2", codes[2].Code);
         }
         [Fact]
         public async Task Auction_ShouldRefreshFees_ForExistingAuction1()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
             _allegroService.IsLoginRequired(UserId).Returns(true);
             _allegroService.Login(UserId, Arg.Any<AllegroCredentials>()).Returns(Task.FromResult(true));
             _allegroService.UpdateAuctionFees(Arg.Any<Auction>()).Returns(t => t.Arg<Auction>())
@@ -586,15 +462,8 @@ namespace AutoAllegro.Tests.Controllers
                     auction.OpenCost = 52m;
                 });
 
-
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(1, null, true, null, false);
-            }
+            IActionResult result = await _controller.Auction(1, null, true, null, false);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -611,105 +480,32 @@ namespace AutoAllegro.Tests.Controllers
         [Fact]
         public async Task Auction_ShouldRedirectToIndex_ForModelError()
         {
-            // arrange
-            CreateFakeData();
+            await TestForModelError(async () => await _controller.Auction(0, null, false, null, false));
 
-            // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                controller.ModelState.AddModelError("error", "some error");
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(0, null, false, null, false);
-            }
-
-            // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Assert.Null(redirect.ControllerName);
-            Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
         public async Task DeleteCode_ShouldRedirectToIndex_ForModelError()
         {
-            // arrange
-            CreateFakeData();
-
-            // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                controller.ModelState.AddModelError("error", "some error");
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.DeleteCode(1);
-            }
-
-            // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Assert.Null(redirect.ControllerName);
-            Assert.Equal("Index", redirect.ActionName);
+            await TestForModelError(() => _controller.DeleteCode(1));
         }
         [Fact]
         public async Task AddCodes_ShouldRedirectToIndex_ForModelError()
         {
-            // arrange
-            CreateFakeData();
-
-            // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                controller.ModelState.AddModelError("error", "some error");
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.AddCodes(new AddCodesViewModel());
-            }
-
-            // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Assert.Null(redirect.ControllerName);
-            Assert.Equal("Index", redirect.ActionName);
+            await TestForModelError(() => _controller.AddCodes(new AddCodesViewModel()));
         }
         [Fact]
         public async Task AuctionPost_ShouldRedirectToIndex_ForModelError()
         {
-            // arrange
-            CreateFakeData();
-
-            // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                controller.ModelState.AddModelError("error", "some error");
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(null);
-            }
-
-            // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Assert.Null(redirect.ControllerName);
-            Assert.Equal("Index", redirect.ActionName);
+            await TestForModelError(() => _controller.Auction(null));
         }
         [Fact]
         public async Task AuctionPost_ShouldRedirectToIndex_ForNotExistingAuction()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId2);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.Auction(new AuctionViewModel { Id = 6});
-            }
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = 6});
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -721,17 +517,11 @@ namespace AutoAllegro.Tests.Controllers
         [Fact]
         public async Task AuctionPost_ShouldRedirectToIndex_ForAuctionThatBelongsToDifferentUser()
         {
-            // arange
-            CreateFakeData();
+            // arrange
+            PopulateHttpContext(UserId2);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.Auction(new AuctionViewModel { Id = 1 });
-            }
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = 1 });
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -744,176 +534,110 @@ namespace AutoAllegro.Tests.Controllers
         public async Task AuctionPost_ShouldDisableMonitoring_ForAuction1()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(new AuctionViewModel { Id = 1, IsMonitored = false, IsVirtualItem = true });
-            }
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = 1, IsMonitored = false, IsVirtualItem = true });
 
             // assert
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult) result;
+            Auction auction = _db.Auctions.Single(t => t.Id == 1);
 
-                Assert.IsType<RedirectToActionResult>(result);
-                RedirectToActionResult redirect = (RedirectToActionResult) result;
-                Auction auction = database.Auctions.Single(t => t.Id == 1);
-
-                Assert.False(auction.IsMonitored);
-                Assert.Equal("Auction", redirect.ActionName);
-                Assert.Equal(1, redirect.RouteValues["id"]);
-                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
-                _allegroProcessor.Received(1).StopProcessor(Arg.Is<Auction>(t => t.Id == 1 && !t.IsMonitored));
-                _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
-            }
+            Assert.False(auction.IsMonitored);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(1, redirect.RouteValues["id"]);
+            Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            _allegroProcessor.Received(1).StopProcessor(Arg.Is<Auction>(t => t.Id == 1 && !t.IsMonitored));
+            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
         }
 
         [Fact]
         public async Task AuctionPost_ShouldEnableMonitoringAndDisableVirtualItem_ForAuction2()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(new AuctionViewModel { Id = 2, IsMonitored = true, IsVirtualItem = false });
-            }
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = 2, IsMonitored = true, IsVirtualItem = false });
 
             // assert
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                Assert.IsType<RedirectToActionResult>(result);
-                RedirectToActionResult redirect = (RedirectToActionResult) result;
-                Auction auction = database.Auctions.Single(t => t.Id == 2);
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult) result;
+            Auction auction = _db.Auctions.Single(t => t.Id == 2);
 
-                Assert.False(auction.IsVirtualItem);
-                Assert.True(auction.IsMonitored);
-                Assert.Equal("Auction", redirect.ActionName);
-                Assert.Equal(2, redirect.RouteValues["id"]);
-                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
-                Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
-                _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
-                _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
-            }
+            Assert.False(auction.IsVirtualItem);
+            Assert.True(auction.IsMonitored);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(2, redirect.RouteValues["id"]);
+            Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
+            _allegroProcessor.Received(1).StartProcessor(Arg.Is<Auction>(t => t.Id == 2 && t.IsMonitored));
+            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
         }
 
         [Fact]
         public async Task AuctionPost_ShouldNotAllowToSelectVirtualItem_ForAuction3()
         {
             // arrange
-            Auction ad;
-            CreateFakeData();
+            PopulateHttpContext(UserId2);
+            Auction ad = _db.Auctions.First(t => t.AllegroAuctionId == 333);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                ad = database.Auctions.First(t => t.AllegroAuctionId == 333);
-                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.Auction(new AuctionViewModel { Id = ad.Id, IsMonitored = true, IsVirtualItem = true });
-            }
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = ad.Id, IsMonitored = true, IsVirtualItem = true });
 
             // assert
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                Assert.IsType<RedirectToActionResult>(result);
-                RedirectToActionResult redirect = (RedirectToActionResult)result;
-                Auction auction = database.Auctions.Single(t => t.Id == ad.Id);
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Auction auction = _db.Auctions.Single(t => t.Id == ad.Id);
 
-                Assert.False(auction.IsVirtualItem);
-                Assert.True(auction.IsMonitored);
-                Assert.Equal("Auction", redirect.ActionName);
-                Assert.Equal(ad.Id, redirect.RouteValues["id"]);
-                Assert.Equal(AuctionMessageId.CannotSetVirtualItem, redirect.RouteValues["message"]);
-                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
-                _allegroProcessor.DidNotReceiveWithAnyArgs().StartProcessor(null);
-                _allegroProcessor.DidNotReceiveWithAnyArgs().StopProcessor(null);
-            }
+            Assert.False(auction.IsVirtualItem);
+            Assert.True(auction.IsMonitored);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(ad.Id, redirect.RouteValues["id"]);
+            Assert.Equal(AuctionMessageId.CannotSetVirtualItem, redirect.RouteValues["message"]);
+            Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            _allegroProcessor.DidNotReceiveWithAnyArgs().StartProcessor(null);
+            _allegroProcessor.DidNotReceiveWithAnyArgs().StopProcessor(null);
         }
 
         [Fact]
         public async Task AuctionPost_ShouldNotChangeMonitoringSetting_ForAuction4()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId2);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId2, controller, scope);
-                result = await controller.Auction(new AuctionViewModel { Id = 4, IsMonitored = false, IsVirtualItem = false });
-            }
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = 4, IsMonitored = false, IsVirtualItem = false });
 
             // assert
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                Assert.IsType<RedirectToActionResult>(result);
-                RedirectToActionResult redirect = (RedirectToActionResult) result;
-                Auction auction = database.Auctions.Single(t => t.Id == 4);
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult) result;
+            Auction auction = _db.Auctions.Single(t => t.Id == 4);
 
-                Assert.False(auction.IsMonitored);
-                Assert.Equal("Auction", redirect.ActionName);
-                Assert.Equal(4, redirect.RouteValues["id"]);
-                Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
-                Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
-                _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
-                _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
-            }
+            Assert.False(auction.IsMonitored);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(4, redirect.RouteValues["id"]);
+            Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
+            _allegroProcessor.DidNotReceive().StartProcessor(Arg.Any<Auction>());
+            _allegroProcessor.DidNotReceive().StopProcessor(Arg.Any<Auction>());
         }
 
         [Fact]
         public async Task Order_ShouldRedirectToIndex_ForModelError()
         {
-            // arange
-            CreateFakeData();
-
-            // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                controller.ModelState.AddModelError("error", "some error");
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(new AuctionViewModel { Id = 4, IsMonitored = false, IsVirtualItem = false });
-            }
-
-            // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Assert.Null(redirect.ControllerName);
-            Assert.Equal("Index", redirect.ActionName);
+            await TestForModelError(() => _controller.Auction(new AuctionViewModel {Id = 4, IsMonitored = false, IsVirtualItem = false}));
         }
 
         [Fact]
         public async Task Order_ShouldRedirectToIndex_ForNotExistingOrder()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Order(-1);
-            }
+            IActionResult result = await _controller.Order(-1);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -926,21 +650,11 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Order_ShouldRedirectToIndex_ForNotUserOrder()
         {
             // arrange
-            int orderId;
-            CreateFakeData();
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                orderId = database.Orders.First(t => t.Auction.UserId == UserId2).Id;
-            }
+            PopulateHttpContext(UserId);
+            int orderId = _db.Orders.First(t => t.Auction.UserId == UserId2).Id;
+
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Order(orderId);
-            }
+            IActionResult result = await _controller.Order(orderId);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -953,22 +667,11 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Order_ShouldReturnOrderView_ForOrder1()
         {
             // arrange
-            int orderId;
-            CreateFakeData();
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                orderId = database.Orders.First(t => t.AllegroDealId == 2).Id;
-            }
+            PopulateHttpContext(UserId);
+            int orderId = _db.Orders.First(t => t.AllegroDealId == 2).Id;
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Order(orderId);
-            }
+            IActionResult result = await _controller.Order(orderId);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -997,7 +700,7 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Add_ShouldFetch_TwoNewAuctions()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
             _allegroService.IsLoginRequired(UserId).Returns(false);
             _allegroService.GetNewAuctions().Returns(Task.FromResult(new List<NewAuction>
             {
@@ -1023,13 +726,7 @@ namespace AutoAllegro.Tests.Controllers
 
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Add(true);
-            }
+            IActionResult result = await _controller.Add(true);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -1046,30 +743,13 @@ namespace AutoAllegro.Tests.Controllers
         [Fact]
         public async Task AddPost_ShouldRedirectToIndex_ForModelError()
         {
-            // arrange
-            CreateFakeData();
-
-            // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                controller.ModelState.AddModelError("error", "some error");
-                result = await controller.Add(new AddViewModel());
-            }
-
-            // assert
-            Assert.IsType<RedirectToActionResult>(result);
-            RedirectToActionResult redirect = (RedirectToActionResult)result;
-            Assert.Null(redirect.ControllerName);
-            Assert.Equal("Index", redirect.ActionName);
+            await TestForModelError(() => _controller.Add(new AddViewModel()));
         }
         [Fact]
         public async Task AddPost_ShouldSaveAndUpdateFees_ForOneSelectedAuction()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
             _allegroService.IsLoginRequired(UserId).Returns(true);
             _allegroService.UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261)).Returns(t => t.Arg<Auction>())
                 .AndDoes(t =>
@@ -1105,66 +785,65 @@ namespace AutoAllegro.Tests.Controllers
             };
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Add(model);
-            }
+            IActionResult result = await _controller.Add(model);
 
             // assert
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                Assert.IsType<RedirectToActionResult>(result);
-                var redirect = (RedirectToActionResult) result;
-                Auction ad = database.Auctions.Single(t => t.AllegroAuctionId == 1261);
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = (RedirectToActionResult) result;
+            Auction ad = _db.Auctions.Single(t => t.AllegroAuctionId == 1261);
 
-                Assert.Equal(1, ad.Converter);
-                Assert.Equal(new DateTime(2012, 12, 3), ad.CreationDate);
-                Assert.Equal(new DateTime(2013, 5, 3), ad.EndDate);
-                Assert.False(ad.IsMonitored);
-                Assert.False(ad.IsVirtualItem);
-                Assert.Equal(55.1m, ad.PricePerItem);
-                Assert.Equal("test addd", ad.Title);
-                Assert.Equal(UserId, ad.UserId);
-                Assert.Equal(1m, ad.Fee);
-                Assert.Equal(52m, ad.OpenCost);
-                Assert.Null(redirect.ControllerName);
-                Assert.Equal("Index", redirect.ActionName);
+            Assert.Equal(1, ad.Converter);
+            Assert.Equal(new DateTime(2012, 12, 3), ad.CreationDate);
+            Assert.Equal(new DateTime(2013, 5, 3), ad.EndDate);
+            Assert.False(ad.IsMonitored);
+            Assert.False(ad.IsVirtualItem);
+            Assert.Equal(55.1m, ad.PricePerItem);
+            Assert.Equal("test addd", ad.Title);
+            Assert.Equal(UserId, ad.UserId);
+            Assert.Equal(1m, ad.Fee);
+            Assert.Equal(52m, ad.OpenCost);
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
 
-                await _allegroService.Received(1).Login(UserId, Arg.Any<AllegroCredentials>());
-                await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
-            }
+            await _allegroService.Received(1).Login(UserId, Arg.Any<AllegroCredentials>());
+            await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
         }
 
         [Fact]
         public async Task Add_ShouldNotFetch()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Add(false);
-            }
+            IActionResult result = await _controller.Add(false);
 
             // assert
             Assert.IsType<ViewResult>(result);
             Assert.IsType<AddViewModel>(((ViewResult)result).Model);
             await _allegroService.DidNotReceiveWithAnyArgs().GetNewAuctions();
         }
-        private void PopulateHttpContext(string userId, AuctionController controller, IServiceScope scope)
+        private async Task TestForModelError(Func<Task<IActionResult>> action)
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            _controller.ModelState.AddModelError("error", "some error");
+
+            // act
+            IActionResult result = await action();
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Assert.Null(redirect.ControllerName);
+            Assert.Equal("Index", redirect.ActionName);
+        }
+        private void PopulateHttpContext(string userId)
         {
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId) };
-            var httpContext = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext;
+            var httpContext = _scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext;
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
-            controller.ControllerContext.HttpContext = httpContext;
+            _controller.ControllerContext.HttpContext = httpContext;
         }
 
         protected override void CreateFakeData()
