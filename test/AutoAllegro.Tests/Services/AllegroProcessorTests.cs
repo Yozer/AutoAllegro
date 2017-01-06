@@ -11,6 +11,7 @@ using Hangfire.Common;
 using Hangfire.States;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using SoaAllegroService;
@@ -24,20 +25,18 @@ namespace AutoAllegro.Tests.Services
         private readonly IAllegroProcessor _processor;
         private readonly IAllegroService _allegroService;
         private readonly IEmailSender _emailService;
+        private readonly IServiceScope _scope;
+        private ApplicationDbContext _db;
 
         public AllegroProcessorTests()
         {
-            _scheduler = Substitute.For<IBackgroundJobClient>();
-            _allegroService = Substitute.For<IAllegroService>();
-            _emailService = Substitute.For<IEmailSender>();
-            //Services.AddTransient(t => _emailService);
-            //Services.AddTransient(t => _allegroService);
-            //Services.AddTransient<IBackgroundJobClient>(t => _scheduler);
-            //Services.AddSingleton<IAllegroProcessor, AllegroProcessor>();
+            _scope = CreateScope();
+            _scheduler = _scope.ServiceProvider.GetService<IBackgroundJobClient>();
+            _allegroService = _scope.ServiceProvider.GetService<IAllegroService>();
+            _emailService = _scope.ServiceProvider.GetService<IEmailSender>();
+            _db = GetDatabase(_scope);
 
-            //ServiceProvider = Services.BuildServiceProvider();
-            //InitDatabase();
-            _processor = ServiceProvider.GetService<IAllegroProcessor>();
+            _processor = new AllegroProcessor(_scheduler, _scope.ServiceProvider, Substitute.For<ILogger<AllegroProcessor>>());
         }
 
         [Fact]
@@ -59,12 +58,7 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            Auction ad;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                ad = database.Auctions.Single(t => t.Id == 4);
-            }
+            Auction ad = _db.Auctions.Single(t => t.Id == 4);
 
             // act & assert
             var ex = Assert.Throws<InvalidOperationException>(() => _processor.StartProcessor(ad));
@@ -75,12 +69,7 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            Auction ad;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                ad = database.Auctions.Single(t => t.Id == 1);
-            }
+            var ad = _db.Auctions.Single(t => t.Id == 1);
 
             // act & assert
             var ex = Assert.Throws<InvalidOperationException>(() => _processor.StopProcessor(ad));
@@ -92,12 +81,7 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            Auction ad;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                ad = database.Auctions.Single(t => t.Id == 1);
-            }
+            Auction ad = _db.Auctions.Single(t => t.Id == 1);
             _processor.StartProcessor(ad);
             _scheduler.ClearReceivedCalls();
 
@@ -247,16 +231,9 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            long userJournal;
-            Auction ad;
-            Buyer buyer;
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                userJournal = database.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-                ad = database.Auctions.Single(t => t.Id == 1);
-                buyer = database.Buyers.Single(t => t.Id == 1);
-            }
+            long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
+            Auction ad = _db.Auctions.Single(t => t.Id == 1);
+            Buyer buyer = _db.Buyers.Single(t => t.Id == 1);
 
             buyer.Orders = null;
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>
@@ -279,30 +256,28 @@ namespace AutoAllegro.Tests.Services
             _processor.Process(UserId, userJournal);
 
             // assert
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                _allegroService.Received().FetchBuyerData(ad.AllegroAuctionId, buyer.AllegroUserId);
-                Assert.Equal(3, _allegroService.ReceivedCalls().Count()); // login, journal, buyer data
+            var subScope = _scope.ServiceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            _db = subScope.ServiceProvider.GetService<ApplicationDbContext>();
+            _allegroService.Received().FetchBuyerData(ad.AllegroAuctionId, buyer.AllegroUserId);
+            Assert.Equal(3, _allegroService.ReceivedCalls().Count()); // login, journal, buyer data
 
-                Order order = database.Orders.Include(t => t.Buyer).Include(t => t.Auction).Single();
-                Assert.Equal(ad.AllegroAuctionId, order.Auction.AllegroAuctionId);
-                Assert.Equal(5, order.AllegroDealId);
-                Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), order.OrderDate);
-                Assert.Equal(OrderStatus.Created, order.OrderStatus);
-                Assert.Equal(3, order.Quantity);
-                Assert.Null(order.ShippingAddress);
-                Assert.Equal(buyer.AllegroUserId, order.Buyer.AllegroUserId);
+            Order order = _db.Orders.Include(t => t.Buyer).Include(t => t.Auction).Single();
+            Assert.Equal(ad.AllegroAuctionId, order.Auction.AllegroAuctionId);
+            Assert.Equal(5, order.AllegroDealId);
+            Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), order.OrderDate);
+            Assert.Equal(OrderStatus.Created, order.OrderStatus);
+            Assert.Equal(3, order.Quantity);
+            Assert.Null(order.ShippingAddress);
+            Assert.Equal(buyer.AllegroUserId, order.Buyer.AllegroUserId);
 
-                Event ev = database.Events.Single();
-                Assert.Equal(order.Id, ev.OrderId);
-                Assert.Equal(152, ev.AllegroEventId);
-                Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), ev.EventTime);
-                Assert.Equal(EventType.DealCreated, ev.EventType);
+            Event ev = _db.Events.Single();
+            Assert.Equal(order.Id, ev.OrderId);
+            Assert.Equal(152, ev.AllegroEventId);
+            Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), ev.EventTime);
+            Assert.Equal(EventType.DealCreated, ev.EventType);
 
-                User user = database.Users.Single(t => t.Id == UserId);
-                Assert.Equal(152, user.AllegroJournalStart);
-            }
+            User user = _db.Users.Single(t => t.Id == UserId);
+            Assert.Equal(152, user.AllegroJournalStart);
         }
 
         [Fact]
@@ -310,9 +285,6 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            long userJournal;
-            Auction ad;
-            Buyer buyer;
             Order order = new Order
             {
                 AllegroDealId = 512,
@@ -320,16 +292,12 @@ namespace AutoAllegro.Tests.Services
                 OrderStatus = OrderStatus.Created,
                 Quantity = 5
             };
-            using (var scope = CreateScope())
-            {
-                var database = GetDatabase(scope);
-                userJournal = database.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-                ad = database.Auctions.Single(t => t.Id == 1);
-                buyer = database.Buyers.Single(t => t.Id == 1);
-                buyer.Orders.Add(order);
-                order.Auction = ad;
-                database.SaveChanges();
-            }
+            long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
+            Auction ad = _db.Auctions.Single(t => t.Id == 1);
+            Buyer buyer = _db.Buyers.Single(t => t.Id == 1);
+            buyer.Orders.Add(order);
+            order.Auction = ad;
+            _db.SaveChanges();
 
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>
             {
@@ -397,7 +365,7 @@ namespace AutoAllegro.Tests.Services
             _processor.Process(UserId, userJournal);
 
             // assert
-            using (var scope = CreateScope())
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
             {
                 var database = GetDatabase(scope);
                 _allegroService.Received(1).GetTransactionDetails(5111L, Arg.Is<Order>(t => t.AllegroDealId == 512));
@@ -448,8 +416,6 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            long userJournal;
-            Auction ad;
             Buyer buyer = new Buyer
             {
                 Email = "wp@wp.pl",
@@ -470,36 +436,32 @@ namespace AutoAllegro.Tests.Services
                 OrderStatus = OrderStatus.Paid,
                 Quantity = 3
             };
-            using (var scope = CreateScope())
+            long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
+            Auction ad = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
+            ad.Orders.Add(order);
+            ad.Orders.Add(order2);
+
+            ad.GameCodes = new List<GameCode>
             {
-                var database = GetDatabase(scope);
-                userJournal = database.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-                ad = database.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
-                ad.Orders.Add(order);
-                ad.Orders.Add(order2);
+                new GameCode {Code = "xxx"},
+                new GameCode {Code = "yyy"},
+                new GameCode {Code = "zzz"},
+                new GameCode {Code = "ggg"},
+                new GameCode {Code = "fff"},
+                new GameCode {Code = "zzz"},
+            };
+            ad.Converter = 2;
+            ad.User.VirtualItemSettings = new VirtualItemSettings
+            {
+                DisplayName = "DisplayName",
+                MessageSubject= "subject",
+                MessageTemplate = "Hi {FIRST_NAME} {LAST_NAME}! You bought {QUANTITY}.<br>Your codes:<br>{ITEM}",
+                ReplyTo = "www@wp.pl"
+            };
 
-                ad.GameCodes = new List<GameCode>
-                {
-                    new GameCode {Code = "xxx"},
-                    new GameCode {Code = "yyy"},
-                    new GameCode {Code = "zzz"},
-                    new GameCode {Code = "ggg"},
-                    new GameCode {Code = "fff"},
-                    new GameCode {Code = "zzz"},
-                };
-                ad.Converter = 2;
-                ad.User.VirtualItemSettings = new VirtualItemSettings
-                {
-                    DisplayName = "DisplayName",
-                    MessageSubject= "subject",
-                    MessageTemplate = "Hi {FIRST_NAME} {LAST_NAME}! You bought {QUANTITY}.<br>Your codes:<br>{ITEM}",
-                    ReplyTo = "www@wp.pl"
-                };
-
-                order.Buyer = buyer;
-                order2.Buyer = buyer;
-                database.SaveChanges();
-            }
+            order.Buyer = buyer;
+            order2.Buyer = buyer;
+            _db.SaveChanges();
 
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
 
@@ -507,7 +469,7 @@ namespace AutoAllegro.Tests.Services
             _processor.Process(UserId, userJournal);
 
             // assert
-            using (var scope = CreateScope())
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
             {
                 var database = GetDatabase(scope);
                 Assert.Equal(2, _allegroService.ReceivedCalls().Count()); // login, journal
@@ -534,8 +496,6 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            long userJournal;
-            Auction ad;
             Buyer buyer = new Buyer
             {
                 Email = "wp@wp.pl",
@@ -549,26 +509,22 @@ namespace AutoAllegro.Tests.Services
                 OrderStatus = OrderStatus.Paid,
                 Quantity = 1
             };
-            using (var scope = CreateScope())
+            long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
+            Auction ad = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
+            ad.Orders.Add(order);
+
+            ad.GameCodes = new List<GameCode>
             {
-                var database = GetDatabase(scope);
-                userJournal = database.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-                ad = database.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
-                ad.Orders.Add(order);
+                new GameCode {Code = "xxx"},
+            };
+            ad.User.VirtualItemSettings = new VirtualItemSettings
+            {
+                MessageSubject = "subject",
+                MessageTemplate = "Hi {FIRST_NAME} {LAST_NAME}! You bought {QUANTITY}.<br>Your codes:<br>{ITEM}",
+            };
 
-                ad.GameCodes = new List<GameCode>
-                {
-                    new GameCode {Code = "xxx"},
-                };
-                ad.User.VirtualItemSettings = new VirtualItemSettings
-                {
-                    MessageSubject = "subject",
-                    MessageTemplate = "Hi {FIRST_NAME} {LAST_NAME}! You bought {QUANTITY}.<br>Your codes:<br>{ITEM}",
-                };
-
-                order.Buyer = buyer;
-                database.SaveChanges();
-            }
+            order.Buyer = buyer;
+            _db.SaveChanges();
 
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
             _emailService.SendEmailAsync(null, null, null).ThrowsForAnyArgs(new Exception());
@@ -577,7 +533,7 @@ namespace AutoAllegro.Tests.Services
             _processor.Process(UserId, userJournal);
 
             // assert
-            using (var scope = CreateScope())
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
             {
                 var database = GetDatabase(scope);
                 Assert.Equal(2, _allegroService.ReceivedCalls().Count()); // login, journal

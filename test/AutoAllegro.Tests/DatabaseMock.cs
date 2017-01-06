@@ -4,6 +4,7 @@ using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -46,7 +47,9 @@ namespace AutoAllegro.Tests
 
             _services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
-            _services.AddTransient(t => Substitute.For<IAllegroService>());
+            _services.AddSingleton(t => Substitute.For<IAllegroService>());
+            _services.AddSingleton(t => Substitute.For<IEmailSender>());
+            _services.AddSingleton(t => Substitute.For<IBackgroundJobClient>());
             _services.AddSingleton(t => Substitute.For<IAllegroProcessor>());
 
 
