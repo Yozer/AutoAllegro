@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using AutoAllegro.Helpers.Attributes;
 
 namespace AutoAllegro.Models.AuctionViewModels
@@ -17,5 +18,16 @@ namespace AutoAllegro.Models.AuctionViewModels
         public bool VirtualItem { get; set; }
         public int AuctionId { get; set; }
         public List<CodeViewModel> GameCodes { get; set; } = new List<CodeViewModel>();
+        public OrderViewMessage? Message { get; set; }
+    }
+
+    public enum OrderViewMessage
+    {
+        [Display(Name = "Kody zwolnione pomyślnie.")]
+        ReleaseCodesSuccess,
+        [Display(Name = "Kod wygnerowany pomyślnie.")]
+        GenerateCodeSuccess,
+        [Display(Name = "Błąd. Dla tej aukcji nie ma już dostępnych kodów. Dodaj nowe.")]
+        GenerateCodeNoCodesAvailable
     }
 }

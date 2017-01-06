@@ -9,6 +9,10 @@
     <div class="row">
         <div class="col-md-12">
             <div class="jumbotron">
+                @if (Model.Message != null)
+                {
+                    <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
+                }
                 <h1>Zamówienie nr: #@Model.Id</h1>
                 <div class="row">
                     <div class="col-md-6">
@@ -22,7 +26,6 @@
                         <p><strong>Data zamówienia:</strong> @Html.DisplayFor(t => t.OrderDate)</p>
                     </div>
                 </div>
-                <p><a class="btn btn-primary btn-lg">Zobacz na allegro</a></p>
                 <p><a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Przejdź do aukcji</a></p>
             </div>
         </div>
@@ -101,12 +104,22 @@
                         @if (Model.VirtualItem)
                         {
                             @if (Model.GameCodes.Count > 0)
-                                    {
-                                 //tutaj jakiś modal
+                            {
+                                 //tutaj jakiś modal z listą kodów - @Model.GameCodes
                                  <a class="list-group-item">Zobacz kody</a>
-                             }
-                            <a href="#" class="list-group-item">Wygeneruj dodatkowy kod</a>
-                            <a href="#" class="list-group-item">Zwolnij kody</a>
+                            }
+                            @if (Model.OrderStatus == OrderStatus.Done)
+                            {
+                                // tutaj też modale z potwierdzeniami czy na pewno chcesz to zrobić
+                                <form asp-action="GetExtraCode">
+                                    @Html.HiddenFor(t => t.Id)
+                                    <button type="submit" class="list-group-item">Wygeneruj dodatkowy kod</button>
+                                </form>
+                                <form asp-action="ReleaseCodes">
+                                    @Html.HiddenFor(t => t.Id)
+                                    <button type="submit" class="list-group-item">Zwolnij kody</button>
+                                </form>
+                            }
                         }
                         else
                         {

@@ -258,18 +258,18 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
         }
         [Fact]
-        public async Task DeleteCode_ShouldRedirectToCodes_CannotDeleteSoldCode()
+        public async Task DeleteCode_ShouldRedirectToIndex_CodeAlreadySold()
         {
             // arrange
             CreateFakeData();
-            GameCode code;
 
             // act
             IActionResult result;
+            GameCode code;
             using (var scope = CreateScope())
             {
                 var database = GetDatabase(scope);
-                code = database.Auctions.Include(t => t.GameCodes).First(t => t.AllegroAuctionId == 111).GameCodes.First(t => t.OrderId != null);
+                code = database.Auctions.Include(t => t.GameCodes).ThenInclude(t => t.Order).First(t => t.AllegroAuctionId == 111).GameCodes.First(t => t.OrderId != null);
                 var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
                 PopulateHttpContext(UserId, controller, scope);
                 result = await controller.DeleteCode(code.Id);
@@ -281,6 +281,137 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Codes", redirect.ActionName);
             Assert.Equal(code.AuctionId, redirect.RouteValues["id"]);
             Assert.Equal(CodeViewMessage.ErrorCodeSold, redirect.RouteValues["message"]);
+        }
+        [Fact]
+        public async Task GetExtraCode_ShouldRedirectToIndex_NoCodesAvailable()
+        {
+            using (var scope = CreateScope())
+            {
+                // arrange
+                CreateFakeData();
+                var database = GetDatabase(scope);
+                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+                var codes = database.GameCodes.Where(t => t.Auction.AllegroAuctionId == 111 && t.Order == null);
+                foreach (GameCode code in codes)
+                {
+                    order.GameCodes.Add(code);
+                }
+                database.SaveChanges();
+
+                // act
+                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                IActionResult result = await controller.GetExtraCode(order.Id);
+
+                // assert
+                Assert.IsType<RedirectToActionResult>(result);
+                var redirect = ((RedirectToActionResult) result);
+                Assert.Equal("Order", redirect.ActionName);
+                Assert.Equal(order.Id, redirect.RouteValues["id"]);
+                Assert.Equal(OrderViewMessage.GenerateCodeNoCodesAvailable, redirect.RouteValues["message"]);
+            }
+        }
+        [Fact]
+        public async Task GetExtraCode_ShouldRedirectToIndex_NotOurAd()
+        {
+            using (var scope = CreateScope())
+            {
+                // arrange
+                CreateFakeData();
+                var database = GetDatabase(scope);
+                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+
+                // act
+                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId2, controller, scope);
+                IActionResult result = await controller.GetExtraCode(order.Id);
+
+                // assert
+                Assert.IsType<RedirectToActionResult>(result);
+                var redirect = ((RedirectToActionResult)result);
+                Assert.Equal("Index", redirect.ActionName);
+            }
+        }
+        [Fact]
+        public async Task GetExtraCode_ShouldGenerateAdditionalCode()
+        {
+            using (var scope = CreateScope())
+            {
+                // arrange
+                CreateFakeData();
+                var database = GetDatabase(scope);
+                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+
+                // act
+                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                IActionResult result = await controller.GetExtraCode(order.Id);
+
+                // assert
+                Assert.IsType<RedirectToActionResult>(result);
+                var redirect = ((RedirectToActionResult)result);
+                Assert.Equal("Order", redirect.ActionName);
+                Assert.Equal(order.Id, redirect.RouteValues["id"]);
+                Assert.Equal(OrderViewMessage.GenerateCodeSuccess, redirect.RouteValues["message"]);
+                order = database.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+
+                Assert.Equal(2, order.GameCodes.Count);
+                Assert.Equal("yyy", order.GameCodes.ElementAt(0).Code);
+                Assert.Equal("xxx", order.GameCodes.ElementAt(1).Code);
+            }
+        }
+        [Fact]
+        public async Task ReleaseCodes_ShouldRedirectToIndex_NotOurAd()
+        {
+            using (var scope = CreateScope())
+            {
+                // arrange
+                CreateFakeData();
+                var database = GetDatabase(scope);
+                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+
+                // act
+                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId2, controller, scope);
+                IActionResult result = await controller.ReleaseCodes(order.Id);
+
+                // assert
+                Assert.IsType<RedirectToActionResult>(result);
+                var redirect = ((RedirectToActionResult)result);
+                Assert.Equal("Index", redirect.ActionName);
+            }
+        }
+        [Fact]
+        public async Task ReleaseCodes_ShouldReleaseAllCodes()
+        {
+            using (var scope = CreateScope())
+            {
+                // arrange
+                CreateFakeData();
+                var database = GetDatabase(scope);
+                var order = database.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+                var codes = database.GameCodes.Where(t => t.Auction.AllegroAuctionId == 111 && t.Order == null);
+                foreach (GameCode code in codes)
+                {
+                    order.GameCodes.Add(code);
+                }
+                database.SaveChanges();
+
+                // act
+                var controller = new AuctionController(database, GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
+                PopulateHttpContext(UserId, controller, scope);
+                IActionResult result = await controller.ReleaseCodes(order.Id);
+
+                // assert
+                Assert.IsType<RedirectToActionResult>(result);
+                var redirect = ((RedirectToActionResult)result);
+                Assert.Equal("Order", redirect.ActionName);
+                Assert.Equal(order.Id, redirect.RouteValues["id"]);
+                Assert.Equal(OrderViewMessage.ReleaseCodesSuccess, redirect.RouteValues["message"]);
+
+                order = database.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+                Assert.Equal(0, order.GameCodes.Count);
+            }
         }
         [Fact]
         public async Task DeleteCode_DeleteCodeSuccessfully()
