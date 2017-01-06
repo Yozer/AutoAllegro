@@ -23,11 +23,13 @@ namespace AutoAllegro.Models.AuctionViewModels
 
     public enum OrderViewMessage
     {
-        [Display(Name = "Kody zwolnione pomyślnie.")]
-        ReleaseCodesSuccess,
+        [Display(Name = "Zamówienie anulowano pomyślnie.")]
+        OrderCancelSuccess,
         [Display(Name = "Kod wygnerowany pomyślnie.")]
         GenerateCodeSuccess,
         [Display(Name = "Błąd. Dla tej aukcji nie ma już dostępnych kodów. Dodaj nowe.")]
-        GenerateCodeNoCodesAvailable
+        GenerateCodeNoCodesAvailable,
+        [Display(Name = "Błąd. Nie możesz anulować już anulowanego zamówienia.")]
+        OrderCancelFail
     }
 }

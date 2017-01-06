@@ -264,18 +264,29 @@ namespace AutoAllegro.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReleaseCodes(int id)
+        public async Task<IActionResult> CancelOrder(int id)
         {
-            var order = await _dbContext.Orders.Include(t => t.GameCodes).FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId() && t.Auction.IsVirtualItem);
+            var order = await _dbContext.Orders.Include(t => t.Auction).Include(t => t.GameCodes).FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId());
             if (order == null)
                 return RedirectToAction(nameof(Index));
 
-            foreach (var code in order.GameCodes)
+            if (order.OrderStatus != OrderStatus.Canceled)
             {
-                code.Order = null;
+                foreach (var code in order.GameCodes)
+                {
+                    code.Order = null;
+                }
+
+                // TODO zwrot prowizji tutaj zrobiæ!!!
+                order.OrderStatus = OrderStatus.Canceled;
+                await _dbContext.SaveChangesAsync();
+                return RedirectToAction(nameof(Order), new {id, message = OrderViewMessage.OrderCancelSuccess});
             }
-            await _dbContext.SaveChangesAsync();
-            return RedirectToAction(nameof(Order), new { id = id, message = OrderViewMessage.ReleaseCodesSuccess });
+            else
+            {
+                return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.OrderCancelFail });
+            }
+
         }
         private async Task LoginToAllegro()
         {

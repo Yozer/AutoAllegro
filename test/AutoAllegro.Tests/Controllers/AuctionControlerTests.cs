@@ -295,14 +295,14 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("xxx", order.GameCodes.ElementAt(1).Code);
         }
         [Fact]
-        public async Task ReleaseCodes_ShouldRedirectToIndex_NotOurAd()
+        public async Task CancelOrder_ShouldRedirectToIndex_NotOurAd()
         {
             // arrange
             PopulateHttpContext(UserId2);
             var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
 
             // act
-            IActionResult result = await _controller.ReleaseCodes(order.Id);
+            IActionResult result = await _controller.CancelOrder(order.Id);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -310,7 +310,7 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Index", redirect.ActionName);
         }
         [Fact]
-        public async Task ReleaseCodes_ShouldReleaseAllCodes()
+        public async Task CancelOrder_ShouldReleaseAllCodesAndChangeOrderStatus()
         {
             // arrange
             PopulateHttpContext(UserId);
@@ -323,17 +323,41 @@ namespace AutoAllegro.Tests.Controllers
             _db.SaveChanges();
 
             // act
-            IActionResult result = await _controller.ReleaseCodes(order.Id);
+            IActionResult result = await _controller.CancelOrder(order.Id);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
             var redirect = ((RedirectToActionResult)result);
             Assert.Equal("Order", redirect.ActionName);
             Assert.Equal(order.Id, redirect.RouteValues["id"]);
-            Assert.Equal(OrderViewMessage.ReleaseCodesSuccess, redirect.RouteValues["message"]);
+            Assert.Equal(OrderViewMessage.OrderCancelSuccess, redirect.RouteValues["message"]);
 
             order = _db.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
             Assert.Equal(0, order.GameCodes.Count);
+            Assert.Equal(OrderStatus.Canceled, order.OrderStatus);
+        }
+        [Fact]
+        public async Task CancelOrder_ShouldRedirectToOrder_CannotCancelAlreadyCanceledOrder()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            order.OrderStatus = OrderStatus.Canceled;
+            _db.SaveChanges();
+
+            // act
+            IActionResult result = await _controller.CancelOrder(order.Id);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.OrderCancelFail, redirect.RouteValues["message"]);
+
+            order = _db.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+            Assert.Equal(1, order.GameCodes.Count);
+            Assert.Equal(OrderStatus.Canceled, order.OrderStatus);
         }
         [Fact]
         public async Task DeleteCode_DeleteCodeSuccessfully()

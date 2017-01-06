@@ -115,16 +115,21 @@
                                     @Html.HiddenFor(t => t.Id)
                                     <button type="submit" class="list-group-item">Wygeneruj dodatkowy kod</button>
                                 </form>
-                                <form asp-action="ReleaseCodes">
-                                    @Html.HiddenFor(t => t.Id)
-                                    <button type="submit" class="list-group-item">Zwolnij kody</button>
-                                </form>
                             }
                         }
                         else
                         {
+                            // NALEPA!!!
                             <a href="#" class="list-group-item">Wygeneruj przesyłkę</a>
                             <a href="#" class="list-group-item">Sprawdź status paczki</a>
+                        }
+                        @if (Model.OrderStatus != OrderStatus.Canceled)
+                        {
+                            // tutaj też modale z potwierdzeniami czy na pewno chcesz to zrobić
+                            <form asp-action="CancelOrder">
+                                @Html.HiddenFor(t => t.Id)
+                                <button type="submit" class="list-group-item">Anuluj zamówienie</button>
+                            </form>
                         }
                     </div>
                 </div>
