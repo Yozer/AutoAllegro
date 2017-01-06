@@ -86,6 +86,7 @@ namespace AutoAllegro
             // processors
             services.AddTransient<IAllegroTransactionProcessor, AllegroTransactionProcessor>();
             services.AddTransient<IAllegroEmailProcessor, AllegroEmailProcessor>();
+            services.AddTransient<IAllegroRefundProcessor, AllegroRefundProcessor>();
 
             services.AddHangfire(t => t.UseMemoryStorage());
             services.AddAutoMapper(ConfigureAutoMapper);
@@ -201,6 +202,8 @@ namespace AutoAllegro
                 allegroProcessor.Init();
                 var emailProcessor = scope.ServiceProvider.GetService<IAllegroEmailProcessor>();
                 emailProcessor.Init();
+                var refundProcessor = scope.ServiceProvider.GetService<IAllegroRefundProcessor>();
+                refundProcessor.Init();
             }
         }
 
