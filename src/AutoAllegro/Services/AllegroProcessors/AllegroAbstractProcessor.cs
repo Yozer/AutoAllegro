@@ -48,6 +48,11 @@ namespace AutoAllegro.Services.AllegroProcessors
             {
                 _logger.LogError(1, e, "There was a communication problem.");
             }
+            catch (Exception e)
+            {
+                _logger.LogCritical(1, e, "Critical error.");
+                throw;
+            }
 
             _backgroundJob.Schedule<T>(t => t.Process(), _interval);
         }

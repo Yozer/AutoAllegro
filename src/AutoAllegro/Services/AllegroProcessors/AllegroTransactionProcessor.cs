@@ -7,6 +7,7 @@ using AutoAllegro.Models;
 using AutoAllegro.Services.Interfaces;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AutoAllegro.Services.AllegroProcessors

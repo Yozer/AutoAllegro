@@ -159,7 +159,6 @@ namespace AutoAllegro
                     template: "{controller=Auction}/{action=Index}/{id?}");
             });
 
-            GlobalConfiguration.Configuration.UseActivator(new ContainerJobActivator(app.ApplicationServices));
             InitAllegroProcessor(app.ApplicationServices);
             InitAllegroRefundReasons(app.ApplicationServices);
         }
@@ -221,46 +220,6 @@ namespace AutoAllegro
             cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
             cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().ReverseMap();
             cf.CreateMap<CodeViewModel, GameCode>().ReverseMap();
-        }
-    }
-
-    public class ContainerJobActivator : JobActivator
-    {
-        private readonly IServiceProvider _serviceProvider;
-
-        public ContainerJobActivator(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
-
-        public override object ActivateJob(Type type)
-        {
-            return _serviceProvider.GetService(type);
-        }
-
-        public override JobActivatorScope BeginScope(JobActivatorContext context)
-        {
-            return new MyScope(_serviceProvider.CreateScope());
-        }
-
-        class MyScope : JobActivatorScope
-        {
-            private readonly IServiceScope _serviceScope;
-
-            public MyScope(IServiceScope lifetimeScope)
-            {
-                _serviceScope = lifetimeScope;
-            }
-
-            public override object Resolve(Type type)
-            {
-                return _serviceScope.ServiceProvider.GetService(type);
-            }
-
-            public override void DisposeScope()
-            {
-                _serviceScope.Dispose();
-            }
         }
     }
 }
