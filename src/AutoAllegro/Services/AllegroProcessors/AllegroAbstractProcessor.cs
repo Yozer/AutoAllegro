@@ -48,6 +48,10 @@ namespace AutoAllegro.Services.AllegroProcessors
             {
                 _logger.LogError(1, e, "There was a communication problem.");
             }
+            catch (AggregateException e)
+            {
+                _logger.LogError(1, e, "AggregateException from allegro service.");
+            }
             catch (Exception e)
             {
                 _logger.LogCritical(1, e, "Critical error.");

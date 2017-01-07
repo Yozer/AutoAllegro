@@ -317,7 +317,7 @@ namespace AutoAllegro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsPaid(int id)
         {
-            var order = await _dbContext.Orders.FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId() && t.OrderStatus == OrderStatus.Created);
+            var order = await _dbContext.Orders.FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId() && t.OrderStatus == OrderStatus.Created || t.OrderStatus == OrderStatus.Canceled);
             if (order == null)
                 return RedirectToAction(nameof(Index));
 

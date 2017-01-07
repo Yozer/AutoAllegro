@@ -230,7 +230,8 @@ namespace AutoAllegro.Services
                 feToUserId = userId,
                 feOp = 2,
                 feUseCommentTemplate = 1,
-                feCommentType = "POS"
+                feCommentType = "POS",
+                feComment = "Transakcja przebiegła pomyślnie."
             }).Result.feedbackId;
 
         }

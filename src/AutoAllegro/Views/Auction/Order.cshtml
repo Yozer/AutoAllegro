@@ -27,7 +27,8 @@
                     </div>
                 </div>
                 <p><a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Przejdź do aukcji</a></p>
-                @if (Model.OrderStatus == OrderStatus.Created)
+                <p><a asp-action="Order" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Odśwież</a></p>
+                @if (Model.OrderStatus == OrderStatus.Created || Model.OrderStatus == OrderStatus.Canceled)
                 {
                     // TUTAJ MODAL Z PYTANIEM CZY NA PEWNO CHCESZ TO ZROBI (nie da się tego cofnąć i automatycznie wyśle kody)
                     <form asp-action="MarkAsPaid">
