@@ -76,9 +76,9 @@ namespace AutoAllegro
                 Converter = 1,
                 GameCodes = new List<GameCode>()
             };
-            for (int i = 0; i < 1000; ++i)
+            for (int i = 0; i < 10; ++i)
             {
-                auction1.GameCodes.Add(new GameCode { Code = $"code - {i} - xxxx", AddDate = DateTime.Now });
+                auction1.GameCodes.Add(new GameCode { Code = $"code - {i}", AddDate = DateTime.Now });
             }
 
             var auction2 = new Auction

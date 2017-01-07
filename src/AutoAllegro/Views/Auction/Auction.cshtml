@@ -94,7 +94,16 @@
                             <div class="col-sm-offset-2 col-sm-10">
                                 <div class="checkbox">
                                     <label>
-                                        <input name="automatic_comments" type="checkbox"> Automatycznie wystawiaj komentarze
+                                        <input asp-for="@Model.AutomaticFeedbackEnabled"> Automatycznie wystawiaj komentarze
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        <input asp-for="@Model.AutomaticRefundsEnabled"> Automatycznie twórz zwroty prowizji dla nie opłaconych zamówień
                                     </label>
                                 </div>
                             </div>
@@ -120,6 +129,7 @@
                                 </div>
                             </div>
                         </div>
+
 
                         <div id="non-material-wrapper" class="@(Model.IsVirtualItem ? string.Empty : "hidden")">
                             <p><a asp-action="AddCodes" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Dodaj nowe kody</a></p>

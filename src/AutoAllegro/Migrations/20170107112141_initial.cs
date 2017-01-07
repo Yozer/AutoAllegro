@@ -169,6 +169,8 @@ namespace AutoAllegro.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     AllegroAuctionId = table.Column<long>(nullable: false),
+                    AutomaticFeedbackEnabled = table.Column<bool>(nullable: false),
+                    AutomaticRefundsEnabled = table.Column<bool>(nullable: false),
                     Converter = table.Column<int>(nullable: false),
                     CreationDate = table.Column<DateTime>(nullable: false),
                     EndDate = table.Column<DateTime>(nullable: false),

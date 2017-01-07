@@ -35,6 +35,10 @@ namespace AutoAllegro.Migrations
 
                     b.Property<long>("AllegroAuctionId");
 
+                    b.Property<bool>("AutomaticFeedbackEnabled");
+
+                    b.Property<bool>("AutomaticRefundsEnabled");
+
                     b.Property<int>("Converter");
 
                     b.Property<DateTime>("CreationDate");

@@ -9,7 +9,7 @@ using AutoAllegro.Models;
 namespace AutoAllegro.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20170106155752_initial")]
+    [Migration("20170107112141_initial")]
     partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,6 +35,10 @@ namespace AutoAllegro.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<long>("AllegroAuctionId");
+
+                    b.Property<bool>("AutomaticFeedbackEnabled");
+
+                    b.Property<bool>("AutomaticRefundsEnabled");
 
                     b.Property<int>("Converter");
 

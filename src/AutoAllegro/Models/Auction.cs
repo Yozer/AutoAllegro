@@ -11,11 +11,13 @@ namespace AutoAllegro.Models
         public DateTime CreationDate { get; set; }
         public DateTime EndDate { get; set; }
         public decimal PricePerItem { get; set; }
-        public bool IsMonitored { get; set; }
         public int Converter { get; set; }
         public decimal Fee { get; set; }
         public decimal OpenCost { get; set; }
         public bool IsVirtualItem { get; set; }
+        public bool IsMonitored { get; set; }
+        public bool AutomaticFeedbackEnabled { get; set; }
+        public bool AutomaticRefundsEnabled { get; set; }
 
         public string UserId { get; set; }
         public virtual User User { get; set; }

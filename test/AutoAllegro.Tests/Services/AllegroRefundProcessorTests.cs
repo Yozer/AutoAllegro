@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
+using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Services;
@@ -10,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace AutoAllegro.Tests.Services
@@ -86,6 +89,8 @@ namespace AutoAllegro.Tests.Services
             Auction ad1 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
             Auction ad2 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 247);
             Auction ad3 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 333);
+            ad1.AutomaticRefundsEnabled = true;
+            ad3.AutomaticRefundsEnabled = true;
             ad1.Orders.Add(order);
             ad1.Orders.Add(order2);
             ad2.Orders.Add(order3);
@@ -121,6 +126,231 @@ namespace AutoAllegro.Tests.Services
                 Assert.Equal(103, order4.AllegroRefundId);
                 Assert.Equal(OrderStatus.Paid, order5.OrderStatus);
                 Assert.Null(order5.AllegroRefundId);
+            }
+        }
+        [Fact]
+        public void Process_ShouldNotProcessFreshOrders()
+        {
+            // arrange
+            CreateFakeData();
+            Buyer buyer = new Buyer
+            {
+                Email = "wp@wp.pl",
+                FirstName = "firstName",
+                LastName = "lastName"
+            };
+            Order order = new Order
+            {
+                AllegroDealId = 512,
+                OrderDate = DateTime.Now.Subtract(TimeSpan.FromDays(5)),
+                OrderStatus = OrderStatus.Created,
+                Quantity = 1,
+                Buyer = buyer
+            };
+            Auction ad1 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
+            ad1.AutomaticRefundsEnabled = true;
+            ad1.Orders.Add(order);
+            _db.SaveChanges();
+
+            // act
+            _processor.Process();
+
+            // assert
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var database = GetDatabase(scope);
+
+                order = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 512);
+
+                Assert.Equal(OrderStatus.Created, order.OrderStatus);
+                Assert.Null(order.AllegroRefundId);
+                _allegroService.DidNotReceiveWithAnyArgs().IsLoginRequired(null);
+                _allegroService.DidNotReceiveWithAnyArgs().SendRefund(null, 0);
+            }
+        }
+        [Fact]
+        public void Process_ShouldNotProcessAlreadyPaidOrders()
+        {
+            // arrange
+            CreateFakeData();
+            Buyer buyer = new Buyer
+            {
+                Email = "wp@wp.pl"
+            };
+            Order order = new Order
+            {
+                AllegroDealId = 512,
+                OrderDate = DateTime.Now.Subtract(TimeSpan.FromDays(12)),
+                OrderStatus = OrderStatus.Paid,
+                Quantity = 1,
+                Buyer = buyer
+            };
+            Auction ad1 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 7731);
+            ad1.AutomaticRefundsEnabled = true;
+            ad1.Orders.Add(order);
+            _db.SaveChanges();
+
+            // act
+            _processor.Process();
+
+            // assert
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var database = GetDatabase(scope);
+
+                order = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 512);
+
+                Assert.Equal(OrderStatus.Paid, order.OrderStatus);
+                Assert.Null(order.AllegroRefundId);
+                _allegroService.DidNotReceiveWithAnyArgs().IsLoginRequired(null);
+                _allegroService.DidNotReceiveWithAnyArgs().SendRefund(null, 0);
+            }
+        }
+        [Fact]
+        public void Process_ShouldScheduleNextJobInCaseOfException()
+        {
+            // arrange
+            CreateFakeData();
+            Buyer buyer = new Buyer
+            {
+                Email = "wp@wp.pl"
+            };
+            Order order = new Order
+            {
+                AllegroDealId = 512,
+                OrderDate = DateTime.Now.Subtract(TimeSpan.FromDays(12)),
+                OrderStatus = OrderStatus.Created,
+                Buyer = buyer
+            };
+            Auction ad1 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 7731);
+            ad1.AutomaticRefundsEnabled = true;
+            ad1.Orders.Add(order);
+            _db.SaveChanges();
+
+            _allegroService.IsLoginRequired(UserId).Returns(true);
+            int i = 0;
+            _allegroService.Login(null, null).ReturnsForAnyArgs(t =>
+            {
+                ++i;
+                if (i == 1)
+                    throw new CommunicationException("ex");
+                else if (i == 2)
+                    throw new FaultException(new FaultReason("xx"), new FaultCode("x"), "yy");
+                else if (i == 3)
+                    throw new TimeoutException();
+
+                return Task.CompletedTask;
+            });
+
+            // act
+            _processor.Process();
+            _processor.Process();
+            _processor.Process();
+
+            // assert
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var database = GetDatabase(scope);
+
+                order = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 512);
+
+                Assert.Equal(OrderStatus.Created, order.OrderStatus);
+                Assert.Null(order.AllegroRefundId);
+                _allegroService.DidNotReceiveWithAnyArgs().SendRefund(null, 0);
+                _scheduler.ReceivedWithAnyArgs(3).Create(null, null);
+            }
+        }
+        [Fact]
+        public void Process_ShouldLoginToAllegroServiceIfLoginRequired()
+        {
+            // arrange
+            CreateFakeData();
+            Buyer buyer = new Buyer
+            {
+                Email = "wp@wp.pl"
+            };
+            Order order = new Order
+            {
+                AllegroDealId = 512,
+                OrderDate = DateTime.Now.Subtract(TimeSpan.FromDays(12)),
+                OrderStatus = OrderStatus.Created,
+                Buyer = buyer
+            };
+            Auction ad1 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 7731);
+            ad1.AutomaticRefundsEnabled = true;
+            ad1.Orders.Add(order);
+            _db.SaveChanges();
+
+            _allegroService.SendRefund(Arg.Is<Order>(t => t.AllegroDealId == 512), 1).Returns(51);
+            _allegroService.IsLoginRequired(UserId).Returns(true);
+            _allegroService
+                .Login(UserId, Arg.Is<AllegroCredentials>(t => t.ApiKey == ad1.User.AllegroKey && t.Pass == ad1.User.AllegroHashedPass && t.UserName == ad1.User.AllegroUserName))
+                .ReturnsForAnyArgs(Task.CompletedTask);
+
+            // act
+            _processor.Process();
+
+            // assert
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var database = GetDatabase(scope);
+
+                order = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 512);
+
+                Assert.Equal(OrderStatus.Canceled, order.OrderStatus);
+                Assert.Equal(51, order.AllegroRefundId);
+                _allegroService.Received(1).Login(UserId, Arg.Is<AllegroCredentials>(t => t.ApiKey == ad1.User.AllegroKey && t.Pass == ad1.User.AllegroHashedPass && t.UserName == ad1.User.AllegroUserName));
+                _scheduler.ReceivedWithAnyArgs(1).Create(null, null);
+            }
+        }
+        [Fact]
+        public void Process_SendRefundThrowsExceptionForOneOrder_ShouldProcessSecondOne()
+        {
+            // arrange
+            CreateFakeData();
+            Buyer buyer = new Buyer
+            {
+                Email = "wp@wp.pl"
+            };
+            Order order = new Order
+            {
+                AllegroDealId = 512,
+                OrderDate = DateTime.Now.Subtract(TimeSpan.FromDays(12)),
+                OrderStatus = OrderStatus.Created,
+                Buyer = buyer
+            };
+            Order order2 = new Order
+            {
+                AllegroDealId = 513,
+                OrderDate = DateTime.Now.Subtract(TimeSpan.FromDays(12)),
+                OrderStatus = OrderStatus.Created,
+                Buyer = buyer
+            };
+            Auction ad1 = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 7731);
+            ad1.AutomaticRefundsEnabled = true;
+            ad1.Orders.Add(order);
+            ad1.Orders.Add(order2);
+            _db.SaveChanges();
+
+            _allegroService.SendRefund(Arg.Is<Order>(t => t.AllegroDealId == 512), 1).Throws(new Exception());
+            _allegroService.SendRefund(Arg.Is<Order>(t => t.AllegroDealId == 513), 1).Returns(51);
+
+            // act
+            _processor.Process();
+
+            // assert
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var database = GetDatabase(scope);
+
+                order = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 512);
+                order2 = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 513);
+
+                Assert.Equal(OrderStatus.Created, order.OrderStatus);
+                Assert.Null(order.AllegroRefundId);
+                Assert.Equal(OrderStatus.Canceled, order2.OrderStatus);
+                Assert.Equal(51, order2.AllegroRefundId);
+                _scheduler.ReceivedWithAnyArgs(1).Create(null, null);
             }
         }
         protected override void CreateFakeData()

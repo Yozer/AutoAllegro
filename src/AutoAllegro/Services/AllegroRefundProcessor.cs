@@ -59,7 +59,7 @@ namespace AutoAllegro.Services
             _logger.LogInformation("Starting refund processor");
             var nowDateTime = DateTime.Now;
             var refundsToMake = from order in _db.Orders
-                                where order.Auction.IsMonitored && order.OrderStatus == OrderStatus.Created && order.OrderDate.Add(MakeRefundAfter) <= nowDateTime
+                                where order.Auction.AutomaticRefundsEnabled && order.OrderStatus == OrderStatus.Created && order.OrderDate.Add(MakeRefundAfter) <= nowDateTime
                                 group order by order.Auction.UserId into g
                                 select g;
 

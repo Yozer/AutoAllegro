@@ -24,10 +24,8 @@ namespace AutoAllegro.Tests.Controllers
     public sealed class AuctionControllerTests : DatabaseMock
     {
         private readonly IAllegroService _allegroService;
-        private readonly IAllegroTransactionProcessor _allegroProcessor;
         private readonly IMapper _mapper;
         private readonly ApplicationDbContext _db;
-        private readonly UserManager<User> _userManager;
         private readonly AuctionController _controller;
         private readonly IServiceScope _scope;
 
@@ -35,13 +33,12 @@ namespace AutoAllegro.Tests.Controllers
         {
             _scope = CreateScope();
             _allegroService = _scope.ServiceProvider.GetRequiredService<IAllegroService>();
-            _allegroProcessor = _scope.ServiceProvider.GetRequiredService<IAllegroTransactionProcessor>();
             _mapper = _scope.ServiceProvider.GetRequiredService<IMapper>();
             _db = GetDatabase(_scope);
-            _userManager = GetUserManager(_scope);
+            var userManager = GetUserManager(_scope);
 
             CreateFakeData();
-            _controller = new AuctionController(_db, _userManager, _allegroService, _mapper, _allegroProcessor);
+            _controller = new AuctionController(_db, userManager, _allegroService, _mapper);
         }
 
         [Fact]
@@ -617,8 +614,76 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Auction", redirect.ActionName);
             Assert.Equal(1, redirect.RouteValues["id"]);
             Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
         }
+        [Fact]
+        public async Task AuctionPost_ShouldDisableAutomaticRefundsAndFeedbackForAuction1()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            var ad = _db.Auctions.First(t => t.UserId == UserId);
+            ad.AutomaticRefundsEnabled = ad.AutomaticFeedbackEnabled = true;
+            _db.SaveChanges();
 
+            // act
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = ad.Id, AutomaticRefundsEnabled = false, AutomaticFeedbackEnabled = false });
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Auction auction = _db.Auctions.Single(t => t.Id == ad.Id);
+
+            Assert.False(auction.AutomaticFeedbackEnabled);
+            Assert.False(auction.AutomaticRefundsEnabled);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(ad.Id, redirect.RouteValues["id"]);
+            Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
+        }
+        [Fact]
+        public async Task AuctionPost_ShouldEnableAutomaticRefundsForAuction1()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            var ad = _db.Auctions.First(t => t.UserId == UserId);
+
+            // act
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = ad.Id, AutomaticRefundsEnabled = true, AutomaticFeedbackEnabled = false });
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Auction auction = _db.Auctions.Single(t => t.Id == ad.Id);
+
+            Assert.False(auction.AutomaticFeedbackEnabled);
+            Assert.True(auction.AutomaticRefundsEnabled);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(ad.Id, redirect.RouteValues["id"]);
+            Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
+        }
+        [Fact]
+        public async Task AuctionPost_ShouldEnableAutomaticFeedbackForAuction1()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            var ad = _db.Auctions.First(t => t.UserId == UserId);
+
+            // act
+            IActionResult result = await _controller.Auction(new AuctionViewModel { Id = ad.Id, AutomaticRefundsEnabled = false, AutomaticFeedbackEnabled = true });
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            RedirectToActionResult redirect = (RedirectToActionResult)result;
+            Auction auction = _db.Auctions.Single(t => t.Id == ad.Id);
+
+            Assert.True(auction.AutomaticFeedbackEnabled);
+            Assert.False(auction.AutomaticRefundsEnabled);
+            Assert.Equal("Auction", redirect.ActionName);
+            Assert.Equal(ad.Id, redirect.RouteValues["id"]);
+            Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
+            Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
+        }
         [Fact]
         public async Task AuctionPost_ShouldEnableMonitoringAndDisableVirtualItem_ForAuction2()
         {

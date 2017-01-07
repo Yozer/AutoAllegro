@@ -25,15 +25,13 @@ namespace AutoAllegro.Controllers
         private readonly IAllegroService _allegroService;
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
-        private readonly IAllegroTransactionProcessor _allegroProcessor;
 
-        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper, IAllegroTransactionProcessor allegroProcessor)
+        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper)
         {
             _dbContext = dbContext;
             _userManager = userManager;
             _allegroService = allegroService;
             _mapper = mapper;
-            _allegroProcessor = allegroProcessor;
         }
         public async Task<IActionResult> Index(int? page)
         {
@@ -96,6 +94,8 @@ namespace AutoAllegro.Controllers
 
             auction.IsMonitored = updatedAuction.IsMonitored;
             auction.IsVirtualItem = updatedAuction.IsVirtualItem;
+            auction.AutomaticFeedbackEnabled = updatedAuction.AutomaticFeedbackEnabled;
+            auction.AutomaticRefundsEnabled = updatedAuction.AutomaticRefundsEnabled;
 
             await _dbContext.SaveChangesAsync();
             return RedirectToAction(nameof(Auction), new {id = auction.Id, settingsTabActive = true, message = AuctionMessageId.SuccessSaveSettings});
