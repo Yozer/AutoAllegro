@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
@@ -85,8 +86,8 @@ namespace AutoAllegro.Services
                 sessionHandle = _sessionKey
             });
 
-            auction.Fee = billing.endingFees.Sum(t => -decimal.Parse(t.biValue));
-            auction.OpenCost = billing.entryFees.Sum(t => -decimal.Parse(t.biValue));
+            auction.Fee = billing.endingFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
+            auction.OpenCost = billing.entryFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
             return auction;
         }
 
@@ -106,6 +107,8 @@ namespace AutoAllegro.Services
 
                 foreach (var dealsStruct in response)
                     yield return dealsStruct;
+
+                journalStart = response.Last().dealEventId;
 
             } while (response.Length == 100);
         }
@@ -152,7 +155,7 @@ namespace AutoAllegro.Services
                 Amount = Convert.ToDecimal(response.postBuyFormPaymentAmount),
                 AllegroTransactionId = dealTransactionId
             };
-
+            // TODO this probably should be assigned to transaction and only one transaction in order can be completed
             order.ShippingAddress = new ShippingAddress
             {
                 Address = response.postBuyFormShipmentAddress.postBuyFormAdrStreet,
@@ -160,7 +163,7 @@ namespace AutoAllegro.Services
                 FirstName = response.postBuyFormShipmentAddress.postBuyFormAdrFullName.Split(' ')[0],
                 LastName = string.Join(" ", response.postBuyFormShipmentAddress.postBuyFormAdrFullName.Split(' ').Skip(1)),
                 PostCode = response.postBuyFormShipmentAddress.postBuyFormAdrPostcode,
-                MessageToSeller = response.postBuyFormMsgToSeller,
+                MessageToSeller = response.postBuyFormMsgToSeller
             };
 
             return transaction;
@@ -232,93 +235,6 @@ namespace AutoAllegro.Services
         {
             if(!IsLogged)
                 throw new InvalidOperationException("Not logged in");
-        }
-
-
-        [Obsolete]
-        public Task<doNewAuctionExtResponse> AddFakeAdd()
-        {
-           return _servicePort.doNewAuctionExtAsync(new doNewAuctionExtRequest
-            {
-                sessionHandle = _sessionKey,
-                fields = new[]
-                {
-                    new FieldsValue
-                    {
-                        fid = 1,
-                        fvalueString = "testow aaukcja 2"
-                    },
-                    new FieldsValue
-                    {
-                        fid = 2,
-                        fvalueInt = 122252,
-                        fvalueIntSpecified = true
-                    },
-                    new FieldsValue
-                    {
-                        fid = 8,
-                        fvalueFloat = 35,
-                        fvalueFloatSpecified = true
-                    },
-                    new FieldsValue
-                    {
-                        fid = 24,
-                        fvalueString = "dsadasnw qhjoqwhouiheuioqwhjku hedujkqwhjkdhnkbawskldjwqbhnkjfhqwklr"
-                    },
-                    new FieldsValue
-                    {
-                        fid = 4,
-                        fvalueInt = 2,
-                        fvalueIntSpecified = true
-                    },
-                    new FieldsValue
-                    {
-                        fid = 5,
-                        fvalueInt = 1000,
-                        fvalueIntSpecified = true
-                    },
-                    new FieldsValue
-                    {
-                        fid = 9,
-                        fvalueInt = 1,
-                        fvalueIntSpecified = true
-                    },
-                    new FieldsValue
-                    {
-                        fid = 10,
-                        fvalueInt = 5,
-                        fvalueIntSpecified = true
-                    },
-                    new FieldsValue
-                    {
-                        fid = 11,
-                        fvalueString = "Kraków"
-                    },
-                    new FieldsValue
-                    {
-                        fid = 32,
-                        fvalueString = "33-300"
-                    },
-                    new FieldsValue
-                    {
-                        fid = 35,
-                        fvalueInt = 2,
-                        fvalueIntSpecified = true
-                    }
-                }
-            });
-        }
-        [Obsolete]
-        public void Buy(long id, float price)
-        {
-            var response = _servicePort.doBidItemAsync(new doBidItemRequest
-            {
-                sessionHandle = _sessionKey,
-                bidBuyNow = 1,
-                bidItId = id,
-                bidQuantity = 1,
-                bidUserPrice = price
-            }).Result;
         }
     }
 

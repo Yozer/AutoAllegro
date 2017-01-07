@@ -188,6 +188,212 @@ namespace AutoAllegro.Tests.Services
             await _servicePort.Received(1).doCancelRefundFormAsync(Arg.Is<doCancelRefundFormRequest>(t => t.refundId == 4));
         }
         [Fact]
+        public async Task GivePositiveFeedback_GivesPositiveFeedback()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            _servicePort.doFeedbackAsync(Arg.Is<doFeedbackRequest>(t => t.feItemId == 255 && t.feCommentType == "POS" &&
+                                                                        t.feOp == 2 && t.feToUserId == 444 && t.feUseCommentTemplate == 1))
+                .Returns(new doFeedbackResponse
+                {
+                    feedbackId = 51
+                });
+
+            // act
+            int result = _allegroService.GivePositiveFeedback(255, 444);
+
+            // assert
+            Assert.Equal(51, result);
+            Assert.Equal(1, _servicePort.ReceivedCalls().Count());
+        }
+        [Fact]
+        public async Task FetchBuyerData_FetchsBuyerData()
+        {
+            // arrange
+            const int buyerId = 222;
+            const long adId = 441;
+            MockLogin();
+            await Login();
+            _servicePort.doGetPostBuyDataAsync(Arg.Is<doGetPostBuyDataRequest>(t => t.buyerFilterArray[0] == buyerId && t.buyerFilterArray.Length == 1 && t.itemsArray[0] == adId && t.itemsArray.Length == 1))
+                .Returns(new doGetPostBuyDataResponse
+                {
+                    itemsPostBuyData = new[]
+                    {
+                        new ItemPostBuyDataStruct
+                        {
+                            itemId = adId, usersPostBuyData = new[]
+                            {
+                                new UserPostBuyDataStruct
+                                {
+                                    userData = new UserDataStruct {userId = buyerId, userLogin = "login", userFirstName = "firstName", userLastName = "lastName", userPostcode = "33-300",
+                                        userCity = "city", userAddress = "address", userEmail = "mail@wp.pl", userPhone = "123", userPhone2 = "2341"}
+                                }
+                            }
+                        }
+                    }
+                });
+
+            // act
+            Buyer result = _allegroService.FetchBuyerData(adId, buyerId);
+
+            // assert
+            Assert.Equal(buyerId, result.AllegroUserId);
+            Assert.Equal("login", result.UserLogin);
+            Assert.Equal("firstName", result.FirstName);
+            Assert.Equal("lastName", result.LastName);
+            Assert.Equal("33-300", result.PostCode);
+            Assert.Equal("city", result.City);
+            Assert.Equal("address", result.Address);
+            Assert.Equal("mail@wp.pl", result.Email);
+            Assert.Equal("123", result.Phone);
+            Assert.Equal("2341", result.Phone2);
+            Assert.Equal(1, _servicePort.ReceivedCalls().Count());
+        }
+        [Fact]
+        public async Task GetTransactionDetails_ShouldReturnTransactionAndShippingData()
+        {
+            // arrange
+            const long transactionId = 444;
+            Order order = new Order();
+
+            MockLogin();
+            await Login();
+            _servicePort.doGetPostBuyFormsDataForSellersAsync(Arg.Is<doGetPostBuyFormsDataForSellersRequest>(t => t.transactionsIdsArray[0] == transactionId && t.transactionsIdsArray.Length == 1))
+                .Returns(new doGetPostBuyFormsDataForSellersResponse
+                {
+                    postBuyFormData = new[]
+                    {
+                        new PostBuyFormDataStruct
+                        {
+                            postBuyFormPaymentAmount = 412.33f,
+                            postBuyFormMsgToSeller = "seller msg",
+                            postBuyFormShipmentAddress = new PostBuyFormAddressStruct
+                            {
+                                postBuyFormAdrStreet = "street",
+                                postBuyFormAdrCity = "city",
+                                postBuyFormAdrFullName = "Dominik Baran Tomasz",
+                                postBuyFormAdrPostcode = "33-300"
+                            }
+                        }
+                    }
+                });
+
+            // act
+            Transaction result = _allegroService.GetTransactionDetails(transactionId, order);
+
+            // assert
+            Assert.Equal(TransactionStatus.Created, result.TransactionStatus);
+            Assert.Equal(412.33m, result.Amount);
+            Assert.Equal(transactionId, result.AllegroTransactionId);
+            Assert.Equal("seller msg", order.ShippingAddress.MessageToSeller);
+            Assert.Equal("street", order.ShippingAddress.Address);
+            Assert.Equal("city", order.ShippingAddress.City);
+            Assert.Equal("Dominik", order.ShippingAddress.FirstName);
+            Assert.Equal("Baran Tomasz", order.ShippingAddress.LastName);
+            Assert.Equal("33-300", order.ShippingAddress.PostCode);
+            Assert.Equal(1, _servicePort.ReceivedCalls().Count());
+        }
+        [Fact]
+        public async Task UpdateAuctionFees_ShouldUpdateAuctionFees()
+        {
+            // arrange
+            Auction auction = new Auction {AllegroAuctionId = 512};
+
+            MockLogin();
+            await Login();
+            _servicePort.doMyBillingItemAsync(Arg.Is<doMyBillingItemRequest>(t => t.itemId == auction.AllegroAuctionId ))
+                .Returns(new doMyBillingItemResponse
+                {
+                    endingFees = new[]{new ItemBilling {biValue = "-21.4"}, new ItemBilling {biValue = "-44.33" } },
+                    entryFees = new[]{new ItemBilling {biValue = "-442.4"}, new ItemBilling {biValue = "-0.33" } },
+                });
+
+            // act
+            Auction result = await _allegroService.UpdateAuctionFees(auction);
+
+            // assert
+            Assert.Equal(65.73m, result.Fee);
+            Assert.Equal(442.73m, result.OpenCost);
+        }
+        [Fact]
+        public async Task GetWaitingFeedback_GetFeedbacks()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            var items = new WaitFeedbackStruct[205];
+            for (int i = 0; i < items.Length; ++i)
+            {
+                items[i] = new WaitFeedbackStruct
+                {
+                    feItemId = i * 10,
+                    feToUserId = 40,
+                    feAnsCommentType = "POS",
+                    fePossibilityToAdd = 0,
+                    feOp = 2
+                };
+            }
+            _servicePort.doGetWaitingFeedbacksAsync(Arg.Is<doGetWaitingFeedbacksRequest>(t => t.offset == 0)).Returns(new doGetWaitingFeedbacksResponse
+            {
+                feWaitList = items.Take(100).ToArray()
+            });
+            _servicePort.doGetWaitingFeedbacksAsync(Arg.Is<doGetWaitingFeedbacksRequest>(t => t.offset == 1)).Returns(new doGetWaitingFeedbacksResponse
+            {
+                feWaitList = items.Skip(100).Take(100).ToArray()
+            });
+            _servicePort.doGetWaitingFeedbacksAsync(Arg.Is<doGetWaitingFeedbacksRequest>(t => t.offset == 2)).Returns(new doGetWaitingFeedbacksResponse
+            {
+                feWaitList = items.Skip(200).Take(100).ToArray()
+            });
+
+            // act
+            var result = _allegroService.GetWaitingFeedback().ToList();
+
+            // assert
+            Assert.Equal(items.Length, result.Count);
+            for (int i = 0; i < items.Length; ++i)
+            {
+                Assert.Same(items[i], result[i]);
+            }
+            await _servicePort.ReceivedWithAnyArgs(3).doGetWaitingFeedbacksAsync(null);
+        }
+        [Fact]
+        public async Task FetchJournal_FetchsJournal()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            var items = new SiteJournalDealsStruct[205];
+            for (int i = 0; i < items.Length; ++i)
+            {
+                items[i] = new SiteJournalDealsStruct {dealEventId = 50 + i};
+            }
+            _servicePort.doGetSiteJournalDealsAsync(Arg.Is<doGetSiteJournalDealsRequest>(t => t.journalStart >= 50 && t.journalStart < 149)).Returns(new doGetSiteJournalDealsResponse
+            {
+                siteJournalDeals = items.Take(100).ToArray()
+            });
+            _servicePort.doGetSiteJournalDealsAsync(Arg.Is<doGetSiteJournalDealsRequest>(t => t.journalStart >= 149 && t.journalStart < 249)).Returns(new doGetSiteJournalDealsResponse
+            {
+                siteJournalDeals = items.Skip(100).Take(100).ToArray()
+            });
+            _servicePort.doGetSiteJournalDealsAsync(Arg.Is<doGetSiteJournalDealsRequest>(t => t.journalStart >= 249 && t.journalStart < 350)).Returns(new doGetSiteJournalDealsResponse
+            {
+                siteJournalDeals = items.Skip(200).Take(100).ToArray()
+            });
+
+            // act
+            var result = _allegroService.FetchJournal(50).ToList();
+
+            // assert
+            Assert.Equal(items.Length, result.Count);
+            for (int i = 0; i < items.Length; ++i)
+            {
+                Assert.Same(items[i], result[i]);
+            }
+            await _servicePort.ReceivedWithAnyArgs(3).doGetSiteJournalDealsAsync(null);
+        }
+        [Fact]
         public async Task CancelRefund_ShouldThrow_WhenNotLogged()
         {
             // arrange & act
@@ -243,10 +449,26 @@ namespace AutoAllegro.Tests.Services
             // assert
             Assert.Equal("Not logged in", exception.Message);
         }
-
+        [Fact]
+        public void GetWaitingFeedback_ShouldThrow_WhenNotLogged()
+        {
+            // arrange & act
+            var exception = Assert.Throws<InvalidOperationException>(() => _allegroService.GetWaitingFeedback().ToList());
+            // assert
+            Assert.Equal("Not logged in", exception.Message);
+        }
+        [Fact]
+        public void GivePositiveFeedback_ShouldThrow_WhenNotLogged()
+        {
+            // arrange & act
+            var exception = Assert.Throws<InvalidOperationException>(() => _allegroService.GivePositiveFeedback(0, 0));
+            // assert
+            Assert.Equal("Not logged in", exception.Message);
+        }
         private async Task Login()
         {
             await _allegroService.Login("userId", _allegroCredentials);
+            _servicePort.ClearReceivedCalls();
         }
         private void MockLogin()
         {
