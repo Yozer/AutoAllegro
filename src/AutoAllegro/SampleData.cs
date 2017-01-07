@@ -28,7 +28,7 @@ namespace AutoAllegro
                 var db = serviceScope.ServiceProvider.GetService<ApplicationDbContext>();
                 await db.Database.MigrateAsync();
                 string id = await CreateAdminUser(serviceProvider);
-                await InsertTestData(db, id);
+               // await InsertTestData(db, id);
             }
         }
         private static async Task<string> CreateAdminUser(IServiceProvider serviceProvider)

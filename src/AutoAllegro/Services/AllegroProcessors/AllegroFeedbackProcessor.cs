@@ -13,7 +13,7 @@ namespace AutoAllegro.Services.AllegroProcessors
     {
     }
 
-    public class AllegroFeedbackProcessor : AllegroAbstractProcessor, IAllegroFeedbackProcessor
+    public class AllegroFeedbackProcessor : AllegroAbstractProcessor<IAllegroFeedbackProcessor>, IAllegroFeedbackProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 

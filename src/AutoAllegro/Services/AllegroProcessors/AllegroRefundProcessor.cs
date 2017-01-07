@@ -12,7 +12,7 @@ namespace AutoAllegro.Services.AllegroProcessors
     {
     }
 
-    public sealed class AllegroRefundProcessor : AllegroAbstractProcessor, IAllegroRefundProcessor
+    public sealed class AllegroRefundProcessor : AllegroAbstractProcessor<IAllegroRefundProcessor>, IAllegroRefundProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
         private static readonly TimeSpan MakeRefundAfter = TimeSpan.FromDays(7);

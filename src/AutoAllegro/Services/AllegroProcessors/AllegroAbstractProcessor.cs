@@ -13,7 +13,7 @@ namespace AutoAllegro.Services.AllegroProcessors
         void Process();
     }
 
-    public abstract class AllegroAbstractProcessor : IAllegroAbstractProcessor
+    public abstract class AllegroAbstractProcessor<T>  where T: IAllegroAbstractProcessor
     {
         private readonly IBackgroundJobClient _backgroundJob;
         private readonly ILogger _logger;
@@ -27,7 +27,7 @@ namespace AutoAllegro.Services.AllegroProcessors
         }
         public virtual void Init()
         {
-            _backgroundJob.Schedule(() => Process(), _interval);
+            _backgroundJob.Schedule<T>(t => t.Process(), _interval);
         }
 
         public void Process()
@@ -49,7 +49,7 @@ namespace AutoAllegro.Services.AllegroProcessors
                 _logger.LogError(1, e, "There was a communication problem.");
             }
 
-            _backgroundJob.Schedule(() => Process(), _interval);
+            _backgroundJob.Schedule<T>(t => t.Process(), _interval);
         }
 
         protected abstract void Execute();

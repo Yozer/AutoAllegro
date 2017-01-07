@@ -14,7 +14,7 @@ namespace AutoAllegro.Services.AllegroProcessors
     public interface IAllegroTransactionProcessor : IAllegroAbstractProcessor
     {
     }
-    public class AllegroTransactionProcessor : AllegroAbstractProcessor, IAllegroTransactionProcessor
+    public class AllegroTransactionProcessor : AllegroAbstractProcessor<IAllegroTransactionProcessor>, IAllegroTransactionProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 

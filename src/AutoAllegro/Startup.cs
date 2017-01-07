@@ -85,6 +85,7 @@ namespace AutoAllegro
             services.AddTransient<servicePort, servicePortClient>();
 
             // processors
+            services.AddTransient<IAllegroFeedbackProcessor, AllegroFeedbackProcessor>();
             services.AddTransient<IAllegroTransactionProcessor, AllegroTransactionProcessor>();
             services.AddTransient<IAllegroEmailProcessor, AllegroEmailProcessor>();
             services.AddTransient<IAllegroRefundProcessor, AllegroRefundProcessor>();
@@ -205,6 +206,8 @@ namespace AutoAllegro
                 emailProcessor.Init();
                 var refundProcessor = scope.ServiceProvider.GetService<IAllegroRefundProcessor>();
                 refundProcessor.Init();
+                var feedbackProcessor = scope.ServiceProvider.GetService<IAllegroFeedbackProcessor>();
+                feedbackProcessor.Init();
             }
         }
 
@@ -233,6 +236,31 @@ namespace AutoAllegro
         public override object ActivateJob(Type type)
         {
             return _serviceProvider.GetService(type);
+        }
+
+        public override JobActivatorScope BeginScope(JobActivatorContext context)
+        {
+            return new MyScope(_serviceProvider.CreateScope());
+        }
+
+        class MyScope : JobActivatorScope
+        {
+            private readonly IServiceScope _serviceScope;
+
+            public MyScope(IServiceScope lifetimeScope)
+            {
+                _serviceScope = lifetimeScope;
+            }
+
+            public override object Resolve(Type type)
+            {
+                return _serviceScope.ServiceProvider.GetService(type);
+            }
+
+            public override void DisposeScope()
+            {
+                _serviceScope.Dispose();
+            }
         }
     }
 }

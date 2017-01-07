@@ -12,7 +12,7 @@ namespace AutoAllegro.Services.AllegroProcessors
     {
     }
 
-    public class AllegroEmailProcessor : AllegroAbstractProcessor, IAllegroEmailProcessor
+    public class AllegroEmailProcessor : AllegroAbstractProcessor<IAllegroEmailProcessor>, IAllegroEmailProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
