@@ -212,6 +212,8 @@ namespace AutoAllegro.Tests.Controllers
             IActionResult result = await _controller.MarkAsPaid(order.Id);
 
             // assert
+            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            Assert.Equal(OrderStatus.Created, order.OrderStatus);
             Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
         }
@@ -226,6 +228,8 @@ namespace AutoAllegro.Tests.Controllers
             IActionResult result = await _controller.MarkAsPaid(order.Id);
 
             // assert
+            order = _db.Orders.Single(t => t.AllegroDealId == 1);
+            Assert.Equal(OrderStatus.Send, order.OrderStatus);
             Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
         }
@@ -389,6 +393,65 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("xxx", order.GameCodes.ElementAt(1).Code);
         }
         [Fact]
+        public async Task FreeCodes_ShouldRedirectToIndex_NotOurAd()
+        {
+            // arrange
+            PopulateHttpContext(UserId2);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+
+            // act
+            IActionResult result = await _controller.FreeCodes(order.Id);
+
+            // assert
+            order = _db.Orders.Include(t => t.GameCodes).Single(t => t.Id == order.Id);
+            Assert.Equal(1, order.GameCodes.Count);
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Index", redirect.ActionName);
+            Assert.Equal(0, _allegroService.ReceivedCalls().Count());
+        }
+        [Fact]
+        public async Task FreeCodes_ShouldRedirectToIndex_NotCanceledOrder()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            var order = _db.Orders.FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
+
+            // act
+            IActionResult result = await _controller.FreeCodes(order.Id);
+
+            // assert
+            order = _db.Orders.Include(t => t.GameCodes).Single(t => t.Id == order.Id);
+            Assert.Equal(1, order.GameCodes.Count);
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.FreeCodesOnlyForCanceledOrder, redirect.RouteValues["message"]);
+        }
+        [Fact]
+        public async Task FreeCodes_ShouldFreeCodes()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            var order = _db.GameCodes.Include(t => t.Order).Include(t => t.Auction).FirstOrDefault(t => t.Order != null).Order;
+            order.OrderStatus = OrderStatus.Canceled;
+            order.GameCodes.Add(new GameCode {Code = "qq", Auction = order.Auction});
+            _db.SaveChanges();
+
+            // act
+            IActionResult result = await _controller.FreeCodes(order.Id);
+
+            // assert
+            order = _db.Orders.Include(t => t.GameCodes).Single(t => t.Id == order.Id);
+            Assert.Equal(0, order.GameCodes.Count);
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.FreeCodesSuccess, redirect.RouteValues["message"]);
+        }
+        [Fact]
         public async Task CancelOrder_ShouldRedirectToIndex_NotOurAd()
         {
             // arrange
@@ -399,6 +462,8 @@ namespace AutoAllegro.Tests.Controllers
             IActionResult result = await _controller.CancelOrder(order.Id, 1);
 
             // assert
+            order = _db.Orders.Include(t => t.GameCodes).Single(t => t.Id == order.Id);
+            Assert.Equal(OrderStatus.Send, order.OrderStatus);
             Assert.IsType<RedirectToActionResult>(result);
             var redirect = ((RedirectToActionResult)result);
             Assert.Equal("Index", redirect.ActionName);
@@ -415,13 +480,15 @@ namespace AutoAllegro.Tests.Controllers
             IActionResult result = await _controller.CancelOrder(order.Id, 1552);
 
             // assert
+            order = _db.Orders.Include(t => t.GameCodes).Single(t => t.Id == order.Id);
+            Assert.Equal(OrderStatus.Send, order.OrderStatus);
             Assert.IsType<RedirectToActionResult>(result);
             var redirect = ((RedirectToActionResult)result);
             Assert.Equal("Index", redirect.ActionName);
             Assert.Equal(0, _allegroService.ReceivedCalls().Count());
         }
         [Fact]
-        public async Task CancelOrder_ShouldReleaseAllCodesAndChangeOrderStatusAndAssignRefundId()
+        public async Task CancelOrder_ShouldChangeOrderStatusAndAssignRefundId()
         {
             // arrange
             PopulateHttpContext(UserId);
@@ -445,7 +512,7 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(OrderViewMessage.OrderCancelSuccess, redirect.RouteValues["message"]);
 
             order = _db.Orders.Include(t => t.GameCodes).FirstOrDefault(t => t.Auction.AllegroAuctionId == 111);
-            Assert.Equal(0, order.GameCodes.Count);
+            Assert.Equal(2, order.GameCodes.Count);
             Assert.Equal(OrderStatus.Canceled, order.OrderStatus);
             Assert.Equal(55512, order.AllegroRefundId);
             await _allegroService.Received(1).SendRefund(Arg.Is<Order>(t => t.AllegroDealId == order.AllegroDealId), 1);
@@ -559,6 +626,8 @@ namespace AutoAllegro.Tests.Controllers
             });
 
             // assert
+            var ad = _db.Auctions.Include(t => t.GameCodes).Single(t => t.Id == 1);
+            Assert.Equal(2, ad.GameCodes.Count);
             Assert.IsType<RedirectToActionResult>(result);
             var redirect = ((RedirectToActionResult)result);
             Assert.Equal("Index", redirect.ActionName);
@@ -577,6 +646,8 @@ namespace AutoAllegro.Tests.Controllers
             });
 
             // assert
+            var ad = _db.Auctions.Include(t => t.GameCodes).Single(t => t.Id == 1);
+            Assert.Equal(2, ad.GameCodes.Count);
             Assert.IsType<RedirectToActionResult>(result);
             var redirect = ((RedirectToActionResult)result);
             Assert.Equal("Index", redirect.ActionName);

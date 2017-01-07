@@ -37,6 +37,10 @@ namespace AutoAllegro.Models.AuctionViewModels
         [Display(Name = "Zamówienie oznaczone jako opłacone.")]
         OrderMarkedAsPaid,
         [Display(Name = "Błąd podczas anulowania zwrotu prowizji. Prawdopodobnie kupujący otrzymał już ostrzeżenie od Allegro.")]
-        CannotMarkAsPaid
+        CannotMarkAsPaid,
+        [Display(Name = "Pomyślnie zwolniono kody.")]
+        FreeCodesSuccess,
+        [Display(Name = "Błąd. Kody można zwolnić tylko dla anulowanego zamówienia.")]
+        FreeCodesOnlyForCanceledOrder
     }
 }

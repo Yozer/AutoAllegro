@@ -157,6 +157,13 @@
                                 <button type="submit" class="list-group-item">Anuluj zamówienie</button>
                             </form>
                         }
+                        else if(Model.GameCodes.Count > 0)
+                        {
+                            <form asp-action="FreeCodes">
+                                @Html.HiddenFor(t => t.Id)
+                                <button type="submit" class="list-group-item">Zwolnij kody</button>
+                            </form>
+                        }
                     </div>
                 </div>
             </div>

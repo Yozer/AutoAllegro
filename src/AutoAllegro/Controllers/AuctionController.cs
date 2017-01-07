@@ -260,7 +260,7 @@ namespace AutoAllegro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelOrder(int id, int reasonId)
         {
-            var order = await _dbContext.Orders.Include(t => t.Auction).Include(t => t.GameCodes).FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId());
+            var order = await _dbContext.Orders.FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId());
             if (order == null || !await _dbContext.AllegroRefundReasons.AnyAsync(t => t.Id == reasonId))
                 return RedirectToAction(nameof(Index));
 
@@ -281,10 +281,6 @@ namespace AutoAllegro.Controllers
 
                 order.AllegroRefundId = refundId;
                 order.OrderStatus = OrderStatus.Canceled;
-                foreach (var code in order.GameCodes)
-                {
-                    code.Order = null;
-                }
 
                 await _dbContext.SaveChangesAsync();
                 return RedirectToAction(nameof(Order), new {id, message = OrderViewMessage.OrderCancelSuccess});
@@ -293,7 +289,29 @@ namespace AutoAllegro.Controllers
             {
                 return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.OrderCancelFail });
             }
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> FreeCodes(int id)
+        {
+            var order = await _dbContext.Orders.Include(t => t.GameCodes).FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId());
+            if (order == null)
+                return RedirectToAction(nameof(Index));
 
+            if (order.OrderStatus == OrderStatus.Canceled)
+            {
+                foreach (var code in order.GameCodes)
+                {
+                    code.Order = null;
+                }
+
+                await _dbContext.SaveChangesAsync();
+                return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.FreeCodesSuccess });
+            }
+            else
+            {
+                return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.FreeCodesOnlyForCanceledOrder });
+            }
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
