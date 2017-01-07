@@ -394,6 +394,24 @@ namespace AutoAllegro.Tests.Services
             await _servicePort.ReceivedWithAnyArgs(3).doGetSiteJournalDealsAsync(null);
         }
         [Fact]
+        public async Task FetchJournal_NoJournalData()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            _servicePort.doGetSiteJournalDealsAsync(Arg.Is<doGetSiteJournalDealsRequest>(t => t.journalStart == 1)).Returns(new doGetSiteJournalDealsResponse
+            {
+                siteJournalDeals = new SiteJournalDealsStruct[0]
+            });
+
+            // act
+            var result = _allegroService.FetchJournal(1).ToList();
+
+            // assert
+            Assert.Equal(0, result.Count);
+            await _servicePort.ReceivedWithAnyArgs(1).doGetSiteJournalDealsAsync(null);
+        }
+        [Fact]
         public async Task CancelRefund_ShouldThrow_WhenNotLogged()
         {
             // arrange & act

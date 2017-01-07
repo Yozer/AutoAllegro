@@ -108,7 +108,10 @@ namespace AutoAllegro.Services
                 foreach (var dealsStruct in response)
                     yield return dealsStruct;
 
-                journalStart = response.Last().dealEventId;
+                if (response.Length > 0)
+                {
+                    journalStart = response.Last().dealEventId;
+                }
 
             } while (response.Length == 100);
         }
