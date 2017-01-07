@@ -202,6 +202,53 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
         }
         [Fact]
+        public async Task MarkAsPaid_ShouldRedirectToIndex_NotOurAd()
+        {
+            // arrange
+            var order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            PopulateHttpContext(UserId2);
+
+            // act
+            IActionResult result = await _controller.MarkAsPaid(order.Id);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
+        }
+        [Fact]
+        public async Task MarkAsPaid_ShouldRedirectToIndex_OrderStateOtherThanCreated()
+        {
+            // arrange
+            var order = _db.Orders.Single(t => t.AllegroDealId == 1);
+            PopulateHttpContext(UserId);
+
+            // act
+            IActionResult result = await _controller.MarkAsPaid(order.Id);
+
+            // assert
+            Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
+        }
+        [Fact]
+        public async Task MarkAsPaid_ShouldChangeOrderStateToPaid()
+        {
+            // arrange
+            var order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            PopulateHttpContext(UserId);
+
+            // act
+            IActionResult result = await _controller.MarkAsPaid(order.Id);
+
+            // assert
+
+            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.OrderMarkedAsPaid, redirect.RouteValues["message"]);
+        }
+        [Fact]
         public async Task DeleteCode_ShouldRedirectToIndex_NotOurAd()
         {
             // arrange

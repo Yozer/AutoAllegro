@@ -295,6 +295,18 @@ namespace AutoAllegro.Controllers
             }
 
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsPaid(int id)
+        {
+            var order = await _dbContext.Orders.FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId() && t.OrderStatus == OrderStatus.Created);
+            if (order == null)
+                return RedirectToAction(nameof(Index));
+
+            order.OrderStatus = OrderStatus.Paid;
+            await _dbContext.SaveChangesAsync();
+            return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.OrderMarkedAsPaid });
+        }
         private async Task LoginToAllegro()
         {
             if (_allegroService.IsLoginRequired(GetUserId()))

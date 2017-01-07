@@ -27,6 +27,14 @@
                     </div>
                 </div>
                 <p><a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Przejdź do aukcji</a></p>
+                @if (Model.OrderStatus == OrderStatus.Created)
+                {
+                    // TUTAJ MODAL Z PYTANIEM CZY NA PEWNO CHCESZ TO ZROBI (nie da się tego cofnąć i automatycznie wyśle kody)
+                    <form asp-action="MarkAsPaid">
+                        @Html.HiddenFor(t => t.Id)
+                        <button type="submit" class="btn btn-primary btn-lg">Oznacz jako opłacona</button>
+                    </form>
+                }
             </div>
         </div>
     </div>

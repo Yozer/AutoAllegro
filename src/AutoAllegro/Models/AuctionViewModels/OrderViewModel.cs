@@ -33,6 +33,8 @@ namespace AutoAllegro.Models.AuctionViewModels
         [Display(Name = "Błąd. Nie możesz anulować już anulowanego zamówienia.")]
         OrderCancelFail,
         [Display(Name = "Błąd podczas wysyłania zwrotu prowizji do Allegro.")]
-        SendingRefundFailed
+        SendingRefundFailed,
+        [Display(Name = "Zamówienie oznaczone jako opłacone.")]
+        OrderMarkedAsPaid
     }
 }
