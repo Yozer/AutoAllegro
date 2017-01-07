@@ -162,6 +162,16 @@ namespace AutoAllegro.Tests.Services
                 Assert.Equal(1, codes.Count(t => t.Order == null));
             }
         }
+        [Fact]
+        public void Init_ShouldScheduleJob()
+        {
+            // arrange
+            // act
+            _processor.Init();
+
+            // assert
+            _scheduler.ReceivedWithAnyArgs(1).Create(null, null);
+        }
         protected override void CreateFakeData()
         {
             base.CreateFakeData();

@@ -353,6 +353,16 @@ namespace AutoAllegro.Tests.Services
                 _scheduler.ReceivedWithAnyArgs(1).Create(null, null);
             }
         }
+        [Fact]
+        public void Init_ShouldScheduleJob()
+        {
+            // arrange
+            // act
+            _processor.Init();
+
+            // assert
+            _scheduler.ReceivedWithAnyArgs(1).Create(null, null);
+        }
         protected override void CreateFakeData()
         {
             base.CreateFakeData();

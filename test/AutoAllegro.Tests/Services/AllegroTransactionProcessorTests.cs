@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
+using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Helpers.Extensions;
 using AutoAllegro.Models;
 using AutoAllegro.Services;
 using AutoAllegro.Services.Interfaces;
 using Hangfire;
-using Hangfire.Common;
-using Hangfire.States;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,7 +18,7 @@ using Xunit;
 
 namespace AutoAllegro.Tests.Services
 {
-    public class AllegroProcessorTests : DatabaseMock
+    public class AllegroTransactionProcessorTests : DatabaseMock
     {
         private readonly IBackgroundJobClient _scheduler;
         private readonly IAllegroTransactionProcessor _processor;
@@ -26,7 +26,7 @@ namespace AutoAllegro.Tests.Services
         private readonly IServiceScope _scope;
         private ApplicationDbContext _db;
 
-        public AllegroProcessorTests()
+        public AllegroTransactionProcessorTests()
         {
             _scope = CreateScope();
             _scheduler = _scope.ServiceProvider.GetService<IBackgroundJobClient>();
@@ -35,19 +35,44 @@ namespace AutoAllegro.Tests.Services
 
             _processor = new AllegroTransactionProcessor(_scheduler, Substitute.For<ILogger<AllegroTransactionProcessor>>(), _db, _allegroService);
         }
-
         [Fact]
-        public void Init_ShouldScheduleTwoJobs()
+        public void Process_ShouldScheduleNextJobInCaseOfException()
         {
             // arrange
             CreateFakeData();
+            _allegroService.IsLoginRequired(UserId).Returns(true);
+            int i = 0;
+            _allegroService.Login(null, null).ReturnsForAnyArgs(t =>
+            {
+                ++i;
+                if (i == 1)
+                    throw new CommunicationException("ex");
+                else if (i == 2)
+                    throw new FaultException(new FaultReason("xx"), new FaultCode("x"), "yy");
+                else if (i == 3)
+                    throw new TimeoutException();
 
+                return Task.CompletedTask;
+            });
+
+            // act
+            _processor.Process();
+            _processor.Process();
+            _processor.Process();
+
+            // assert
+            _scheduler.ReceivedWithAnyArgs(3).Create(null, null);
+            _allegroService.DidNotReceiveWithAnyArgs().FetchJournal(0);
+        }
+        [Fact]
+        public void Init_ShouldScheduleJob()
+        {
+            // arrange
             // act
             _processor.Init();
 
             // assert
-            _scheduler.Received(1).Create(Arg.Any<Job>(), Arg.Any<IState>());
-
+            _scheduler.ReceivedWithAnyArgs(1).Create(null, null);
         }
         
         [Fact]
@@ -343,142 +368,69 @@ namespace AutoAllegro.Tests.Services
                 _allegroService.Received(1).CancelRefund(5124);
             }
         }
-        //[Fact]
-        //public void Process_SendCodesToBuyer()
-        //{
-        //    // arrange
-        //    CreateFakeData();
-        //    Buyer buyer = new Buyer
-        //    {
-        //        Email = "wp@wp.pl",
-        //        FirstName = "firstName",
-        //        LastName = "lastName"
-        //    };
-        //    Order order = new Order
-        //    {
-        //        AllegroDealId = 512,
-        //        OrderDate = new DateTime(2012, 5, 6, 4, 3, 2),
-        //        OrderStatus = OrderStatus.Paid,
-        //        Quantity = 1
-        //    };
-        //    Order order2 = new Order
-        //    {
-        //        AllegroDealId = 513,
-        //        OrderDate = new DateTime(2012, 5, 6, 4, 3, 2),
-        //        OrderStatus = OrderStatus.Paid,
-        //        Quantity = 3
-        //    };
-        //    long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-        //    Auction ad = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
-        //    ad.Orders.Add(order);
-        //    ad.Orders.Add(order2);
+        [Fact]
+        public void Process_TransactionWithOpenCaseFinished_AllegroServiceReturnsFalse_ShouldNotCancelRefund()
+        {
+            // arrange
+            CreateFakeData();
+            Order order = new Order
+            {
+                AllegroDealId = 512,
+                OrderDate = new DateTime(2012, 5, 6, 4, 3, 2),
+                OrderStatus = OrderStatus.Canceled,
+                AllegroRefundId = 5124,
+                Quantity = 5
+            };
+            Auction ad = _db.Auctions.Single(t => t.Id == 1);
+            Buyer buyer = _db.Buyers.Single(t => t.Id == 1);
+            buyer.Orders.Add(order);
+            order.Auction = ad;
+            _db.SaveChanges();
 
-        //    ad.GameCodes = new List<GameCode>
-        //    {
-        //        new GameCode {Code = "xxx"},
-        //        new GameCode {Code = "yyy"},
-        //        new GameCode {Code = "zzz"},
-        //        new GameCode {Code = "ggg"},
-        //        new GameCode {Code = "fff"},
-        //        new GameCode {Code = "zzz"},
-        //    };
-        //    ad.Converter = 2;
-        //    ad.User.VirtualItemSettings = new VirtualItemSettings
-        //    {
-        //        DisplayName = "DisplayName",
-        //        MessageSubject= "subject",
-        //        MessageTemplate = "Hi {FIRST_NAME} {LAST_NAME}! You bought {QUANTITY}.<br>Your codes:<br>{ITEM}",
-        //        ReplyTo = "www@wp.pl"
-        //    };
+            _allegroService.FetchJournal(0).ReturnsForAnyArgs(new List<SiteJournalDealsStruct>
+            {
+                new SiteJournalDealsStruct
+                {
+                    dealTransactionId = 5111,
+                    dealBuyerId = (int) buyer.AllegroUserId,
+                    dealEventId = 152,
+                    dealItemId = ad.AllegroAuctionId,
+                    dealEventTime = new DateTime(2015, 4, 6, 5, 8, 4).FromDateTime(),
+                    dealEventType = (int)EventType.TransactionCreated,
+                    dealId = 512
+                },
+                new SiteJournalDealsStruct
+                {
+                    dealTransactionId = 5111,
+                    dealBuyerId = (int) buyer.AllegroUserId,
+                    dealEventId = 155,
+                    dealItemId = ad.AllegroAuctionId,
+                    dealEventTime = new DateTime(2015, 4, 6, 5, 8, 7).FromDateTime(),
+                    dealEventType = (int)EventType.TransactionFinished,
+                    dealId = 512
+                }
+            });
+            _allegroService.GetTransactionDetails(Arg.Is<long>(t => t == 5111), Arg.Is<Order>(t => t.AllegroDealId == 512)).Returns(t => new Transaction
+            {
+                AllegroTransactionId = t.Arg<long>(),
+                Amount = ad.PricePerItem * order.Quantity,
+                TransactionStatus = TransactionStatus.Created
+            });
+            _allegroService.CancelRefund(0).ReturnsForAnyArgs(false);
 
-        //    order.Buyer = buyer;
-        //    order2.Buyer = buyer;
-        //    _db.SaveChanges();
+            // act
+            _processor.Process();
 
-        //    _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
-
-        //    // act
-        //    _processor.Process(UserId, userJournal);
-
-        //    // assert
-        //    using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
-        //    {
-        //        var database = GetDatabase(scope);
-        //        Assert.Equal(2, _allegroService.ReceivedCalls().Count()); // login, journal
-        //        _emailService.Received(1).SendEmailAsync("wp@wp.pl", "subject", "Hi firstName lastName! You bought 1.<br>Your codes:<br>xxx<br>yyy", "www@wp.pl", "DisplayName");
-
-        //        order = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 512);
-        //        order2 = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 513);
-        //        var codes = database.GameCodes.Include(t => t.Order).ToList();
-
-        //        Assert.Equal(2, order.GameCodes.Count);
-        //        Assert.Equal("xxx", order.GameCodes.ElementAt(0).Code);
-        //        Assert.Equal("yyy", order.GameCodes.ElementAt(1).Code);
-        //        Assert.Equal(OrderStatus.Done, order.OrderStatus);
-
-        //        Assert.Equal(0, order2.GameCodes.Count);
-        //        Assert.Equal(OrderStatus.Paid, order2.OrderStatus);
-
-        //        Assert.Equal(6, codes.Count);
-        //        Assert.Equal(4, codes.Count(t => t.Order == null));
-        //    }
-        //}
-        //[Fact]
-        //public void Process_SendCodesToBuyer_EmailSenderThrowsException()
-        //{
-        //    // arrange
-        //    CreateFakeData();
-        //    Buyer buyer = new Buyer
-        //    {
-        //        Email = "wp@wp.pl",
-        //        FirstName = "firstName",
-        //        LastName = "lastName"
-        //    };
-        //    Order order = new Order
-        //    {
-        //        AllegroDealId = 512,
-        //        OrderDate = new DateTime(2012, 5, 6, 4, 3, 2),
-        //        OrderStatus = OrderStatus.Paid,
-        //        Quantity = 1
-        //    };
-        //    long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-        //    Auction ad = _db.Auctions.Include(t => t.User).Single(t => t.AllegroAuctionId == 111);
-        //    ad.Orders.Add(order);
-
-        //    ad.GameCodes = new List<GameCode>
-        //    {
-        //        new GameCode {Code = "xxx"},
-        //    };
-        //    ad.User.VirtualItemSettings = new VirtualItemSettings
-        //    {
-        //        MessageSubject = "subject",
-        //        MessageTemplate = "Hi {FIRST_NAME} {LAST_NAME}! You bought {QUANTITY}.<br>Your codes:<br>{ITEM}",
-        //    };
-
-        //    order.Buyer = buyer;
-        //    _db.SaveChanges();
-
-        //    _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
-        //    _emailService.SendEmailAsync(null, null, null).ThrowsForAnyArgs(new Exception());
-
-        //    // act
-        //    _processor.Process(UserId, userJournal);
-
-        //    // assert
-        //    using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
-        //    {
-        //        var database = GetDatabase(scope);
-        //        Assert.Equal(2, _allegroService.ReceivedCalls().Count()); // login, journal
-        //        _emailService.Received(1).SendEmailAsync("wp@wp.pl", "subject", "Hi firstName lastName! You bought 1.<br>Your codes:<br>xxx");
-
-        //        order = database.Orders.Include(t => t.GameCodes).First(t => t.AllegroDealId == 512);
-        //        var codes = database.GameCodes.Include(t => t.Order).ToList();
-
-        //        Assert.Equal(0, order.GameCodes.Count);
-        //        Assert.Equal(OrderStatus.Paid, order.OrderStatus);
-        //        Assert.Equal(1, codes.Count(t => t.Order == null));
-        //    }
-        //}
+            // assert
+            using (var scope = _scope.ServiceProvider.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var database = GetDatabase(scope);
+                var orderCheck = database.Orders.Include(t => t.ShippingAddress).Include(t => t.Transactions).Single(t => t.AllegroDealId == 512);
+                Assert.Equal(OrderStatus.Paid, orderCheck.OrderStatus);
+                Assert.Equal(5124, orderCheck.AllegroRefundId);
+                _allegroService.Received(1).CancelRefund(5124);
+            }
+        }
         private void ClearTransactionData()
         {
             using(var scope = CreateScope())
