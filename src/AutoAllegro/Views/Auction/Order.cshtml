@@ -73,7 +73,7 @@
             </div>
             @if (Model.ShippingAddress != null)
             {
-                <div class="panel panel-primary">
+                <div class="panel panel-warning">
                     <div class="panel-heading">
                         <h3 class="panel-title">Dane do wysyłki</h3>
                     </div>
@@ -103,7 +103,7 @@
             }
         </div>
         <div class="col-md-6">
-            <div class="panel panel-default">
+            <div class="panel panel-success">
                 <div class="panel-heading">
                     <h3 class="panel-title">Szybkie akcje</h3>
                 </div>
@@ -113,13 +113,31 @@
                         {
                             @if (Model.GameCodes.Count > 0)
                             {
-                                 //tutaj jakiś modal z listą kodów - @Model.GameCodes
-                                 <a class="list-group-item">Zobacz kody</a>
+                                <a class="list-group-item" data-toggle="modal" data-target="#codesModal">Zobacz kody</a>
+                                <div class="modal fade" id="codesModal" tabindex="-1" role="dialog">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <button type="button" class="close" data-dismiss="modal" ><span>&times;</span></button>
+                                                <h4 class="modal-title">Kupione kody</h4>
+                                            </div>
+                                            <div class="modal-body">
+                                                <ul class="list-group">
+                                                    @foreach (var code in Model.GameCodes) {
+                                                        <li class="list-group-item">@code.Code</li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-info" data-dismiss="modal">Zamknij</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             }
                             @if (Model.OrderStatus == OrderStatus.Done)
                             {
-                                // tutaj też modale z potwierdzeniami czy na pewno chcesz to zrobić
-                                <form asp-action="GetExtraCode">
+                                <form asp-action="GetExtraCode" onsubmit="return confirm('Czy na pewno chcesz wygenerować dodatkowy kod?');">
                                     @Html.HiddenFor(t => t.Id)
                                     <button type="submit" class="list-group-item">Wygeneruj dodatkowy kod</button>
                                 </form>
@@ -142,7 +160,7 @@
                     </div>
                 </div>
             </div>
-            <div class="panel panel-default">
+            <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title">Wiadomość do kupującego</h3>
                 </div>

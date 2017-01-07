@@ -11,10 +11,19 @@
             {
                 <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
             }
-            <p><a asp-action="AddCodes" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Dodaj nowe</a></p>
-            <p><a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Powrót do aukcji</a></p>
-            <hr />
-            <table class="table table-hover table-bordered">
+            <hr>
+
+            <div class="btn-toolbar" role="toolbar">  
+                <div class="btn-group" role="group" aria-label="...">
+                    <a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-default btn-lg">Powrót do aukcji</a>
+                </div>
+                <div class="btn-group pull-right" role="group" >
+                    <a asp-action="AddCodes" asp-route-id="@Model.AuctionId" class="btn btn-success btn-lg">Dodaj nowe</a>
+                </div>
+            </div>
+
+            <hr>
+            <table class="table table-hover table-striped">
                 <thead>
                 <tr>
                     <th>Data dodania</th>
@@ -29,7 +38,7 @@
                         <td>@code.AddDate.ToString("dd MMMM yyyy")</td>
                         <td>@code.Code</td>
                         <td>
-                            <form asp-controller="Auction" asp-action="DeleteCode" method="post" class="navbar-right">
+                            <form asp-controller="Auction" asp-action="DeleteCode" method="post">
                                 <input type="hidden" name="id" value="@code.Id" />
                                 <button type="submit" class="btn btn-danger">Usuń</button>
                             </form>
@@ -38,7 +47,7 @@
                 }
                 </tbody>
             </table>
-            <div class="pagination-wrapper">
+            <div class="pagination-wrapper text-center">
                 <ul class="pagination">
                     <li><a asp-action="Codes" asp-route-id="@Model.AuctionId" asp-route-page="1">&laquo;&laquo;</a></li>
                     <li class=@(Model.PaginationSettings.IsFirstPage ? "disabled" : string.Empty)><a asp-action="Codes" asp-route-id="@Model.AuctionId" asp-route-page="@(Model.PaginationSettings.CurrentPage - 1)">&laquo;</a></li>
