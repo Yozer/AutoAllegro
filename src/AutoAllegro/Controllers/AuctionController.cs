@@ -274,7 +274,7 @@ namespace AutoAllegro.Controllers
                 {
                     refundId = await _allegroService.SendRefund(order, reasonId);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.SendingRefundFailed });
                 }

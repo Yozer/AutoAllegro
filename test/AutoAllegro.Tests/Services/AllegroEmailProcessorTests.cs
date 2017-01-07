@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
-using AutoAllegro.Services;
+using AutoAllegro.Services.AllegroProcessors;
 using AutoAllegro.Services.Interfaces;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
+using AutoAllegro.Services.AllegroProcessors;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Hangfire;
@@ -51,8 +52,6 @@ namespace AutoAllegro.Tests
             _services.AddTransient(t => Substitute.For<IAllegroService>());
             _services.AddTransient(t => Substitute.For<IEmailSender>());
             _services.AddTransient(t => Substitute.For<IBackgroundJobClient>());
-            _services.AddTransient(t => Substitute.For<IAllegroTransactionProcessor>());
-
 
             // IHttpContextAccessor is required for SignInManager, and UserManager
             var authHandler = Substitute.For<IAuthenticationHandler>();

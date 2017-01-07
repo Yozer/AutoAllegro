@@ -1,79 +1,56 @@
 ﻿using System;
 using System.Collections.Generic;
-using AutoAllegro.Data;
-using AutoAllegro.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using System.ServiceModel;
-using AutoAllegro.Models;
-using Hangfire;
+using AutoAllegro.Data;
 using AutoAllegro.Helpers.Extensions;
+using AutoAllegro.Models;
+using AutoAllegro.Services.Interfaces;
+using Hangfire;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace AutoAllegro.Services
+namespace AutoAllegro.Services.AllegroProcessors
 {
-    public class AllegroTransactionProcessor : IAllegroTransactionProcessor
+    public interface IAllegroTransactionProcessor : IAllegroAbstractProcessor
+    {
+    }
+    public class AllegroTransactionProcessor : AllegroAbstractProcessor, IAllegroTransactionProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
         // https://mgmccarthy.wordpress.com/2016/11/07/using-hangfire-to-schedule-jobs-in-asp-net-core/
-        private readonly IBackgroundJobClient _backgroundJob;
         private readonly ILogger<AllegroTransactionProcessor> _logger;
         private readonly ApplicationDbContext _db;
         private readonly IAllegroService _allegroService;
 
         public AllegroTransactionProcessor(IBackgroundJobClient backgroundJob, ILogger<AllegroTransactionProcessor> logger,
             ApplicationDbContext db, IAllegroService allegroService)
+            :base(backgroundJob, logger, Interval)
         {
-            _backgroundJob = backgroundJob;
             _logger = logger;
             _db = db;
             _allegroService = allegroService;
         }
-        public void Init()
+        protected override void Execute()
         {
-            _backgroundJob.Schedule(() => Process(), Interval);
+            var auctions = from auction in _db.Auctions
+                           where auction.IsMonitored
+                           group new KeyValuePair<long, int>(auction.AllegroAuctionId, auction.Id) by auction.UserId into g
+                           select g;
+
+            foreach (var userAuction in auctions)
+            {
+                string userId = userAuction.Key;
+                var allegroCredentials = GetAllegroCredentials(_db, userId);
+                long journalStart = allegroCredentials.JournalStart;
+                _allegroService.Login(userId, allegroCredentials).Wait();
+
+                ProcessJournal(ref journalStart, userAuction.ToDictionary(t => t.Key, t => t.Value));
+                var user = _db.Users.First(t => t.Id == userId);
+                user.AllegroJournalStart = journalStart;
+                _db.SaveChanges();
+            }
         }
-        public void Process()
-        {
-            try
-            {
-                var auctions =  from auction in _db.Auctions
-                                where auction.IsMonitored
-                                group new KeyValuePair<long, int>(auction.AllegroAuctionId, auction.Id) by auction.UserId into g
-                                select g;
-
-                foreach (var userAuction in auctions)
-                {
-                    string userId = userAuction.Key;
-                    var allegroCredentials = GetAllegroCredentials(_db, userId);
-                    long journalStart = allegroCredentials.JournalStart;
-                    _allegroService.Login(userId, allegroCredentials).Wait();
-
-                    ProcessJournal(ref journalStart, userAuction.ToDictionary(t => t.Key, t => t.Value));
-                    var user = _db.Users.First(t => t.Id == userId);
-                    user.AllegroJournalStart = journalStart;
-                    _db.SaveChanges();
-                }
-                
-                //SendCodes(db, emailService, userId);
-            }
-            catch (TimeoutException e)
-            {
-                _logger.LogError(1, e, "The service operation timed out.");
-            }
-            catch (FaultException e)
-            {
-                _logger.LogError(1, e, "An unknown exception was received.");
-            }
-            catch (CommunicationException e)
-            {
-                _logger.LogError(1, e, "There was a communication problem.");
-            }
-
-            _backgroundJob.Schedule(() => Process(), Interval);
-        }
-
 
         private void ProcessJournal(ref long journalStart, Dictionary<long, int> monitoredAds)
         {
@@ -156,12 +133,6 @@ namespace AutoAllegro.Services
                 journalStart = dealsStruct.dealEventId;
                 _db.SaveChanges();
             }
-        }
-
-        private AllegroCredentials GetAllegroCredentials(ApplicationDbContext db, string id)
-        {
-            var user = db.Users.Single(t => t.Id == id);
-            return new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
         }
     }
 }

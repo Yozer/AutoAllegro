@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using System.ServiceModel;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Services.Interfaces;
 using Hangfire;
 using Microsoft.Extensions.Logging;
 
-namespace AutoAllegro.Services
+namespace AutoAllegro.Services.AllegroProcessors
 {
-    public class AllegroFeedbackProcessor : IAllegroFeedbackProcessor
+    public interface IAllegroFeedbackProcessor : IAllegroAbstractProcessor
+    {
+    }
+
+    public class AllegroFeedbackProcessor : AllegroAbstractProcessor, IAllegroFeedbackProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 
@@ -20,40 +23,14 @@ namespace AutoAllegro.Services
         private readonly ApplicationDbContext _db;
 
         public AllegroFeedbackProcessor(IBackgroundJobClient backgroundJob, IAllegroService allegroService, ILogger<AllegroFeedbackProcessor> logger, ApplicationDbContext db)
+            :base(backgroundJob, logger, Interval)
         {
             _backgroundJob = backgroundJob;
             _allegroService = allegroService;
             _logger = logger;
             _db = db;
         }
-
-        public void Init()
-        {
-            _backgroundJob.Schedule(() => Process(), Interval);
-        }
-        public void Process()
-        {
-            try
-            {
-                GiveFeedbacks();
-            }
-            catch (TimeoutException e)
-            {
-                _logger.LogError(1, e, "The service operation timed out.");
-            }
-            catch (FaultException e)
-            {
-                _logger.LogError(1, e, "An unknown exception was received.");
-            }
-            catch (CommunicationException e)
-            {
-                _logger.LogError(1, e, "There was a communication problem.");
-            }
-
-            _backgroundJob.Schedule(() => Process(), Interval);
-        }
-
-        private void GiveFeedbacks()
+        protected override void Execute()
         {
             _logger.LogInformation("Starting feedback processor");
             var auctions = from ad in _db.Auctions
@@ -107,11 +84,6 @@ namespace AutoAllegro.Services
                     }
                 }
             }
-        }
-        private AllegroCredentials GetAllegroCredentials(ApplicationDbContext db, string id)
-        {
-            var user = db.Users.Single(t => t.Id == id);
-            return new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
         }
     }
 }

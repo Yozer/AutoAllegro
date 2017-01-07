@@ -14,6 +14,7 @@ using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Models.ManageViewModels;
 using AutoAllegro.Services;
+using AutoAllegro.Services.AllegroProcessors;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;

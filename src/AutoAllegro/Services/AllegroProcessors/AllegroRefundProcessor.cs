@@ -1,60 +1,36 @@
 ﻿using System;
 using System.Linq;
-using System.ServiceModel;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Services.Interfaces;
 using Hangfire;
 using Microsoft.Extensions.Logging;
 
-namespace AutoAllegro.Services
+namespace AutoAllegro.Services.AllegroProcessors
 {
-    public class AllegroRefundProcessor : IAllegroRefundProcessor
+    public interface IAllegroRefundProcessor : IAllegroAbstractProcessor
+    {
+    }
+
+    public sealed class AllegroRefundProcessor : AllegroAbstractProcessor, IAllegroRefundProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
         private static readonly TimeSpan MakeRefundAfter = TimeSpan.FromDays(7);
         private static readonly int RefundReasonId = 1;
 
-        private readonly IBackgroundJobClient _backgroundJob;
         private readonly IAllegroService _allegroService;
         private readonly ILogger<AllegroRefundProcessor> _logger;
         private readonly ApplicationDbContext _db;
 
         public AllegroRefundProcessor(IBackgroundJobClient backgroundJob, IAllegroService allegroService, ILogger<AllegroRefundProcessor> logger, ApplicationDbContext db)
+            : base(backgroundJob, logger, Interval)
         {
-            _backgroundJob = backgroundJob;
             _allegroService = allegroService;
             _logger = logger;
             _db = db;
         }
 
-        public void Init()
-        {
-            _backgroundJob.Schedule(() => Process(), Interval);
-        }
-        public void Process()
-        {
-            try
-            {
-                MakeRefunds();
-            }
-            catch (TimeoutException e)
-            {
-                _logger.LogError(1, e, "The service operation timed out.");
-            }
-            catch (FaultException e)
-            {
-                _logger.LogError(1, e, "An unknown exception was received.");
-            }
-            catch (CommunicationException e)
-            {
-                _logger.LogError(1, e, "There was a communication problem.");
-            }
-
-            _backgroundJob.Schedule(() => Process(), Interval);
-        }
-
-        private void MakeRefunds()
+        protected override void Execute()
         {
             _logger.LogInformation("Starting refund processor");
             var nowDateTime = DateTime.Now;
@@ -90,11 +66,6 @@ namespace AutoAllegro.Services
                 }
                 _db.SaveChanges();
             }
-        }
-        private AllegroCredentials GetAllegroCredentials(ApplicationDbContext db, string id)
-        {
-            var user = db.Users.Single(t => t.Id == id);
-            return new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
         }
     }
 }

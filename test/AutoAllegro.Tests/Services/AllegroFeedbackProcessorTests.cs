@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Services;
+using AutoAllegro.Services.AllegroProcessors;
 using AutoAllegro.Services.Interfaces;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using SoaAllegroService;
 using Xunit;
 
