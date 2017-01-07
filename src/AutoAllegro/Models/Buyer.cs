@@ -18,6 +18,6 @@ namespace AutoAllegro.Models
         public string Phone { get; set; }
         public string Phone2 { get; set; }
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+        public virtual ICollection<AuctionBuyerFeedback> ReceivedFeedbackInAuctions { get; set; } = new List<AuctionBuyerFeedback>();
     }
-
 }

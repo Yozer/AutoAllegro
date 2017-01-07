@@ -28,6 +28,16 @@ namespace AutoAllegro.Data
             builder.Entity<Event>().HasIndex(t => t.AllegroEventId).IsUnique();
             builder.Entity<Order>().HasIndex(t => t.AllegroDealId).IsUnique();
             builder.Entity<Transaction>().HasIndex(t => t.AllegroTransactionId).IsUnique();
+
+            builder.Entity<AuctionBuyerFeedback>()
+                .HasOne(pt => pt.Auction)
+                .WithMany(p => p.GivenFeedbackToBuyers)
+                .HasForeignKey(pt => pt.AuctionId);
+
+            builder.Entity<AuctionBuyerFeedback>()
+                .HasOne(pt => pt.Buyer)
+                .WithMany(t => t.ReceivedFeedbackInAuctions)
+                .HasForeignKey(pt => pt.BuyerId);
         }
     }
 }

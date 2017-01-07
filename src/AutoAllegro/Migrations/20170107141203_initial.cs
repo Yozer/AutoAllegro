@@ -259,6 +259,33 @@ namespace AutoAllegro.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AuctionBuyerFeedback",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    AllegroFeedbackId = table.Column<int>(nullable: false),
+                    AuctionId = table.Column<int>(nullable: false),
+                    BuyerId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuctionBuyerFeedback", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AuctionBuyerFeedback_Auctions_AuctionId",
+                        column: x => x.AuctionId,
+                        principalTable: "Auctions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AuctionBuyerFeedback_Buyers_BuyerId",
+                        column: x => x.BuyerId,
+                        principalTable: "Buyers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
@@ -380,6 +407,16 @@ namespace AutoAllegro.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AuctionBuyerFeedback_AuctionId",
+                table: "AuctionBuyerFeedback",
+                column: "AuctionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuctionBuyerFeedback_BuyerId",
+                table: "AuctionBuyerFeedback",
+                column: "BuyerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Buyers_AllegroUserId",
                 table: "Buyers",
                 column: "AllegroUserId",
@@ -486,6 +523,9 @@ namespace AutoAllegro.Migrations
         {
             migrationBuilder.DropTable(
                 name: "AllegroRefundReasons");
+
+            migrationBuilder.DropTable(
+                name: "AuctionBuyerFeedback");
 
             migrationBuilder.DropTable(
                 name: "Events");

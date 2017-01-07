@@ -18,5 +18,7 @@ namespace AutoAllegro.Services.Interfaces
         Transaction GetTransactionDetails(long dealTransactionId, Order order);
         Task<int> SendRefund(Order order, int reasonId);
         Task<bool> CancelRefund(int refundId);
+        IEnumerable<WaitFeedbackStruct> GetWaitingFeedback();
+        int GivePositiveFeedback(long adId, int userId);
     }
 }

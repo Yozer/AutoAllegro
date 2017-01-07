@@ -69,6 +69,26 @@ namespace AutoAllegro.Migrations
                     b.ToTable("Auctions");
                 });
 
+            modelBuilder.Entity("AutoAllegro.Models.AuctionBuyerFeedback", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("AllegroFeedbackId");
+
+                    b.Property<int>("AuctionId");
+
+                    b.Property<int>("BuyerId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuctionId");
+
+                    b.HasIndex("BuyerId");
+
+                    b.ToTable("AuctionBuyerFeedback");
+                });
+
             modelBuilder.Entity("AutoAllegro.Models.Buyer", b =>
                 {
                     b.Property<int>("Id")
@@ -420,6 +440,19 @@ namespace AutoAllegro.Migrations
                     b.HasOne("AutoAllegro.Models.User", "User")
                         .WithMany("Auctions")
                         .HasForeignKey("UserId");
+                });
+
+            modelBuilder.Entity("AutoAllegro.Models.AuctionBuyerFeedback", b =>
+                {
+                    b.HasOne("AutoAllegro.Models.Auction", "Auction")
+                        .WithMany("GivenFeedbackToBuyers")
+                        .HasForeignKey("AuctionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("AutoAllegro.Models.Buyer", "Buyer")
+                        .WithMany("ReceivedFeedbackInAuctions")
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("AutoAllegro.Models.Event", b =>

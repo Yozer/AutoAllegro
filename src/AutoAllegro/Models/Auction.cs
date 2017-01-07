@@ -24,5 +24,6 @@ namespace AutoAllegro.Models
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<GameCode> GameCodes { get; set; } = new List<GameCode>();
+        public virtual ICollection<AuctionBuyerFeedback> GivenFeedbackToBuyers { get; set; } = new List<AuctionBuyerFeedback>();
     }
 }

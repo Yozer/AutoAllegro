@@ -194,11 +194,46 @@ namespace AutoAllegro.Services
 
             return false;
         }
+        public IEnumerable<WaitFeedbackStruct> GetWaitingFeedback()
+        {
+            ThrowIfNotLogged();
+
+            const int packageSize = 100;
+            int offset = 0;
+            WaitFeedbackStruct[] response;
+
+            do
+            {
+                response = _servicePort.doGetWaitingFeedbacksAsync(new doGetWaitingFeedbacksRequest(_sessionKey, offset, packageSize)).Result.feWaitList;
+
+                foreach (var feedbackStruct in response)
+                    yield return feedbackStruct;
+
+                ++offset;
+            } while (response.Length == packageSize);
+
+        }
+        public int GivePositiveFeedback(long adId, int userId)
+        {
+            ThrowIfNotLogged();
+
+            return _servicePort.doFeedbackAsync(new doFeedbackRequest
+            {
+                sessionHandle = _sessionKey,
+                feItemId = adId,
+                feToUserId = userId,
+                feOp = 2,
+                feUseCommentTemplate = 1,
+                feCommentType = "POS"
+            }).Result.feedbackId;
+
+        }
         private void ThrowIfNotLogged()
         {
             if(!IsLogged)
                 throw new InvalidOperationException("Not logged in");
         }
+
 
         [Obsolete]
         public Task<doNewAuctionExtResponse> AddFakeAdd()
