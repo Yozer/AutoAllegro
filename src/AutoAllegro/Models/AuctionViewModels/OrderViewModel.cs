@@ -35,6 +35,8 @@ namespace AutoAllegro.Models.AuctionViewModels
         [Display(Name = "Błąd podczas wysyłania zwrotu prowizji do Allegro.")]
         SendingRefundFailed,
         [Display(Name = "Zamówienie oznaczone jako opłacone.")]
-        OrderMarkedAsPaid
+        OrderMarkedAsPaid,
+        [Display(Name = "Błąd podczas anulowania zwrotu prowizji. Prawdopodobnie kupujący otrzymał już ostrzeżenie od Allegro.")]
+        CannotMarkAsPaid
     }
 }

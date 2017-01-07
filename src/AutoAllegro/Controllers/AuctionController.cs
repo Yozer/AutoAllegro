@@ -303,6 +303,18 @@ namespace AutoAllegro.Controllers
             if (order == null)
                 return RedirectToAction(nameof(Index));
 
+            if (order.AllegroRefundId != null)
+            {
+                await LoginToAllegro();
+                if (!await _allegroService.CancelRefund(order.AllegroRefundId.Value))
+                {
+                    return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.CannotMarkAsPaid });
+                }
+
+                order.AllegroRefundId = null;
+            }
+
+            order.AllegroRefundId = null;
             order.OrderStatus = OrderStatus.Paid;
             await _dbContext.SaveChangesAsync();
             return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.OrderMarkedAsPaid });

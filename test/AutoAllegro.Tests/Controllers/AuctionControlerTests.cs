@@ -230,6 +230,55 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
         }
         [Fact]
+        public async Task MarkAsPaid_ShouldChangeOrderStateToPaid_WithRefund()
+        {
+            // arrange
+            var order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            order.AllegroRefundId = 512;
+            _db.SaveChanges();
+            _allegroService.CancelRefund(512).Returns(true);
+            PopulateHttpContext(UserId);
+
+            // act
+            IActionResult result = await _controller.MarkAsPaid(order.Id);
+
+            // assert
+
+            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            Assert.Equal(OrderStatus.Paid, order.OrderStatus);
+            Assert.Null(order.AllegroRefundId);
+
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.OrderMarkedAsPaid, redirect.RouteValues["message"]);
+        }
+        [Fact]
+        public async Task MarkAsPaid_ShouldNotChangeOrderStatus_WithRefund()
+        {
+            // arrange
+            var order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            order.AllegroRefundId = 512;
+            _db.SaveChanges();
+            _allegroService.CancelRefund(512).Returns(false);
+            PopulateHttpContext(UserId);
+
+            // act
+            IActionResult result = await _controller.MarkAsPaid(order.Id);
+
+            // assert
+            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            Assert.Equal(OrderStatus.Created, order.OrderStatus);
+            Assert.Equal(512, order.AllegroRefundId);
+
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.CannotMarkAsPaid, redirect.RouteValues["message"]);
+        }
+        [Fact]
         public async Task MarkAsPaid_ShouldChangeOrderStateToPaid()
         {
             // arrange
