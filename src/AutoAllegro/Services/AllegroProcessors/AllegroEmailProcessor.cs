@@ -16,6 +16,7 @@ namespace AutoAllegro.Services.AllegroProcessors
     {
         private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
+        private readonly IBackgroundJobClient _backgroundJob;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<AllegroEmailProcessor> _logger;
         private readonly ApplicationDbContext _db;
@@ -23,9 +24,15 @@ namespace AutoAllegro.Services.AllegroProcessors
         public AllegroEmailProcessor(IBackgroundJobClient backgroundJob, IEmailSender emailSender, ILogger<AllegroEmailProcessor> logger, ApplicationDbContext db)
             :base(backgroundJob, logger, Interval)
         {
+            _backgroundJob = backgroundJob;
             _emailSender = emailSender;
             _logger = logger;
             _db = db;
+        }
+
+        public override void Init()
+        {
+            _backgroundJob.Schedule<IAllegroEmailProcessor>(t => t.Process(), Interval.Add(TimeSpan.FromSeconds(30)));
         }
 
         protected override void Execute()
