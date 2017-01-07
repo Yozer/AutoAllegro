@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.ServiceModel;
@@ -7,12 +6,11 @@ using AutoAllegro.Data;
 using AutoAllegro.Models;
 using AutoAllegro.Services.Interfaces;
 using Hangfire;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace AutoAllegro.Services
 {
-    public class AllegroFeedbackProcessor 
+    public class AllegroFeedbackProcessor : IAllegroFeedbackProcessor
     {
         private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 
