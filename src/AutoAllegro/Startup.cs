@@ -17,12 +17,15 @@ using AutoAllegro.Services;
 using AutoAllegro.Services.AllegroProcessors;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
+using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Hangfire.MemoryStorage;
 using Hangfire.Storage;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging.AzureAppServices;
+using NuGet.Packaging;
 using SoaAllegroService;
 
 namespace AutoAllegro
@@ -162,13 +165,16 @@ namespace AutoAllegro
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
-            app.UseHangfireDashboard();
             app.UseHangfireServer();
             app.UseApplicationInsightsExceptionTelemetry();
 
-            //app.UseSession();
             app.UseStaticFiles();
             app.UseIdentity();
+
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = new[] { new MyRestrictiveAuthorizationFilter() }
+            });
 
             app.UseMvc(routes =>
             {
@@ -215,25 +221,29 @@ namespace AutoAllegro
             }
         }
 
+        private static readonly List<Type> Jobs = new List<Type>
+        {
+            typeof(IAllegroTransactionProcessor),
+            typeof(IAllegroEmailProcessor),
+            typeof(IAllegroRefundProcessor),
+            typeof(IAllegroFeedbackProcessor)
+        };
         private void InitAllegroProcessor(IServiceProvider serviceProvider)
         {
             using (var scope = serviceProvider.CreateScope())
             {
-                IMonitoringApi api = JobStorage.Current.GetMonitoringApi();
-                long count = api.ScheduledCount();
-                foreach (var job in api.ScheduledJobs(0, (int)count))
-                {
-                    BackgroundJob.Delete(job.Key);
-                }
+                HashSet<Type> scheduledJobs = new HashSet<Type>();
 
-                var allegroProcessor = scope.ServiceProvider.GetService<IAllegroTransactionProcessor>();
-                allegroProcessor.Init();
-                var emailProcessor = scope.ServiceProvider.GetService<IAllegroEmailProcessor>();
-                emailProcessor.Init();
-                var refundProcessor = scope.ServiceProvider.GetService<IAllegroRefundProcessor>();
-                refundProcessor.Init();
-                var feedbackProcessor = scope.ServiceProvider.GetService<IAllegroFeedbackProcessor>();
-                feedbackProcessor.Init();
+                IMonitoringApi api = JobStorage.Current.GetMonitoringApi();
+                scheduledJobs.AddRange(api.ScheduledJobs(0, 1000).Select(t => t.Value.Job.Type));
+                scheduledJobs.AddRange(api.ProcessingJobs(0, 1000).Select(t => t.Value.Job.Type));
+                scheduledJobs.AddRange(api.EnqueuedJobs("default", 0, 1000).Select(t => t.Value.Job.Type));
+
+                foreach (var jobType in Jobs.Where(t => !scheduledJobs.Contains(t)))
+                {
+                    var processor = (IAllegroAbstractProcessor)scope.ServiceProvider.GetService(jobType);
+                    processor.Init();
+                }
             }
         }
 
@@ -247,6 +257,15 @@ namespace AutoAllegro
             cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
             cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().ReverseMap();
             cf.CreateMap<CodeViewModel, GameCode>().ReverseMap();
+        }
+
+        public class MyRestrictiveAuthorizationFilter : IDashboardAuthorizationFilter
+        {
+            public bool Authorize(DashboardContext context)
+            {
+                var httpContext = context.GetHttpContext();
+                return httpContext.User.Identity.IsAuthenticated;
+            }
         }
     }
 }
