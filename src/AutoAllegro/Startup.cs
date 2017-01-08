@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Hangfire.MemoryStorage;
 using Hangfire.Storage;
+using Microsoft.Extensions.Logging.AzureAppServices;
 using SoaAllegroService;
 
 namespace AutoAllegro
@@ -33,7 +34,8 @@ namespace AutoAllegro
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
+                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
 
             if (env.IsDevelopment())
             {
@@ -148,6 +150,7 @@ namespace AutoAllegro
         public void ConfigureProduction(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
+            loggerFactory.AddAzureWebAppDiagnostics();
 
             // StatusCode pages to gracefully handle status codes 400-599.
             app.UseStatusCodePagesWithRedirects("~/Home/StatusCodePage");
