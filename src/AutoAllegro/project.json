@@ -46,6 +46,7 @@
     "AutoMapper.Extensions.Microsoft.DependencyInjection": "1.1.0",
     "Hangfire.AspNetCore": "1.6.8",
     "Hangfire.Core": "1.6.8",
+    "Hangfire.SqlServer": "1.6.8",
     "MailKit": "1.10.1"
   },
   "tools": {

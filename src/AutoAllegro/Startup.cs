@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Hangfire.MemoryStorage;
+using Hangfire.Storage;
 using SoaAllegroService;
 
 namespace AutoAllegro
@@ -45,9 +46,11 @@ namespace AutoAllegro
 
             builder.AddEnvironmentVariables();
             Configuration = builder.Build();
+            HostingEnvironment = env;
         }
 
         public IConfigurationRoot Configuration { get; }
+        public IHostingEnvironment HostingEnvironment { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -58,8 +61,16 @@ namespace AutoAllegro
             // Add framework services.
             services.AddApplicationInsightsTelemetry(Configuration);
 
-            services.AddDbContext<ApplicationDbContext>(options =>
+            if (HostingEnvironment.IsDevelopment())
+            {
+                services.AddDbContext<ApplicationDbContext>(options =>
                     options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+            }
+            else
+            {
+                services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            }
 
             services.AddIdentity<User, IdentityRole>(options =>
                 {
@@ -90,7 +101,14 @@ namespace AutoAllegro
             services.AddTransient<IAllegroEmailProcessor, AllegroEmailProcessor>();
             services.AddTransient<IAllegroRefundProcessor, AllegroRefundProcessor>();
 
-            services.AddHangfire(t => t.UseMemoryStorage());
+            if (HostingEnvironment.IsDevelopment())
+            {
+                services.AddHangfire(t => t.UseMemoryStorage());
+            }
+            else
+            {
+                services.AddHangfire(t => t.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
+            }
             services.AddAutoMapper(ConfigureAutoMapper);
 
 
@@ -115,9 +133,6 @@ namespace AutoAllegro
             app.UseBrowserLink();
 
             Configure(app);
-
-            //Populates the app sample data
-            SampleData.InitializeDatabaseAsync(app.ApplicationServices).Wait();
         }
         public void ConfigureStaging(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
@@ -159,6 +174,8 @@ namespace AutoAllegro
                     template: "{controller=Auction}/{action=Index}/{id?}");
             });
 
+            //Populates the app sample data
+            SampleData.InitializeDatabaseAsync(app.ApplicationServices, HostingEnvironment).Wait();
             InitAllegroProcessor(app.ApplicationServices);
             InitAllegroRefundReasons(app.ApplicationServices);
         }
@@ -199,6 +216,13 @@ namespace AutoAllegro
         {
             using (var scope = serviceProvider.CreateScope())
             {
+                IMonitoringApi api = JobStorage.Current.GetMonitoringApi();
+                long count = api.ScheduledCount();
+                foreach (var job in api.ScheduledJobs(0, (int)count))
+                {
+                    BackgroundJob.Delete(job.Key);
+                }
+
                 var allegroProcessor = scope.ServiceProvider.GetService<IAllegroTransactionProcessor>();
                 allegroProcessor.Init();
                 var emailProcessor = scope.ServiceProvider.GetService<IAllegroEmailProcessor>();

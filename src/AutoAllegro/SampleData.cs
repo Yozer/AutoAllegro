@@ -21,14 +21,17 @@ namespace AutoAllegro
         const string allegroPassword = "AllegroPassword";
         const string allegroKey = "AllegroKey";
 
-        public static async Task InitializeDatabaseAsync(IServiceProvider serviceProvider, bool createUsers = true)
+        public static async Task InitializeDatabaseAsync(IServiceProvider serviceProvider, IHostingEnvironment env)
         {
             using (var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
                 var db = serviceScope.ServiceProvider.GetService<ApplicationDbContext>();
                 await db.Database.MigrateAsync();
                 string id = await CreateAdminUser(serviceProvider);
-                await InsertTestData(db, id);
+                if (env.IsDevelopment())
+                {
+                    await InsertTestData(db, id);
+                }
             }
         }
         private static async Task<string> CreateAdminUser(IServiceProvider serviceProvider)
