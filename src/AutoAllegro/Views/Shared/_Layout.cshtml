@@ -10,9 +10,10 @@
     <link href="~/lib/bootstrap/bootstrap-custom.min.css" rel="stylesheet">
     <link href="~/css/main.css" rel="stylesheet">
 </environment>
-<environment names="Staging,Production">
-    <link href="~/css/main.min.css" rel="stylesheet">
-</environment>
+    <environment names="Staging,Production">
+        <link href="~/css/main.min.css" rel="stylesheet">
+    </environment>
+    @Html.ApplicationInsightsJavaScript(TelemetryConfiguration)
 </head>
 
 <body class="@ViewData["bodyClass"]">

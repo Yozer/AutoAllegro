@@ -141,6 +141,7 @@ namespace AutoAllegro
         }
         public void ConfigureStaging(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
+            app.UseApplicationInsightsRequestTelemetry();
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
 
             // StatusCode pages to gracefully handle status codes 400-599.
@@ -152,6 +153,7 @@ namespace AutoAllegro
         }
         public void ConfigureProduction(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
+            app.UseApplicationInsightsRequestTelemetry();
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
             loggerFactory.AddAzureWebAppDiagnostics();
 
@@ -165,8 +167,8 @@ namespace AutoAllegro
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
-            app.UseHangfireServer();
             app.UseApplicationInsightsExceptionTelemetry();
+            app.UseHangfireServer();
 
             app.UseStaticFiles();
             app.UseIdentity();
