@@ -340,7 +340,7 @@ namespace AutoAllegro.Controllers
         private async Task LoginToAllegro()
         {
             var user = await _userManager.GetUserAsync(User);
-            var allegroCredentials = new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
+            var allegroCredentials = new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, null);
             await _allegroService.Login(GetUserId(), allegroCredentials);
         }
 

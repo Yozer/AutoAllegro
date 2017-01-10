@@ -705,7 +705,7 @@ namespace AutoAllegro.Tests.Controllers
 
             await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.Id == 1));
             await _allegroService.Received(1).Login(UserId, Arg.Is<AllegroCredentials>(t =>
-                t.ApiKey == "allegroKey1" && t.JournalStart == 14 && t.Pass == "hashPass1" && t.UserName == "username1"));
+                t.ApiKey == "allegroKey1" && t.Pass == "hashPass1" && t.UserName == "username1"));
             Assert.Equal(1.0m, model.Fee);
             Assert.Equal(52.0m, model.OpenCost);
             Assert.Equal(-53.0m, model.Profit);

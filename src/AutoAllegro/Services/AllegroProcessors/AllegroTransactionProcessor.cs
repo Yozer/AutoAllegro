@@ -47,9 +47,6 @@ namespace AutoAllegro.Services.AllegroProcessors
                 _allegroService.Login(userId, allegroCredentials).Wait();
 
                 ProcessJournal(ref journalStart, userAuction.ToDictionary(t => t.Key, t => t.Value));
-                var user = _db.Users.First(t => t.Id == userId);
-                user.AllegroJournalStart = journalStart;
-                _db.SaveChanges();
             }
         }
 

@@ -257,8 +257,6 @@ namespace AutoAllegro.Migrations
 
                     b.Property<string>("AllegroHashedPass");
 
-                    b.Property<long>("AllegroJournalStart");
-
                     b.Property<string>("AllegroKey");
 
                     b.Property<string>("AllegroUserName");

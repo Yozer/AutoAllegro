@@ -66,7 +66,8 @@ namespace AutoAllegro.Services.AllegroProcessors
         {
             return (from user in db.Users
                     where user.Id == id
-                    select new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart)
+                    let journal = db.Events.Where(t => t.Order.Auction.UserId == id).OrderByDescending(t => t.Id).FirstOrDefault()
+                    select new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, journal)
                     ).First();
         }
     }

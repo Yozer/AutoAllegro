@@ -32,7 +32,7 @@ namespace AutoAllegro.Tests.Services
         public AllegroServiceTests()
         {
             _apiKey = "TestApiKey";
-            _allegroCredentials = new AllegroCredentials("testName", "testPass", _apiKey, 41);
+            _allegroCredentials = new AllegroCredentials("testName", "testPass", _apiKey, new Event { AllegroEventId = 41 });
 
             _memoryCache = new MemoryCache(new MemoryCacheOptions());
             _servicePort = Substitute.For<servicePort>();

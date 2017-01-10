@@ -280,12 +280,12 @@ namespace AutoAllegro.Services
         public string ApiKey { get; }
         public long JournalStart { get; }
 
-        public AllegroCredentials(string userName, string pass, string apiKey, long journalStart)
+        public AllegroCredentials(string userName, string pass, string apiKey, Event journalStart)
         {
             UserName = userName;
             Pass = pass;
             ApiKey = apiKey;
-            JournalStart = journalStart;
+            JournalStart = journalStart?.AllegroEventId ?? 0L;
         }
     }
 }

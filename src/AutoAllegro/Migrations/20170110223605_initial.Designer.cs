@@ -9,7 +9,7 @@ using AutoAllegro.Models;
 namespace AutoAllegro.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20170107141203_initial")]
+    [Migration("20170110223605_initial")]
     partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -257,8 +257,6 @@ namespace AutoAllegro.Migrations
                     b.Property<int>("AccessFailedCount");
 
                     b.Property<string>("AllegroHashedPass");
-
-                    b.Property<long>("AllegroJournalStart");
 
                     b.Property<string>("AllegroKey");
 

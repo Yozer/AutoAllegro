@@ -112,7 +112,6 @@ namespace AutoAllegro.Migrations
                     Id = table.Column<string>(nullable: false),
                     AccessFailedCount = table.Column<int>(nullable: false),
                     AllegroHashedPass = table.Column<string>(nullable: true),
-                    AllegroJournalStart = table.Column<long>(nullable: false),
                     AllegroKey = table.Column<string>(nullable: true),
                     AllegroUserName = table.Column<string>(nullable: true),
                     ConcurrencyStamp = table.Column<string>(nullable: true),

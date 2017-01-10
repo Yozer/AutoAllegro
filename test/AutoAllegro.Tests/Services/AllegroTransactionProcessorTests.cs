@@ -75,57 +75,21 @@ namespace AutoAllegro.Tests.Services
             _scheduler.ReceivedWithAnyArgs(1).Create(null, null);
         }
         
-        [Fact]
-        public void Process_LogsToAllegro_NoJournalSet()
-        {
-            // arrange
-            CreateFakeData();
-            long userJournal;
-            _db.Auctions.Single(t => t.AllegroAuctionId == 333).IsMonitored = false;
-            userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-            _db.SaveChanges();
-
-            _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
-            _allegroService.ClearReceivedCalls();
-
-            // act
-            _processor.Process();
-
-            // assert
-            _allegroService.Received().Login(UserId, Arg.Any<AllegroCredentials>());
-            Assert.Equal(2, _allegroService.ReceivedCalls().Count());
-        }
-        [Fact]
-        public void Process_LogsToAllegro_JournalSet()
-        {
-            // arrange
-            CreateFakeData();
-            long userJournal;
-            _db.Auctions.Single(t => t.AllegroAuctionId == 333).IsMonitored = false;
-            userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-            _db.SaveChanges();
-
-            _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
-
-            // act
-            _processor.Process();
-
-            // assert
-            _allegroService.Received().Login(UserId, Arg.Any<AllegroCredentials>());
-            Assert.Equal(2, _allegroService.ReceivedCalls().Count());
-        }
 
         [Fact]
         public void Process_DealCreated_GetBuyerData_AndInsertOrder()
         {
             // arrange
             CreateFakeData();
-            long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
-            _db.Auctions.Single(t => t.AllegroAuctionId == 333).IsMonitored = false;
-            _db.SaveChanges();
+            long userJournal = 14;
 
             Auction ad = _db.Auctions.Single(t => t.Id == 1);
             Buyer buyer = _db.Buyers.Single(t => t.Id == 1);
+            ClearTransactionData();
+
+            _db.Auctions.Single(t => t.AllegroAuctionId == 333).IsMonitored = false;
+            _db.Events.Add(new Event {Order = new Order {Auction = ad, Buyer = new Buyer() }, AllegroEventId = userJournal });
+            _db.SaveChanges();
 
             buyer.Orders = null;
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>
@@ -138,11 +102,10 @@ namespace AutoAllegro.Tests.Services
                     dealEventTime = new DateTime(2015, 4, 6, 5, 8, 4).FromDateTime(),
                     dealQuantity = 3,
                     dealEventType = (int)EventType.DealCreated,
-                    dealId = 5
+                    dealId = 5999
                 }
             });
             _allegroService.FetchBuyerData(ad.AllegroAuctionId, buyer.AllegroUserId).Returns(buyer);
-            ClearTransactionData();
 
             // act
             _processor.Process();
@@ -153,23 +116,23 @@ namespace AutoAllegro.Tests.Services
             _allegroService.Received().FetchBuyerData(ad.AllegroAuctionId, buyer.AllegroUserId);
             Assert.Equal(3, _allegroService.ReceivedCalls().Count()); // login, journal, buyer data
 
-            Order order = _db.Orders.Include(t => t.Buyer).Include(t => t.Auction).Single();
+            Order order = _db.Orders.Include(t => t.Buyer).Include(t => t.Auction).Last();
             Assert.Equal(ad.AllegroAuctionId, order.Auction.AllegroAuctionId);
-            Assert.Equal(5, order.AllegroDealId);
+            Assert.Equal(5999, order.AllegroDealId);
             Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), order.OrderDate);
             Assert.Equal(OrderStatus.Created, order.OrderStatus);
             Assert.Equal(3, order.Quantity);
             Assert.Null(order.ShippingAddress);
             Assert.Equal(buyer.AllegroUserId, order.Buyer.AllegroUserId);
 
-            Event ev = _db.Events.Single();
+            Event ev = _db.Events.Last();
             Assert.Equal(order.Id, ev.OrderId);
             Assert.Equal(152, ev.AllegroEventId);
             Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), ev.EventTime);
             Assert.Equal(EventType.DealCreated, ev.EventType);
 
             User user = _db.Users.Single(t => t.Id == UserId);
-            Assert.Equal(152, user.AllegroJournalStart);
+            Assert.Equal(152, _db.Events.Last(t => t.Order.Auction.UserId == ad.UserId).AllegroEventId);
         }
 
         [Fact]
@@ -184,12 +147,14 @@ namespace AutoAllegro.Tests.Services
                 OrderStatus = OrderStatus.Created,
                 Quantity = 5
             };
-            long userJournal = _db.Users.Single(t => t.Id == UserId).AllegroJournalStart;
+            long userJournal = 22;
             Auction ad = _db.Auctions.Single(t => t.Id == 1);
             _db.Auctions.Single(t => t.AllegroAuctionId == 333).IsMonitored = false;
             Buyer buyer = _db.Buyers.Single(t => t.Id == 1);
             buyer.Orders.Add(order);
             order.Auction = ad;
+
+            _db.Events.Add(new Event { Order = new Order { Auction = ad, Buyer = new Buyer() }, AllegroEventId = userJournal });
             _db.SaveChanges();
 
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>
@@ -280,7 +245,7 @@ namespace AutoAllegro.Tests.Services
                 Assert.Equal(TransactionStatus.Canceled, transaction1.TransactionStatus);
                 Assert.Equal(TransactionStatus.Finished, transaction2.TransactionStatus);
 
-                var events = database.Events.ToList();
+                var events = database.Events.Skip(1).ToList();
                 Assert.Equal(4, events.Count);
                 Assert.Equal(order.Id, events[0].OrderId);
                 Assert.Equal(152, events[0].AllegroEventId);
@@ -300,7 +265,7 @@ namespace AutoAllegro.Tests.Services
                 Assert.Equal(EventType.TransactionFinished, events[3].EventType);
 
                 User user = database.Users.Single(t => t.Id == UserId);
-                Assert.Equal(155, user.AllegroJournalStart);
+                Assert.Equal(155, database.Events.OrderByDescending(t => t.AllegroEventId).First(t => t.Order.Auction.UserId == user.Id).AllegroEventId);
             }
         }
         [Fact]
@@ -431,20 +396,13 @@ namespace AutoAllegro.Tests.Services
         }
         private void ClearTransactionData()
         {
-            using(var scope = CreateScope())
+            foreach (var b in _db.Buyers)
             {
-                var database = GetDatabase(scope);
-
-                foreach (var b in database.Buyers)
-                {
-                    database.Entry(b).State = EntityState.Deleted;
-                }
-                foreach (var o in database.Orders)
-                {
-                    database.Entry(o).State = EntityState.Deleted;
-                }
-
-                database.SaveChanges();
+                _db.Entry(b).State = EntityState.Deleted;
+            }
+            foreach (var o in _db.Orders)
+            {
+                _db.Entry(o).State = EntityState.Deleted;
             }
         }
 

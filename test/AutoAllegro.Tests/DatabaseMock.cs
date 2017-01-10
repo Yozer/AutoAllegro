@@ -103,7 +103,6 @@ namespace AutoAllegro.Tests
                     AllegroUserName = "username1",
                     AllegroHashedPass = "hashPass1",
                     AllegroKey = "allegroKey1",
-                    AllegroJournalStart = 14,
                     VirtualItemSettings = new VirtualItemSettings
                     {
                         DisplayName = "x",
@@ -120,7 +119,6 @@ namespace AutoAllegro.Tests
                     AllegroUserName = "username2",
                     AllegroHashedPass = "hashPass2",
                     AllegroKey = "allegroKey2",
-                    AllegroJournalStart = 16
                 }, "Pass@word13").Wait();
 
                 var auction1 = new Auction
