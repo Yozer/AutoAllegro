@@ -9,6 +9,7 @@ using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using SoaAllegroService;
 
 namespace AutoAllegro.Services
@@ -20,26 +21,31 @@ namespace AutoAllegro.Services
 
         private readonly IMemoryCache _memoryCache;
         private readonly servicePort _servicePort;
+        private readonly ILogger<AllegroService> _logger;
+
         private string _sessionKey;
         private string _userId;
+        private AllegroCredentials _credentials;
 
-        public bool IsLogged => !IsLoginRequired(_userId);
+        public bool IsLogged => !IsLoginRequired();
 
-        public AllegroService(IMemoryCache memoryCache, servicePort servicePort)
+        public AllegroService(IMemoryCache memoryCache, servicePort servicePort, ILogger<AllegroService> logger)
         {
             _memoryCache = memoryCache;
             _servicePort = servicePort;
+            _logger = logger;
         }
 
-        public bool IsLoginRequired(string userId)
+        private bool IsLoginRequired()
         {
-            _userId = userId;
-            return _userId == null || !_memoryCache.TryGetValue(userId, out _sessionKey);
+            return _userId == null || !_memoryCache.TryGetValue(_userId, out _sessionKey);
         }
 
         public async Task Login(string userId, AllegroCredentials credentials)
         {
             _userId = userId;
+            _credentials = credentials;
+
             if (_memoryCache.TryGetValue(userId, out _sessionKey))
                 return;
 
@@ -56,15 +62,40 @@ namespace AutoAllegro.Services
             _sessionKey = loginResult.sessionHandlePart;
             _memoryCache.Set(userId, _sessionKey, WebApiKeyExpirationTime);
         }
+
+        private async Task<T> DoRequest<T>(Func<Task<T>> request)
+        {
+            _logger.LogInformation(1, $"Allegro request for: {_userId}. Request type: {typeof(T)}.");
+            T response;
+            try
+            {
+                response = await request();
+            }
+            catch (FaultException e) when (e.Code.Name == "ERR_NO_SESSION" || e.Code.Name == "ERR_SESSION_EXPIRED")
+            {
+                _logger.LogError(3, e, $"Allegro request for: {_userId}. Invalid session.");
+                _memoryCache.Remove(_userId);
+                await Login(_userId, _credentials);
+                return await DoRequest(request);
+            }
+            catch (FaultException e)
+            {
+                _logger.LogError(3, e, $"Unhandled error Allegro request for: {_userId}. {e.Code.Name}");
+                throw;
+            }
+
+            _logger.LogInformation(2, $"Allegro request for: {_userId}. Success.");
+            return response;
+        }
         public async Task<List<NewAuction>> GetNewAuctions()
         {
             ThrowIfNotLogged();
 
-            var auctions = await _servicePort.doGetMySellItemsAsync(new doGetMySellItemsRequest
+            var auctions = await DoRequest(() => _servicePort.doGetMySellItemsAsync(new doGetMySellItemsRequest
             {
                 pageSize = 1000,
                 sessionId = _sessionKey
-            });
+            }));
 
             return auctions.sellItemsList.Select(t => new NewAuction
             {
@@ -80,11 +111,11 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
-            var billing = await _servicePort.doMyBillingItemAsync(new doMyBillingItemRequest
+            var billing = await DoRequest(() => _servicePort.doMyBillingItemAsync(new doMyBillingItemRequest
             {
                 itemId = auction.AllegroAuctionId,
                 sessionHandle = _sessionKey
-            });
+            }));
 
             auction.Fee = billing.endingFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
             auction.OpenCost = billing.entryFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
@@ -98,12 +129,12 @@ namespace AutoAllegro.Services
 
             do
             {
-                response = _servicePort.doGetSiteJournalDealsAsync(new doGetSiteJournalDealsRequest
+                response = DoRequest(() => _servicePort.doGetSiteJournalDealsAsync(new doGetSiteJournalDealsRequest
                 {
                     sessionId = _sessionKey,
                     journalStart = journalStart
                     
-                }).Result.siteJournalDeals;
+                })).Result.siteJournalDeals;
 
                 foreach (var dealsStruct in response)
                     yield return dealsStruct;
@@ -120,12 +151,12 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
-            var response = _servicePort.doGetPostBuyDataAsync(new doGetPostBuyDataRequest
+            var response = DoRequest(() => _servicePort.doGetPostBuyDataAsync(new doGetPostBuyDataRequest
             {
                 sessionHandle = _sessionKey,
                 buyerFilterArray = new[] {dealBuyerId},
                 itemsArray = new[] {dealItemId}
-            }).Result.itemsPostBuyData[0].usersPostBuyData[0];
+            })).Result.itemsPostBuyData[0].usersPostBuyData[0];
 
             return new Buyer
             {
@@ -146,11 +177,11 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
-            var response = _servicePort.doGetPostBuyFormsDataForSellersAsync(new doGetPostBuyFormsDataForSellersRequest
+            var response = DoRequest(() => _servicePort.doGetPostBuyFormsDataForSellersAsync(new doGetPostBuyFormsDataForSellersRequest
             {
                 sessionId = _sessionKey,
                 transactionsIdsArray = new[] {dealTransactionId}
-            }).Result.postBuyFormData[0];
+            })).Result.postBuyFormData[0];
 
             var transaction = new Transaction
             {
@@ -174,13 +205,13 @@ namespace AutoAllegro.Services
         public async Task<int> SendRefund(Order order, int reasonId)
         {
             ThrowIfNotLogged();
-            var response = await _servicePort.doSendRefundFormAsync(new doSendRefundFormRequest
+            var response = await DoRequest(() => _servicePort.doSendRefundFormAsync(new doSendRefundFormRequest
             {
                 reasonId = reasonId,
                 dealId = (int) order.AllegroDealId,
                 refundQuantity = order.Quantity,
                 sessionId = _sessionKey
-            });
+            }));
 
             return response.refundId;
         }
@@ -189,7 +220,7 @@ namespace AutoAllegro.Services
             ThrowIfNotLogged();
             try
             {
-                var response = await _servicePort.doCancelRefundFormAsync(new doCancelRefundFormRequest {sessionId = _sessionKey, refundId = refundId});
+                var response = await DoRequest(() => _servicePort.doCancelRefundFormAsync(new doCancelRefundFormRequest {sessionId = _sessionKey, refundId = refundId}));
                 if(response.cancellationResult)
                     return true;
             }
@@ -210,7 +241,7 @@ namespace AutoAllegro.Services
 
             do
             {
-                response = _servicePort.doGetWaitingFeedbacksAsync(new doGetWaitingFeedbacksRequest(_sessionKey, offset, packageSize)).Result.feWaitList;
+                response = DoRequest(() => _servicePort.doGetWaitingFeedbacksAsync(new doGetWaitingFeedbacksRequest(_sessionKey, offset, packageSize))).Result.feWaitList;
 
                 foreach (var feedbackStruct in response)
                     yield return feedbackStruct;
@@ -223,7 +254,7 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
-            return _servicePort.doFeedbackAsync(new doFeedbackRequest
+            return DoRequest(() => _servicePort.doFeedbackAsync(new doFeedbackRequest
             {
                 sessionHandle = _sessionKey,
                 feItemId = adId,
@@ -232,7 +263,7 @@ namespace AutoAllegro.Services
                 feUseCommentTemplate = 1,
                 feCommentType = "POS",
                 feComment = "Transakcja przebiegła pomyślnie."
-            }).Result.feedbackId;
+            })).Result.feedbackId;
 
         }
         private void ThrowIfNotLogged()

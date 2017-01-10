@@ -41,7 +41,6 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange
             CreateFakeData();
-            _allegroService.IsLoginRequired(UserId).Returns(true);
             int i = 0;
             _allegroService.Login(null, null).ReturnsForAnyArgs(t =>
             {
@@ -87,7 +86,6 @@ namespace AutoAllegro.Tests.Services
             _db.SaveChanges();
 
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
-            _allegroService.IsLoginRequired(UserId).Returns(true);
             _allegroService.ClearReceivedCalls();
 
             // act
@@ -108,7 +106,6 @@ namespace AutoAllegro.Tests.Services
             _db.SaveChanges();
 
             _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>());
-            _allegroService.IsLoginRequired(UserId).Returns(true);
 
             // act
             _processor.Process();

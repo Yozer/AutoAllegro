@@ -44,11 +44,8 @@ namespace AutoAllegro.Services.AllegroProcessors
                 string userId = item.Key;
                 _logger.LogInformation($"Processing refunds for {userId}");
 
-                if (_allegroService.IsLoginRequired(userId))
-                {
-                    var allegroCredentials = GetAllegroCredentials(_db, userId);
-                    _allegroService.Login(userId, allegroCredentials).Wait();
-                }
+                var allegroCredentials = GetAllegroCredentials(_db, userId);
+                _allegroService.Login(userId, allegroCredentials).Wait();
 
                 foreach (var order in item)
                 {

@@ -339,12 +339,9 @@ namespace AutoAllegro.Controllers
         }
         private async Task LoginToAllegro()
         {
-            if (_allegroService.IsLoginRequired(GetUserId()))
-            {
-                var user = await _userManager.GetUserAsync(User);
-                var allegroCredentials = new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
-                await _allegroService.Login(GetUserId(), allegroCredentials);
-            }
+            var user = await _userManager.GetUserAsync(User);
+            var allegroCredentials = new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
+            await _allegroService.Login(GetUserId(), allegroCredentials);
         }
 
         private string GetUserId()

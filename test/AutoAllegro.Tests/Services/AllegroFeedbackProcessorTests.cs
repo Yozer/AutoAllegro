@@ -329,26 +329,6 @@ namespace AutoAllegro.Tests.Services
             }
         }
         [Fact]
-        public void Process_AllegroServiceLoginRequired()
-        {
-            // arrange
-            CreateFakeData();
-
-            _allegroService.GetWaitingFeedback().Returns(new List<WaitFeedbackStruct>
-            {
-                new WaitFeedbackStruct {feItemId = 111, feToUserId = 412, feOp = 2, feAnsCommentType = "POS", fePossibilityToAdd = 1},
-                new WaitFeedbackStruct {feItemId = 247, feToUserId = 412, feOp = 2, feAnsCommentType = "POS", fePossibilityToAdd = 1}
-            });
-            _allegroService.GivePositiveFeedback(111, 412).Returns(100);
-            _allegroService.IsLoginRequired(UserId).Returns(true);
-
-            // act
-            _processor.Process();
-
-            // assert
-            _allegroService.Received(1).Login(UserId, Arg.Is<AllegroCredentials>(t => t.UserName == "username1" && t.Pass == "hashPass1" && t.ApiKey == "allegroKey1"));
-        }
-        [Fact]
         public void Init_ShouldScheduleJob()
         {
             // arrange

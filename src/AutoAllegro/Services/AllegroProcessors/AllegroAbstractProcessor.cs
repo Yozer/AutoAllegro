@@ -64,8 +64,10 @@ namespace AutoAllegro.Services.AllegroProcessors
         protected abstract void Execute();
         protected AllegroCredentials GetAllegroCredentials(ApplicationDbContext db, string id)
         {
-            var user = db.Users.Single(t => t.Id == id);
-            return new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart);
+            return (from user in db.Users
+                    where user.Id == id
+                    select new AllegroCredentials(user.AllegroUserName, user.AllegroHashedPass, user.AllegroKey, user.AllegroJournalStart)
+                    ).First();
         }
     }
 }

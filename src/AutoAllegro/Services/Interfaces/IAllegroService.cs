@@ -9,7 +9,6 @@ namespace AutoAllegro.Services.Interfaces
 {
     public interface IAllegroService
     {
-        bool IsLoginRequired(string userId);
         Task Login(string userId, AllegroCredentials getAllegroCredentials);
         Task<List<NewAuction>> GetNewAuctions();
         Task<Auction> UpdateAuctionFees(Auction auction);

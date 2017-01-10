@@ -9,11 +9,11 @@ using AutoAllegro.Models;
 using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Services;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using SoaAllegroService;
 using Xunit;
-using Xunit.Sdk;
 
 namespace AutoAllegro.Tests.Services
 {
@@ -36,7 +36,7 @@ namespace AutoAllegro.Tests.Services
 
             _memoryCache = new MemoryCache(new MemoryCacheOptions());
             _servicePort = Substitute.For<servicePort>();
-            _allegroService = new AllegroService(_memoryCache, _servicePort)
+            _allegroService = new AllegroService(_memoryCache, _servicePort, Substitute.For<ILogger<AllegroService>>())
             {
                 WebApiKeyExpirationTime = _apiSessionExpiration
             };
@@ -71,7 +71,6 @@ namespace AutoAllegro.Tests.Services
             await _allegroService.Login("userId", null);
 
             // assert
-            Assert.False(_allegroService.IsLoginRequired("userId"));
             Assert.True(_allegroService.IsLogged);
             await _servicePort.ReceivedWithAnyArgs(1).doLoginEncAsync(null);
             await _servicePort.ReceivedWithAnyArgs(1).doQuerySysStatusAsync(null);
@@ -86,7 +85,6 @@ namespace AutoAllegro.Tests.Services
             await _allegroService.Login("userId", _allegroCredentials);
             Thread.Sleep(1200);
             Assert.False(_allegroService.IsLogged);
-            Assert.True(_allegroService.IsLoginRequired("userId"));
             await _allegroService.Login("userId", _allegroCredentials);
 
             // assert
@@ -144,6 +142,54 @@ namespace AutoAllegro.Tests.Services
             // assert
             Assert.Equal(55, result);
             await _servicePort.Received(1).doSendRefundFormAsync(Arg.Is<doSendRefundFormRequest>(t => t.dealId == 5 && t.reasonId == 4 && t.refundQuantity == 3));
+        }
+        [Fact]
+        public async Task SendRefund_ShouldLoginAgainAndSendRefund_WhenSessionIsInvalid()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            bool wasException = false;
+            _servicePort.doSendRefundFormAsync(null).ReturnsForAnyArgs(t =>
+            {
+                if (wasException)
+                    return new doSendRefundFormResponse {refundId = 55};
+
+                wasException = true;
+                throw new FaultException(new FaultReason("reason"), new FaultCode("ERR_NO_SESSION"), "xx");
+            });
+            // act
+            int result = await _allegroService.SendRefund(new Order { AllegroDealId = 5, Quantity = 3 }, 4);
+
+            // assert
+            Assert.Equal(55, result);
+            await _servicePort.Received(2).doSendRefundFormAsync(Arg.Is<doSendRefundFormRequest>(t => t.dealId == 5 && t.reasonId == 4 && t.refundQuantity == 3));
+            await _servicePort.ReceivedWithAnyArgs(1).doLoginEncAsync(null);
+            await _servicePort.ReceivedWithAnyArgs(1).doQuerySysStatusAsync(null);
+        }
+        [Fact]
+        public async Task SendRefund_ShouldLoginAgainAndSendRefund_WhenSessionExpired()
+        {
+            // arrange
+            MockLogin();
+            await Login();
+            bool wasException = false;
+            _servicePort.doSendRefundFormAsync(null).ReturnsForAnyArgs(t =>
+            {
+                if (wasException)
+                    return new doSendRefundFormResponse { refundId = 55 };
+
+                wasException = true;
+                throw new FaultException(new FaultReason("reason"), new FaultCode("ERR_SESSION_EXPIRED"), "xx");
+            });
+            // act
+            int result = await _allegroService.SendRefund(new Order { AllegroDealId = 5, Quantity = 3 }, 4);
+
+            // assert
+            Assert.Equal(55, result);
+            await _servicePort.Received(2).doSendRefundFormAsync(Arg.Is<doSendRefundFormRequest>(t => t.dealId == 5 && t.reasonId == 4 && t.refundQuantity == 3));
+            await _servicePort.ReceivedWithAnyArgs(1).doLoginEncAsync(null);
+            await _servicePort.ReceivedWithAnyArgs(1).doQuerySysStatusAsync(null);
         }
         [Fact]
         public async Task SendRefund_ShouldSendCancelRefund()
@@ -414,7 +460,8 @@ namespace AutoAllegro.Tests.Services
         [Fact]
         public async Task CancelRefund_ShouldThrow_WhenNotLogged()
         {
-            // arrange & act
+            // arrange
+            // act
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _allegroService.CancelRefund(1));
             // assert
             Assert.Equal("Not logged in", exception.Message);

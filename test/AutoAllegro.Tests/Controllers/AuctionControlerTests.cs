@@ -686,7 +686,6 @@ namespace AutoAllegro.Tests.Controllers
         {
             // arrange
             PopulateHttpContext(UserId);
-            _allegroService.IsLoginRequired(UserId).Returns(true);
             _allegroService.Login(UserId, Arg.Any<AllegroCredentials>()).Returns(Task.FromResult(true));
             _allegroService.UpdateAuctionFees(Arg.Any<Auction>()).Returns(t => t.Arg<Auction>())
                 .AndDoes(t =>
@@ -996,7 +995,6 @@ namespace AutoAllegro.Tests.Controllers
         {
             // arrange
             PopulateHttpContext(UserId);
-            _allegroService.IsLoginRequired(UserId).Returns(false);
             _allegroService.GetNewAuctions().Returns(Task.FromResult(new List<NewAuction>
             {
                 new NewAuction
@@ -1032,7 +1030,7 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(2, model.Auctions.Count);
             Assert.Equal(1261, model.Auctions[0].Id);
             Assert.Equal(1263, model.Auctions[1].Id);
-            await _allegroService.DidNotReceiveWithAnyArgs().Login(null, Arg.Any<AllegroCredentials>());
+            await _allegroService.ReceivedWithAnyArgs(1).Login(null, Arg.Any<AllegroCredentials>());
             await _allegroService.Received(1).GetNewAuctions();
         }
         [Fact]
@@ -1045,7 +1043,6 @@ namespace AutoAllegro.Tests.Controllers
         {
             // arrange
             PopulateHttpContext(UserId);
-            _allegroService.IsLoginRequired(UserId).Returns(true);
             _allegroService.UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261)).Returns(t => t.Arg<Auction>())
                 .AndDoes(t =>
                 {

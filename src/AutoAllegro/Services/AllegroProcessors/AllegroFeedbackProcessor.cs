@@ -43,11 +43,8 @@ namespace AutoAllegro.Services.AllegroProcessors
                 string userId = item.Key;
                 _logger.LogInformation($"Processing feedbacks for user: {userId}");
 
-                if (_allegroService.IsLoginRequired(userId))
-                {
-                    var allegroCredentials = GetAllegroCredentials(_db, userId);
-                    _allegroService.Login(userId, allegroCredentials).Wait();
-                }
+                var allegroCredentials = GetAllegroCredentials(_db, userId);
+                _allegroService.Login(userId, allegroCredentials).Wait();
 
                 var enabledAuctions = item.ToImmutableDictionary(t => t.AllegroAuctionId, t => t.Id);
                 foreach (var feedbackStruct in _allegroService.GetWaitingFeedback())

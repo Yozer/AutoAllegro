@@ -165,7 +165,6 @@ namespace AutoAllegro.Tests.Services
 
                 Assert.Equal(OrderStatus.Created, order.OrderStatus);
                 Assert.Null(order.AllegroRefundId);
-                _allegroService.DidNotReceiveWithAnyArgs().IsLoginRequired(null);
                 _allegroService.DidNotReceiveWithAnyArgs().SendRefund(null, 0);
             }
         }
@@ -203,7 +202,6 @@ namespace AutoAllegro.Tests.Services
 
                 Assert.Equal(OrderStatus.Paid, order.OrderStatus);
                 Assert.Null(order.AllegroRefundId);
-                _allegroService.DidNotReceiveWithAnyArgs().IsLoginRequired(null);
                 _allegroService.DidNotReceiveWithAnyArgs().SendRefund(null, 0);
             }
         }
@@ -228,7 +226,6 @@ namespace AutoAllegro.Tests.Services
             ad1.Orders.Add(order);
             _db.SaveChanges();
 
-            _allegroService.IsLoginRequired(UserId).Returns(true);
             int i = 0;
             _allegroService.Login(null, null).ReturnsForAnyArgs(t =>
             {
@@ -283,7 +280,6 @@ namespace AutoAllegro.Tests.Services
             _db.SaveChanges();
 
             _allegroService.SendRefund(Arg.Is<Order>(t => t.AllegroDealId == 512), 1).Returns(51);
-            _allegroService.IsLoginRequired(UserId).Returns(true);
             _allegroService
                 .Login(UserId, Arg.Is<AllegroCredentials>(t => t.ApiKey == ad1.User.AllegroKey && t.Pass == ad1.User.AllegroHashedPass && t.UserName == ad1.User.AllegroUserName))
                 .ReturnsForAnyArgs(Task.CompletedTask);
