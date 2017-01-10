@@ -17,14 +17,14 @@ using AutoAllegro.Services;
 using AutoAllegro.Services.AllegroProcessors;
 using AutoAllegro.Services.Interfaces;
 using AutoMapper;
+using Hangfire.Common;
 using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Hangfire.MemoryStorage;
+using Hangfire.States;
 using Hangfire.Storage;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Logging.AzureAppServices;
 using NuGet.Packaging;
 using SoaAllegroService;
 
@@ -187,7 +187,7 @@ namespace AutoAllegro
 
             //Populates the app sample data
             SampleData.InitializeDatabaseAsync(app.ApplicationServices, HostingEnvironment).Wait();
-            InitAllegroProcessor(app.ApplicationServices);
+            InitHangfire(app.ApplicationServices);
             InitAllegroRefundReasons(app.ApplicationServices);
         }
 
@@ -230,7 +230,7 @@ namespace AutoAllegro
             typeof(IAllegroRefundProcessor),
             typeof(IAllegroFeedbackProcessor)
         };
-        private void InitAllegroProcessor(IServiceProvider serviceProvider)
+        private void InitHangfire(IServiceProvider serviceProvider)
         {
             using (var scope = serviceProvider.CreateScope())
             {
@@ -247,6 +247,8 @@ namespace AutoAllegro
                     processor.Init();
                 }
             }
+
+            GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
         }
 
         public static void ConfigureAutoMapper(IMapperConfigurationExpression cf)
@@ -256,7 +258,10 @@ namespace AutoAllegro
                 model.TotalPayment = order.Quantity * order.Auction.PricePerItem;
                 model.VirtualItem = order.Auction.IsVirtualItem;
             }).ReverseMap();
-            cf.CreateMap<Auction, AuctionViewModel>().ReverseMap();
+            cf.CreateMap<Auction, AuctionViewModel>().AfterMap((auction, model) =>
+            {
+                model.Profit = auction.Orders.Where(t => t.OrderStatus == OrderStatus.Done).Sum(t => t.Quantity) * auction.PricePerItem - auction.Fee - auction.OpenCost;
+            }).ReverseMap();
             cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().ReverseMap();
             cf.CreateMap<CodeViewModel, GameCode>().ReverseMap();
         }
@@ -267,6 +272,18 @@ namespace AutoAllegro
             {
                 var httpContext = context.GetHttpContext();
                 return httpContext.User.Identity.IsAuthenticated;
+            }
+        }
+        public class ProlongExpirationTimeAttribute : JobFilterAttribute, IApplyStateFilter
+        {
+            public void OnStateApplied(ApplyStateContext filterContext, IWriteOnlyTransaction transaction)
+            {
+                filterContext.JobExpirationTimeout = TimeSpan.FromHours(2);
+            }
+
+            public void OnStateUnapplied(ApplyStateContext context, IWriteOnlyTransaction transaction)
+            {
+                context.JobExpirationTimeout = TimeSpan.FromHours(2);
             }
         }
     }

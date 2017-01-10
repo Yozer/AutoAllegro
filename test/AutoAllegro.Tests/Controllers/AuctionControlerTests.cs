@@ -145,6 +145,7 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(new DateTime(2011, 5, 4, 5, 6, 6), model.EndDate);
             Assert.True(model.IsMonitored);
             Assert.True(model.IsVirtualItem);
+            Assert.Equal(-101.23m, model.Profit);
             Assert.Equal(1, model.FreeCodesCount);
             Assert.Equal(2, model.Orders.Count);
 
@@ -708,6 +709,7 @@ namespace AutoAllegro.Tests.Controllers
                 t.ApiKey == "allegroKey1" && t.JournalStart == 14 && t.Pass == "hashPass1" && t.UserName == "username1"));
             Assert.Equal(1.0m, model.Fee);
             Assert.Equal(52.0m, model.OpenCost);
+            Assert.Equal(-53.0m, model.Profit);
         }
 
         [Fact]

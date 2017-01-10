@@ -17,6 +17,7 @@ namespace AutoAllegro.Models.AuctionViewModels
         public decimal Fee { get; set; }
         [CurrencyFormat]
         public decimal OpenCost { get; set; }
+        public decimal Profit { get; set; }
         public DateTime EndDate { get; set; }
         public IList<OrderViewModel> Orders { get; set; }
         public PaginationView PaginationSettings { get; set; }
