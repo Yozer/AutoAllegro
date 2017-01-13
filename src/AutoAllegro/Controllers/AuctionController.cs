@@ -116,7 +116,7 @@ namespace AutoAllegro.Controllers
 
             await _dbContext.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Auction), new { id = auction.Id, settingsTabActive = true, message = AuctionMessageId.Success , searchString = updatedAuction.SearchString });
+            return RedirectToAction(nameof(Auction), new { id = auction.Id, settingsTabActive = true, message = AuctionMessageId.SuccessSaveSettings, searchString = updatedAuction.SearchString });
         }
 
         public async Task<IActionResult> Order(int id, OrderViewMessage? message = null)
