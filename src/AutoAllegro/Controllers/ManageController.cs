@@ -152,21 +152,12 @@ namespace AutoAllegro.Controllers
             }
 
             string userId = _userManager.GetUserId(User);
-            var user = await _dbContext.Users.Include(t => t.VirtualItemSettings).FirstOrDefaultAsync(t => t.Id == userId);
-            if (user != null)
-            {
-                user.VirtualItemSettings = _mapper.Map<VirtualItemSettings>(model);
+            var user = await _dbContext.Users.Include(t => t.VirtualItemSettings).FirstAsync(t => t.Id == userId);
+            user.VirtualItemSettings = _mapper.Map<VirtualItemSettings>(model);
+            await _dbContext.SaveChangesAsync();
 
-                if (string.IsNullOrEmpty(user.VirtualItemSettings.MessageSubject) || string.IsNullOrEmpty(user.VirtualItemSettings.MessageTemplate))
-                    user.VirtualItemSettings = null;
-                else
-                    user.VirtualItemSettings.MessageTemplate = user.VirtualItemSettings.MessageTemplate.Replace("\r\n", "<br>");
-
-                await _dbContext.SaveChangesAsync();
-                _logger.LogInformation("User changed virtual item settings successfully.");
-                return RedirectToAction(nameof(Index), new { Message = ManageMessageId.ChangedVirtualItemSettings });
-            }
-            return RedirectToAction(nameof(Index), new { Message = ManageMessageId.Error });
+            _logger.LogInformation("User changed virtual item settings successfully.");
+            return RedirectToAction(nameof(Index), new { Message = ManageMessageId.ChangedVirtualItemSettings });
         }
 
         #region Helpers

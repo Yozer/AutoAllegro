@@ -9,13 +9,14 @@ using AutoAllegro.Models;
 namespace AutoAllegro.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20170110223605_initial")]
-    partial class initial
+    [Migration("20170114200701_mssql")]
+    partial class mssql
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.0-rtm-22752");
+                .HasAnnotation("ProductVersion", "1.1.0-rtm-22752")
+                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("AutoAllegro.Models.AllegroRefundReason", b =>
                 {

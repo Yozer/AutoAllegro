@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace AutoAllegro.Migrations
 {
-    public partial class initial : Migration
+    public partial class mssql : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -13,7 +14,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     Reason = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
@@ -26,7 +27,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     Address = table.Column<string>(nullable: true),
                     AllegroUserId = table.Column<long>(nullable: false),
                     City = table.Column<string>(nullable: true),
@@ -48,7 +49,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     Address = table.Column<string>(nullable: true),
                     City = table.Column<string>(nullable: true),
                     FirstName = table.Column<string>(nullable: true),
@@ -66,7 +67,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     DisplayName = table.Column<string>(nullable: true),
                     MessageSubject = table.Column<string>(nullable: true),
                     MessageTemplate = table.Column<string>(nullable: true),
@@ -145,7 +146,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     ClaimType = table.Column<string>(nullable: true),
                     ClaimValue = table.Column<string>(nullable: true),
                     RoleId = table.Column<string>(nullable: false)
@@ -166,7 +167,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     AllegroAuctionId = table.Column<long>(nullable: false),
                     AutomaticFeedbackEnabled = table.Column<bool>(nullable: false),
                     AutomaticRefundsEnabled = table.Column<bool>(nullable: false),
@@ -197,7 +198,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     ClaimType = table.Column<string>(nullable: true),
                     ClaimValue = table.Column<string>(nullable: true),
                     UserId = table.Column<string>(nullable: false)
@@ -262,7 +263,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     AllegroFeedbackId = table.Column<int>(nullable: false),
                     AuctionId = table.Column<int>(nullable: false),
                     BuyerId = table.Column<int>(nullable: false)
@@ -289,7 +290,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     AllegroDealId = table.Column<long>(nullable: false),
                     AllegroRefundId = table.Column<int>(nullable: true),
                     AuctionId = table.Column<int>(nullable: false),
@@ -327,7 +328,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     AllegroEventId = table.Column<long>(nullable: false),
                     EventTime = table.Column<DateTime>(nullable: false),
                     EventType = table.Column<int>(nullable: false),
@@ -349,7 +350,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     AddDate = table.Column<DateTime>(nullable: false),
                     AuctionId = table.Column<int>(nullable: false),
                     Code = table.Column<string>(nullable: true),
@@ -377,7 +378,7 @@ namespace AutoAllegro.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     AllegroTransactionId = table.Column<long>(nullable: false),
                     Amount = table.Column<decimal>(nullable: false),
                     OrderId = table.Column<int>(nullable: false),

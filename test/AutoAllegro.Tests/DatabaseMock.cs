@@ -109,9 +109,9 @@ namespace AutoAllegro.Tests
                     VirtualItemSettings = new VirtualItemSettings
                     {
                         DisplayName = "x",
-                        MessageSubject = "x",
-                        MessageTemplate = "x",
-                        ReplyTo = "x"
+                        MessageSubject = "xy",
+                        MessageTemplate = "xyz",
+                        ReplyTo = "xyzx"
                     }
                 }, "Pass@word1").Wait();
                 userManager.CreateAsync(new User

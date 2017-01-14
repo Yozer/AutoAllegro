@@ -262,7 +262,14 @@ namespace AutoAllegro
             {
                 model.Profit = auction.Orders.Where(t => t.OrderStatus == OrderStatus.Done).Sum(t => t.Quantity) * auction.PricePerItem - auction.Fee - auction.OpenCost;
             }).ReverseMap();
-            cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().ReverseMap();
+            cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().AfterMap((settings, model) =>
+            {
+                settings.MessageTemplate = settings.MessageTemplate.Replace("<br>", "\r\n");
+            }).ReverseMap().AfterMap((model, settings) =>
+            {
+                settings.MessageTemplate = settings.MessageTemplate.Replace("\r\n", "<br>");
+            });
+
             cf.CreateMap<CodeViewModel, GameCode>().ReverseMap();
         }
 
