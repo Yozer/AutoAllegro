@@ -13,8 +13,7 @@ namespace AutoAllegro.Migrations
                 name: "AllegroRefundReasons",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<int>(nullable: false),
                     Reason = table.Column<string>(nullable: true)
                 },
                 constraints: table =>

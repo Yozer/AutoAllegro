@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using AutoAllegro.Data;
+using AutoAllegro.Models;
 
 namespace AutoAllegro.Migrations
 {
@@ -18,8 +19,7 @@ namespace AutoAllegro.Migrations
 
             modelBuilder.Entity("AutoAllegro.Models.AllegroRefundReason", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                    b.Property<int>("Id");
 
                     b.Property<string>("Reason");
 

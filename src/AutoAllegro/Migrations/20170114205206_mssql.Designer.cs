@@ -9,7 +9,7 @@ using AutoAllegro.Models;
 namespace AutoAllegro.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20170114200701_mssql")]
+    [Migration("20170114205206_mssql")]
     partial class mssql
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -20,8 +20,7 @@ namespace AutoAllegro.Migrations
 
             modelBuilder.Entity("AutoAllegro.Models.AllegroRefundReason", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                    b.Property<int>("Id");
 
                     b.Property<string>("Reason");
 
