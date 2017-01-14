@@ -48,7 +48,7 @@ namespace AutoAllegro.Controllers
             return View(viewModel);
         }
 
-
+/*
         public async Task<IActionResult> Auction(int id, int? page, bool refresh, AuctionMessageId? message, bool settingsTabActive,string searchString = null)
         {
             if (!ModelState.IsValid)
@@ -76,7 +76,7 @@ namespace AutoAllegro.Controllers
             // possible bottleneck
             var viewModel = _mapper.Map<AuctionViewModel>(auction);
             if(searchString !=null){
-    			string emailPattern = "^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$";
+    			const string emailPattern = "^([0-9a-zA-Z]([-\\.\\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\\w]*[0-9a-zA-Z]\\.)+[a-zA-Z]{2,9})$";
             IList<Order> orders;
 
 			if (Regex.IsMatch(searchString, emailPattern)){
@@ -118,6 +118,66 @@ namespace AutoAllegro.Controllers
 
             return RedirectToAction(nameof(Auction), new { id = auction.Id, settingsTabActive = true, message = AuctionMessageId.SuccessSaveSettings, searchString = updatedAuction.SearchString });
         }
+*/
+
+        public async Task<IActionResult> Auction(int id, int? page, bool refresh, AuctionMessageId? message, bool settingsTabActive)
+        {
+            if (!ModelState.IsValid)
+                return RedirectToAction(nameof(Index));
+
+            const int pageSize = 25;
+            Auction auction = await (
+                from ad in _dbContext.Auctions.Include(t => t.Orders).ThenInclude(t => t.Buyer)
+                where ad.UserId == GetUserId() && ad.Id == id
+                select ad).FirstOrDefaultAsync();
+
+
+            if (auction == null)
+                return RedirectToAction(nameof(Index));
+
+            int codesCount = await _dbContext.GameCodes.CountAsync(t => t.AuctionId == auction.Id && t.Order == null);
+
+            if (refresh)
+            {
+                await LoginToAllegro();
+                await _allegroService.UpdateAuctionFees(auction);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            // possible bottleneck
+            var viewModel = _mapper.Map<AuctionViewModel>(auction);
+            viewModel.Message = message;
+            viewModel.SettingsTabActive = settingsTabActive;
+            viewModel.Paginate(page, pageSize, c => c.Orders);
+            viewModel.FreeCodesCount = codesCount;
+            return View(viewModel);
+        }
+
+
+
+
+        [HttpPost]
+        public async Task<IActionResult> Auction(AuctionViewModel updatedAuction)
+        {
+            if (!ModelState.IsValid)
+                return RedirectToAction(nameof(Index));
+
+            var auction = await GetUserAuction(updatedAuction.Id);
+            if (auction == null)
+                return RedirectToAction(nameof(Index));
+            else if (updatedAuction.IsVirtualItem && auction.User.VirtualItemSettingsId == null)
+                return RedirectToAction(nameof(Auction), new { id = auction.Id, message = AuctionMessageId.CannotSetVirtualItem, settingsTabActive = true});
+
+            auction.IsMonitored = updatedAuction.IsMonitored;
+            auction.IsVirtualItem = updatedAuction.IsVirtualItem;
+            auction.AutomaticFeedbackEnabled = updatedAuction.AutomaticFeedbackEnabled;
+            auction.AutomaticRefundsEnabled = updatedAuction.AutomaticRefundsEnabled;
+
+            await _dbContext.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Auction), new { id = auction.Id, settingsTabActive = true, message = AuctionMessageId.SuccessSaveSettings});
+        }
+
 
         public async Task<IActionResult> Order(int id, OrderViewMessage? message = null)
         {
@@ -373,12 +433,6 @@ namespace AutoAllegro.Controllers
                     select auction).ToListAsync();
         }
 
-        private Task<Auction> GetUserAuctionWithOrders(int id)
-        {
-            return (from auction in _dbContext.Auctions.Include(t => t.Orders).ThenInclude(t => t.Buyer)
-                    where auction.UserId == GetUserId() && auction.Id == id
-                    select auction).FirstOrDefaultAsync();
-        }
 
         public IList<Order> GetOrdersByName(int id,string userLogin){
             var orders = (from order in _dbContext.Orders.Include(t=> t.Buyer)
@@ -393,14 +447,6 @@ namespace AutoAllegro.Controllers
                 select order);
                 return orders.ToList().AsReadOnly();
         }
-
-        private Task<Auction> GetUserAuctionWithOrdersByEmail(int id, string email)
-        {
-            return (from auction in _dbContext.Auctions.Include(t => t.Orders.Where(s => s.Buyer.Email.Equals(email))).ThenInclude(t => t.Buyer)
-                    where auction.UserId == GetUserId() && auction.Id == id
-                    select auction).FirstOrDefaultAsync();
-        }
-
 
 
         private Task<Auction> GetUserAuction(int id)

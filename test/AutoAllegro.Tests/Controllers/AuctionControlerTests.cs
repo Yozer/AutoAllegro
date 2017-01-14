@@ -126,28 +126,20 @@ namespace AutoAllegro.Tests.Controllers
         public async Task Auction_ShouldReturnAuctionAndOrdersByLogin1()
         {
             // arrange
-            CreateFakeData();
+            PopulateHttpContext(UserId);
 
             // act
-            IActionResult result;
-            using (var scope = CreateScope())
-            {
-                var controller = new AuctionController(GetDatabase(scope), GetUserManager(scope), _allegroService, _mapper, _allegroProcessor);
-                PopulateHttpContext(UserId, controller, scope);
-                result = await controller.Auction(1, null, false, null, false,"Pierdola");
-            }
+            IActionResult result = await _controller.Auction(1, null, false, null, false,"Pierdola");
 
             // assert
-
-            
             Assert.IsType<ViewResult>(result);
             ViewResult view = (ViewResult)result;
             AuctionViewModel model = (AuctionViewModel) view.Model;
-            Console.WriteLine(model.Id);
+
+
+
+            
             Assert.Equal(1, model.Id);
-            
-            
-            
             Assert.Equal("test ad", model.Title);
             Assert.Equal(111, model.AllegroAuctionId);
             Assert.Equal(50, model.Fee);
