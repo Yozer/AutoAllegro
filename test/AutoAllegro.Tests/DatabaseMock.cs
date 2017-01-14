@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace AutoAllegro.Tests
@@ -32,6 +33,8 @@ namespace AutoAllegro.Tests
 
             ServiceProvider = _services.BuildServiceProvider();
             InitDatabase();
+            var loggerFactory = ServiceProvider.GetService<ILoggerFactory>();
+            loggerFactory.AddConsole();
         }
 
         private void ConfigureServices()

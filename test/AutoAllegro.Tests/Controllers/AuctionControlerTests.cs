@@ -136,8 +136,6 @@ namespace AutoAllegro.Tests.Controllers
             ViewResult view = (ViewResult)result;
             AuctionViewModel model = (AuctionViewModel) view.Model;
 
-
-
             
             Assert.Equal(1, model.Id);
             Assert.Equal("test ad", model.Title);
@@ -158,8 +156,6 @@ namespace AutoAllegro.Tests.Controllers
             Assert.True(model.Orders[0].VirtualItem);
             Assert.Equal("buyer1@gmail.com", model.Orders[0].Buyer.Email);
             Assert.Equal("Pierdola", model.Orders[0].Buyer.UserLogin);
-            
-
         }
 
         [Fact]
@@ -176,9 +172,6 @@ namespace AutoAllegro.Tests.Controllers
             ViewResult view = (ViewResult)result;
             AuctionViewModel model = (AuctionViewModel) view.Model;
 
-
-
-            
             Assert.Equal(1, model.Id);
             Assert.Equal("test ad", model.Title);
             Assert.Equal(111, model.AllegroAuctionId);
@@ -198,8 +191,6 @@ namespace AutoAllegro.Tests.Controllers
             Assert.True(model.Orders[0].VirtualItem);
             Assert.Equal("buyer1@gmail.com", model.Orders[0].Buyer.Email);
             Assert.Equal("Pierdola", model.Orders[0].Buyer.UserLogin);
-            
-
         }
 
         [Fact]
