@@ -28,7 +28,7 @@ namespace AutoAllegro.Models.AuctionViewModels
         public AuctionMessageId? Message { get; set; }
         public bool SettingsTabActive { get; set; }
         public int FreeCodesCount { get; set; }
-        //public string SearchString { get; set;}
+        public string SearchString { get; set;}
     }
 
     public enum AuctionMessageId
