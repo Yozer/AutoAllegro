@@ -56,7 +56,7 @@ namespace AutoAllegro.Controllers
                 return RedirectToAction(nameof(Index));
 
             const int pageSize = 25;
-            Auction auction = Object.ReferenceEquals(searchString,null) ? 
+            Auction auction = string.IsNullOrEmpty(searchString) ? 
                 await (
                     from ad in _dbContext.Auctions.Include(t => t.Orders).ThenInclude(t => t.Buyer)
                     where ad.UserId == GetUserId() && ad.Id == id
@@ -81,11 +81,15 @@ namespace AutoAllegro.Controllers
 
             // possible bottleneck
             var viewModel = _mapper.Map<AuctionViewModel>(auction);
-            if(!Object.ReferenceEquals(searchString,null)){
-                if (Regex.IsMatch(searchString, emailPattern)){
+            if(!string.IsNullOrEmpty(searchString))
+            {
+                if (Regex.IsMatch(searchString, emailPattern))
+                {
                    var orders = await GetOrdersByEmail(id,searchString);
                     viewModel.Orders = _mapper.Map<List<OrderViewModel>>(orders);
-                } else {
+                } 
+                else 
+                {
                    var orders = await GetOrdersByName(id,searchString);
                     viewModel.Orders = _mapper.Map<List<OrderViewModel>>(orders);
 
@@ -438,13 +442,15 @@ namespace AutoAllegro.Controllers
                     select auction).ToListAsync();
         }
 
-        public Task<List<Order>> GetOrdersByName(int id,string userLogin){
+        public Task<List<Order>> GetOrdersByName(int id,string userLogin)
+        {
             return (from order in _dbContext.Orders.Include(t=> t.Buyer)
                 where order.Auction.UserId == GetUserId() && order.AuctionId == id && order.Buyer.UserLogin.Contains(userLogin.Trim())
                 select order).ToListAsync();
         }
 
-         public Task<List<Order>> GetOrdersByEmail(int id,string userEmail){
+         public Task<List<Order>> GetOrdersByEmail(int id,string userEmail)
+         {
                 return (from order in _dbContext.Orders.Include(t=> t.Buyer)
                 where order.Auction.UserId == GetUserId() && order.AuctionId == id && order.Buyer.Email.Contains(userEmail.Trim())
                 select order).ToListAsync();
