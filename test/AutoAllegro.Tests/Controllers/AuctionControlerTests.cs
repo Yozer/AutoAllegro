@@ -123,13 +123,53 @@ namespace AutoAllegro.Tests.Controllers
         }
 
         [Fact]
-        public async Task Auction_ShouldReturnAuctionAndOrdersByLogin1()
+        public async Task Auction_ShouldReturnAuctionAndOrdersByLogin()
         {
             // arrange
             PopulateHttpContext(UserId);
 
             // act
             IActionResult result = await _controller.Auction(1, null, false, null, false,"Pierdola");
+
+            // assert
+            Assert.IsType<ViewResult>(result);
+            ViewResult view = (ViewResult)result;
+            AuctionViewModel model = (AuctionViewModel) view.Model;
+
+
+
+            
+            Assert.Equal(1, model.Id);
+            Assert.Equal("test ad", model.Title);
+            Assert.Equal(111, model.AllegroAuctionId);
+            Assert.Equal(50, model.Fee);
+            Assert.Equal(51.23m, model.OpenCost);
+            Assert.Equal(8.99m, model.PricePerItem);
+            Assert.Equal(new DateTime(2011, 5, 4, 5, 6, 6), model.EndDate);
+            Assert.True(model.IsMonitored);
+            Assert.True(model.IsVirtualItem);
+            Assert.Equal(1, model.Orders.Count);
+            
+            Assert.Equal(1, model.Orders[0].AuctionId);
+            Assert.Equal(4, model.Orders[0].Quantity);
+            Assert.Equal(4 * 8.99m, model.Orders[0].TotalPayment);
+            Assert.Equal(new DateTime(1993, 12, 11, 14, 55, 22), model.Orders[0].OrderDate);
+            Assert.Equal(OrderStatus.Send, model.Orders[0].OrderStatus);
+            Assert.True(model.Orders[0].VirtualItem);
+            Assert.Equal("buyer1@gmail.com", model.Orders[0].Buyer.Email);
+            Assert.Equal("Pierdola", model.Orders[0].Buyer.UserLogin);
+            
+
+        }
+
+        [Fact]
+        public async Task Auction_ShouldReturnAuctionAndOrdersByEmail()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+
+            // act
+            IActionResult result = await _controller.Auction(1, null, false, null, false,"buyer1@gmail.com");
 
             // assert
             Assert.IsType<ViewResult>(result);
