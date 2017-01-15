@@ -23,10 +23,7 @@ npm install
 dotnet restore
 dotnet run
 ```
-5. Jeśli jest to pierwsze uruchomienie albo ty/ktoś zmienił bazę to robimy:
-```
-dotnet ef database update
-```
+5. Jeśli ty/ktoś zmienił bazę to usuwamy plik db.sqlite z folderu bin.
 Więcej o migracjach bazy po aktualizowaniu modelu można poczytać na necie.
 
 6. Na localhost:5000 mamy stronke
