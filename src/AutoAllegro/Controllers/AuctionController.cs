@@ -51,7 +51,7 @@ namespace AutoAllegro.Controllers
         }
 
 
-        public async Task<IActionResult> Auction(int id, int? page, bool refresh, AuctionMessageId? message, bool settingsTabActive, string searchString = null)
+        public async Task<IActionResult> Auction(int id, int? page = null, bool refreshFees = false, bool refreshAd = false, AuctionMessageId? message = null, bool settingsTabActive = false, string searchString = null)
         {
             if (!ModelState.IsValid)
                 return RedirectToAction(nameof(Index));
@@ -73,10 +73,16 @@ namespace AutoAllegro.Controllers
 
             int codesCount = await _dbContext.GameCodes.CountAsync(t => t.AuctionId == auction.Id && t.Order == null);
 
-            if (refresh)
+            if (refreshFees)
             {
                 await LoginToAllegro();
                 await _allegroService.UpdateAuctionFees(auction);
+                await _dbContext.SaveChangesAsync();
+            }
+            if (refreshAd)
+            {
+                await LoginToAllegro();
+                await _allegroService.RefreshAd(auction);
                 await _dbContext.SaveChangesAsync();
             }
 

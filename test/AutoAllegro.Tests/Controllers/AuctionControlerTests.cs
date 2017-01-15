@@ -114,7 +114,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            var result = await _controller.Auction(3, null, false, null, false);
+            var result = await _controller.Auction(3);
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -130,7 +130,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            IActionResult result = await _controller.Auction(1, null, false, null, false,"Pierdola");
+            IActionResult result = await _controller.Auction(1, searchString: "Pierdola");
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -166,7 +166,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            IActionResult result = await _controller.Auction(1, null, false, null, false,"buyer1@gmail.com");
+            IActionResult result = await _controller.Auction(1, searchString: "buyer1@gmail.com");
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -201,7 +201,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            IActionResult result = await _controller.Auction(1, null, false, null, false);
+            IActionResult result = await _controller.Auction(1);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -768,7 +768,7 @@ namespace AutoAllegro.Tests.Controllers
                 });
 
             // act
-            IActionResult result = await _controller.Auction(1, null, true, null, false);
+            IActionResult result = await _controller.Auction(1, refreshFees: true);
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -786,7 +786,7 @@ namespace AutoAllegro.Tests.Controllers
         [Fact]
         public async Task Auction_ShouldRedirectToIndex_ForModelError()
         {
-            await TestForModelError(async () => await _controller.Auction(0, null, false, null, false));
+            await TestForModelError(async () => await _controller.Auction(0));
 
         }
         [Fact]
@@ -1124,12 +1124,31 @@ namespace AutoAllegro.Tests.Controllers
             await _allegroService.Received(1).GetNewAuctions();
         }
         [Fact]
+        public async Task Auction_ShouldUpdateAuctionData()
+        {
+            // arrange
+            PopulateHttpContext(UserId);
+            var auction = _db.Auctions.Single(t => t.AllegroAuctionId == 111);
+
+            // act
+            IActionResult result = await _controller.Auction(auction.Id, refreshAd: true);
+
+            // assert
+            Assert.IsType<ViewResult>(result);
+            Assert.IsType<AuctionViewModel>(((ViewResult)result).Model);
+            var model = (AuctionViewModel)((ViewResult)result).Model;
+
+            Assert.Equal(111, model.AllegroAuctionId);
+            await _allegroService.ReceivedWithAnyArgs(1).Login(null, Arg.Any<AllegroCredentials>());
+            await _allegroService.Received(1).RefreshAd(Arg.Is<Auction>(t => t.AllegroAuctionId == 111));
+        }
+        [Fact]
         public async Task AddPost_ShouldRedirectToIndex_ForModelError()
         {
             await TestForModelError(() => _controller.Add(new AddViewModel()));
         }
         [Fact]
-        public async Task AddPost_ShouldSaveAndUpdateFees_ForOneSelectedAuction()
+        public async Task AddPost_ShouldSaveAndNotUpdateFees_ForOneSelectedAuction()
         {
             // arrange
             PopulateHttpContext(UserId);
@@ -1182,13 +1201,15 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(55.1m, ad.PricePerItem);
             Assert.Equal("test addd", ad.Title);
             Assert.Equal(UserId, ad.UserId);
-            Assert.Equal(1m, ad.Fee);
-            Assert.Equal(52m, ad.OpenCost);
+            //Assert.Equal(1m, ad.Fee);
+            //Assert.Equal(52m, ad.OpenCost);
+            Assert.Equal(0m, ad.Fee);
+            Assert.Equal(0m, ad.OpenCost);
             Assert.Null(redirect.ControllerName);
             Assert.Equal("Index", redirect.ActionName);
 
-            await _allegroService.Received(1).Login(UserId, Arg.Any<AllegroCredentials>());
-            await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
+            //await _allegroService.Received(1).Login(UserId, Arg.Any<AllegroCredentials>());
+            //await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
         }
 
         [Fact]

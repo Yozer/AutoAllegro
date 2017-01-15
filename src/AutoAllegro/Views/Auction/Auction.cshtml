@@ -32,7 +32,7 @@
                     <div class="col-md-12">
                          <div class="btn-toolbar" role="toolbar">  
                             <div class="btn-group" role="group" aria-label="...">
-                                <a asp-action="Auction" asp-route-id="@Model.Id" asp-route-refresh="true" class="btn btn-primary btn-lg">Synchronizuj opłaty</a>
+                                <a asp-action="Auction" asp-route-id="@Model.Id" asp-route-refreshFees="true" class="btn btn-primary btn-lg">Synchronizuj opłaty</a>
                             </div>
                             @if (Model.IsVirtualItem)
                             {
@@ -40,7 +40,9 @@
                                     <a asp-action="Codes" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Zarządzaj kodami</a>
                                 </div>
                             }
-                
+                             <div class="btn-group" role="group" aria-label="...">
+                                 <a asp-action="Auction" asp-route-id="@Model.Id" asp-route-refreshAd="true" class="btn btn-primary btn-lg">Odśwież dane</a>
+                             </div>
                         </div>
                     </div>
                 </div>

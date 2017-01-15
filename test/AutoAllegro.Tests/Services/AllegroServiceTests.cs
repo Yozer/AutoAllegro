@@ -486,6 +486,85 @@ namespace AutoAllegro.Tests.Services
             await _servicePort.ReceivedWithAnyArgs(1).doGetRefundsReasonsAsync(null);
         }
         [Fact]
+        public async Task RefreshAd_ShouldRefreshAd_WhenAdHasEnded()
+        {
+            // arrange
+            Auction auction = new Auction
+            {
+                AllegroAuctionId = 131,
+                Title = "test",
+                EndDate = DateTime.Now.Subtract(TimeSpan.FromMinutes(1)),
+                PricePerItem = 41.03m
+            };
+            MockLogin();
+            await Login();
+            _servicePort.doGetMySoldItemsAsync(Arg.Is<doGetMySoldItemsRequest>(t => t.itemIds.Length == 1 && t.itemIds[0] == 131)).Returns(new doGetMySoldItemsResponse
+            {
+                soldItemsList = new []
+                {
+                    new SoldItemStruct
+                    {
+                        itemPrice = new []{ new ItemPriceStruct {priceType = 2, priceValue = 4.03f}, new ItemPriceStruct {priceValue = 23.55f, priceType = 1}, },
+                        itemTitle = "updatedTitle",
+                        itemEndTime = new DateTime(2016, 5, 4, 3, 2, 1).FromDateTime()
+                    }
+                }
+            });
+
+            // act
+            await _allegroService.RefreshAd(auction);
+
+            // assert
+            Assert.Equal(23.55m, auction.PricePerItem);
+            Assert.Equal("updatedTitle", auction.Title);
+            Assert.Equal(new DateTime(2016, 5, 4, 3, 2, 1), auction.EndDate);
+            await _servicePort.ReceivedWithAnyArgs(1).doGetMySoldItemsAsync(null);
+        }
+        [Fact]
+        public async Task RefreshAd_ShouldRefreshAd_WhenAdHasNotEnded()
+        {
+            // arrange
+            Auction auction = new Auction
+            {
+                AllegroAuctionId = 131,
+                Title = "test2",
+                EndDate = DateTime.Now.Add(TimeSpan.FromMinutes(5)),
+                PricePerItem = 1.03m
+            };
+            MockLogin();
+            await Login();
+            _servicePort.doGetMySellItemsAsync(Arg.Is<doGetMySellItemsRequest>(t => t.itemIds.Length == 1 && t.itemIds[0] == 131)).Returns(new doGetMySellItemsResponse
+            {
+                sellItemsList = new[]
+                {
+                    new SellItemStruct
+                    {
+                        itemPrice = new []{ new ItemPriceStruct {priceType = 2, priceValue = 5.23f}, new ItemPriceStruct {priceValue = 13.55f, priceType = 1}, },
+                        itemTitle = "updatedTitle2",
+                        itemEndTime = new DateTime(2017, 12, 11, 2, 4, 3).FromDateTime()
+                    }
+                }
+            });
+
+            // act
+            await _allegroService.RefreshAd(auction);
+
+            // assert
+            Assert.Equal(13.55m, auction.PricePerItem);
+            Assert.Equal("updatedTitle2", auction.Title);
+            Assert.Equal(new DateTime(2017, 12, 11, 2, 4, 3), auction.EndDate);
+            await _servicePort.ReceivedWithAnyArgs(1).doGetMySellItemsAsync(null);
+        }
+        [Fact]
+        public async Task RefreshAd_ShouldThrow_WhenNotLogged()
+        {
+            // arrange
+            // act
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _allegroService.RefreshAd(null));
+            // assert
+            Assert.Equal("Not logged in", exception.Message);
+        }
+        [Fact]
         public async Task CancelRefund_ShouldThrow_WhenNotLogged()
         {
             // arrange
