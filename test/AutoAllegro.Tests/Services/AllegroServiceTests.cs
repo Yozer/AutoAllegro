@@ -458,6 +458,34 @@ namespace AutoAllegro.Tests.Services
             await _servicePort.ReceivedWithAnyArgs(1).doGetSiteJournalDealsAsync(null);
         }
         [Fact]
+        public async Task GetReasonsList_ShouldReturnReasonsList()
+        {
+            // arrange
+            const int dealId = 5122;
+            MockLogin();
+            await Login();
+            _servicePort.doGetRefundsReasonsAsync(Arg.Is<doGetRefundsReasonsRequest>(t => t.dealId == dealId)).Returns(new doGetRefundsReasonsResponse
+            {
+                reasonsCount = 2,
+                reasonsList = new []
+                {
+                    new ReasonInfoType {reasonId = 5, reasonName = "test1"},
+                    new ReasonInfoType {reasonId = 7, reasonName = "test2"}
+                }
+            });
+
+            // act
+            var result = await _allegroService.GetReasonsList(dealId);
+
+            // assert
+            Assert.Equal(2, result.Count);
+            Assert.Equal(5, result[0].Id);
+            Assert.Equal(7, result[1].Id);
+            Assert.Equal("test1", result[0].Reason);
+            Assert.Equal("test2", result[1].Reason);
+            await _servicePort.ReceivedWithAnyArgs(1).doGetRefundsReasonsAsync(null);
+        }
+        [Fact]
         public async Task CancelRefund_ShouldThrow_WhenNotLogged()
         {
             // arrange
@@ -527,6 +555,14 @@ namespace AutoAllegro.Tests.Services
         {
             // arrange & act
             var exception = Assert.Throws<InvalidOperationException>(() => _allegroService.GivePositiveFeedback(0, 0));
+            // assert
+            Assert.Equal("Not logged in", exception.Message);
+        }
+        [Fact]
+        public async Task GetReasonsList_ShouldThrow_WhenNotLogged()
+        {
+            // arrange & act
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _allegroService.GetReasonsList(2));
             // assert
             Assert.Equal("Not logged in", exception.Message);
         }

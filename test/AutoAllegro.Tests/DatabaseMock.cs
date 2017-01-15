@@ -281,12 +281,6 @@ namespace AutoAllegro.Tests
                     Quantity = 3
                 });
 
-                database.AllegroRefundReasons.AddRange(new List<AllegroRefundReason>
-                {
-                    new AllegroRefundReason {Id = 1, Reason = "ble ble"},
-                    new AllegroRefundReason {Id = 2, Reason = "ble ble2"},
-                });
-
                 database.SaveChanges();
             }
         }

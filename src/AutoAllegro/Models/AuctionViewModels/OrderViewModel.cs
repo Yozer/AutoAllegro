@@ -8,6 +8,7 @@ namespace AutoAllegro.Models.AuctionViewModels
     public class OrderViewModel
     {
         public int Id { get; set; }
+        public long AllegroDealId { get; set; }
         public int Quantity { get; set; }
         public OrderStatus OrderStatus { get; set; }
         [CurrencyFormat]
@@ -18,7 +19,6 @@ namespace AutoAllegro.Models.AuctionViewModels
         public bool VirtualItem { get; set; }
         public int AuctionId { get; set; }
         public List<CodeViewModel> GameCodes { get; set; } = new List<CodeViewModel>();
-        public List<AllegroRefundReason> RefundReasons { get; set; }
         public OrderViewMessage? Message { get; set; }
     }
 

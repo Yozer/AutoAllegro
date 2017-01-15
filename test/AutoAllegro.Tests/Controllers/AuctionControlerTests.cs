@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
@@ -988,7 +989,25 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(true, redirect.RouteValues["settingsTabActive"]);
             Assert.Equal(AuctionMessageId.SuccessSaveSettings, redirect.RouteValues["message"]);
         }
+        [Fact]
+        public async Task RefundReasons_ShouldReturnJsonWithReasonsList()
+        {
+            // arrange
+            const int dealId = 141;
+            PopulateHttpContext(UserId);
+            _allegroService.GetReasonsList(dealId).Returns(new List<AllegroRefundReason>
+            {
+                new AllegroRefundReason {Id = 2, Reason = "test1"},
+                new AllegroRefundReason {Id = 42, Reason = "test2"}
+            });
 
+            // act
+            JsonResult result = await _controller.RefundReasons(dealId);
+
+            // assert
+            string json = JsonConvert.SerializeObject(result.Value);
+            Assert.Equal("[{\"Id\":2,\"Reason\":\"test1\"},{\"Id\":42,\"Reason\":\"test2\"}]", json);
+        }
         [Fact]
         public async Task Order_ShouldRedirectToIndex_ForModelError()
         {

@@ -19,5 +19,6 @@ namespace AutoAllegro.Services.Interfaces
         Task<bool> CancelRefund(int refundId);
         IEnumerable<WaitFeedbackStruct> GetWaitingFeedback();
         int GivePositiveFeedback(long adId, int userId);
+        Task<List<AllegroRefundReason>> GetReasonsList(int dealId);
     }
 }

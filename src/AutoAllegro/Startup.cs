@@ -188,39 +188,6 @@ namespace AutoAllegro
             //Populates the app sample data
             SampleData.InitializeDatabaseAsync(app.ApplicationServices, HostingEnvironment).Wait();
             InitHangfire(app.ApplicationServices);
-            InitAllegroRefundReasons(app.ApplicationServices);
-        }
-
-        private void InitAllegroRefundReasons(IServiceProvider appApplicationServices)
-        {
-            var reasons = new List<AllegroRefundReason>
-            {
-                new AllegroRefundReason {Id = 1, Reason = "Nie nawiązano kontaktu z Kupującym"},
-                new AllegroRefundReason {Id = 2, Reason = "Nawiązano kontakt, lecz Kupujący odmówił zakupu"},
-                new AllegroRefundReason {Id = 3, Reason = "Kupujący potwierdził chęć zakupu, lecz nie uiścił zapłaty"},
-                new AllegroRefundReason {Id = 4, Reason = "Kupujący nie dotrzymał warunków sprzedaży zawartych w opisie przedmiotu"},
-                new AllegroRefundReason {Id = 16, Reason = "Kupujący pomylił się przy składaniu oferty i zakupił więcej przedmiotów"},
-                new AllegroRefundReason {Id = 11, Reason = "Przedmiot został odesłany przez Kupującego w ramach zwrotu lub reklamacji"},
-            };
-
-            List<AllegroRefundReason> existingData;
-            using (var scope = appApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
-            {
-                var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
-                existingData = db.AllegroRefundReasons.ToList();
-            }
-            using (var scope = appApplicationServices.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetService<ApplicationDbContext>();
-                foreach (var item in reasons)
-                {
-                    db.Entry(item).State = existingData.Any(g => g.Id.Equals(item.Id))
-                        ? EntityState.Modified
-                        : EntityState.Added;
-                }
-
-                db.SaveChanges();
-            }
         }
 
         private static readonly List<Type> Jobs = new List<Type>

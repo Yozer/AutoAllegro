@@ -37,7 +37,7 @@ namespace AutoAllegro.Services.AllegroProcessors
 
         protected override void Execute()
         {
-            var ordersToSend =  from order in _db.Orders
+            var ordersToSend =  (from order in _db.Orders
                                 where order.Auction.IsMonitored && order.Auction.IsVirtualItem && order.OrderStatus == OrderStatus.Paid
                                 select new
                                 {
@@ -47,7 +47,7 @@ namespace AutoAllegro.Services.AllegroProcessors
                                     order.Buyer.FirstName,
                                     order.Buyer.LastName,
                                     order.Buyer.Email
-                                };
+                                }).ToList();
 
             foreach (var item in ordersToSend)
             {

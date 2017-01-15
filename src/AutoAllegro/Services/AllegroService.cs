@@ -266,6 +266,22 @@ namespace AutoAllegro.Services
             })).Result.feedbackId;
 
         }
+        public async Task<List<AllegroRefundReason>> GetReasonsList(int dealId)
+        {
+            ThrowIfNotLogged();
+
+            var reasons = await DoRequest(() => _servicePort.doGetRefundsReasonsAsync(new doGetRefundsReasonsRequest
+            {
+                dealId = dealId,
+                sessionId = _sessionKey
+            }));
+
+            return reasons.reasonsList.Select(t => new AllegroRefundReason
+            {
+                Id = t.reasonId,
+                Reason = t.reasonName
+            }).ToList();
+        }
         private void ThrowIfNotLogged()
         {
             if(!IsLogged)
@@ -287,5 +303,10 @@ namespace AutoAllegro.Services
             ApiKey = apiKey;
             JournalStart = journalStart?.AllegroEventId ?? 0L;
         }
+    }
+    public class AllegroRefundReason
+    {
+        public int Id { get; set; }
+        public string Reason { get; set; }
     }
 }

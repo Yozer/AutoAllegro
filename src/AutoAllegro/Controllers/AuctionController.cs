@@ -135,7 +135,6 @@ namespace AutoAllegro.Controllers
 
             var viewModel = _mapper.Map<OrderViewModel>(order);
             viewModel.Message = message;
-            viewModel.RefundReasons = await _dbContext.AllegroRefundReasons.ToListAsync();
             return View(viewModel);
         }
         public async Task<IActionResult> Add(bool? fetch)
@@ -287,12 +286,11 @@ namespace AutoAllegro.Controllers
         public async Task<IActionResult> CancelOrder(int id, int reasonId)
         {
             var order = await _dbContext.Orders.FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId());
-            if (order == null || !await _dbContext.AllegroRefundReasons.AnyAsync(t => t.Id == reasonId))
+            if (order == null)
                 return RedirectToAction(nameof(Index));
 
             if (order.OrderStatus != OrderStatus.Canceled)
             {
-
                 int refundId;
 
                 await LoginToAllegro();
@@ -316,6 +314,15 @@ namespace AutoAllegro.Controllers
                 return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.OrderCancelFail });
             }
         }
+
+        [HttpGet]
+        public async Task<JsonResult> RefundReasons(int dealId)
+        {
+            await LoginToAllegro();
+            var reasonsList = await _allegroService.GetReasonsList(dealId);
+            return Json(reasonsList);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> FreeCodes(int id)
