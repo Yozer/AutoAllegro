@@ -14,7 +14,7 @@ namespace AutoAllegro.Services.AllegroProcessors
 
     public class AllegroEmailProcessor : AllegroAbstractProcessor<IAllegroEmailProcessor>, IAllegroEmailProcessor
     {
-        private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
 
         private readonly IBackgroundJobClient _backgroundJob;
         private readonly IEmailSender _emailSender;
@@ -32,7 +32,7 @@ namespace AutoAllegro.Services.AllegroProcessors
 
         public override void Init()
         {
-            _backgroundJob.Schedule<IAllegroEmailProcessor>(t => t.Process(), Interval.Add(TimeSpan.FromSeconds(10)));
+            _backgroundJob.Schedule<IAllegroEmailProcessor>(t => t.Process(), Interval.Add(TimeSpan.FromSeconds(5)));
         }
 
         protected override void Execute()

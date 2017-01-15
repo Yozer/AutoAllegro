@@ -17,7 +17,7 @@ namespace AutoAllegro.Services.AllegroProcessors
     }
     public class AllegroTransactionProcessor : AllegroAbstractProcessor<IAllegroTransactionProcessor>, IAllegroTransactionProcessor
     {
-        private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
 
         // https://mgmccarthy.wordpress.com/2016/11/07/using-hangfire-to-schedule-jobs-in-asp-net-core/
         private readonly ILogger<AllegroTransactionProcessor> _logger;
