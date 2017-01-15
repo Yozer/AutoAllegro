@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -25,6 +26,7 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Hangfire.MemoryStorage;
 using Hangfire.States;
 using Hangfire.Storage;
+using Microsoft.AspNetCore.Localization;
 using NuGet.Packaging;
 using SoaAllegroService;
 
@@ -172,6 +174,13 @@ namespace AutoAllegro
 
             app.UseStaticFiles();
             app.UseIdentity();
+
+            app.UseRequestLocalization(new RequestLocalizationOptions
+            {
+                DefaultRequestCulture = new RequestCulture("pl-PL"),
+                SupportedCultures = new List<CultureInfo> { new CultureInfo("pl-PL") },
+                SupportedUICultures = new List<CultureInfo> { new CultureInfo("pl-PL") }
+            });
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
