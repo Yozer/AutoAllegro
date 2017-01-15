@@ -86,43 +86,43 @@ namespace AutoAllegro.Controllers
 
         //
         // GET: /Account/Register
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Register(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
-        }
+        //[HttpGet]
+        //[AllowAnonymous]
+        //public IActionResult Register(string returnUrl = null)
+        //{
+        //    ViewData["ReturnUrl"] = returnUrl;
+        //    return View();
+        //}
 
-        //
-        // POST: /Account/Register
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-            if (ModelState.IsValid)
-            {
-                var user = new User { UserName = model.Email, Email = model.Email };
-                var result = await _userManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
-                {
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
-                    await _emailSender.SendEmailAsync(model.Email, "Potwierdź swoje konto",
-                        "Dostajesz tą wiadomość, ponieważ na ten email zostało zarejestrowane konto w serwisie AutoAllegro.<br>" +
-                        "Jeśli nie tworzyłeś żadnego konta zignoruj tę wiadomość.<br><br>" +
-                        $"Proszę potwierdzić swoje konto klikając w ten link: <a href='{callbackUrl}'>Kliknij tutaj</a>");
-                    _logger.LogInformation(3, "User created a new account with password.");
-                    return RedirectToAction(nameof(RegisterConfirmation));
-                }
-                AddErrors(result);
-            }
+        ////
+        //// POST: /Account/Register
+        //[HttpPost]
+        //[AllowAnonymous]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
+        //{
+        //    ViewData["ReturnUrl"] = returnUrl;
+        //    if (ModelState.IsValid)
+        //    {
+        //        var user = new User { UserName = model.Email, Email = model.Email };
+        //        var result = await _userManager.CreateAsync(user, model.Password);
+        //        if (result.Succeeded)
+        //        {
+        //            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        //            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+        //            await _emailSender.SendEmailAsync(model.Email, "Potwierdź swoje konto",
+        //                "Dostajesz tą wiadomość, ponieważ na ten email zostało zarejestrowane konto w serwisie AutoAllegro.<br>" +
+        //                "Jeśli nie tworzyłeś żadnego konta zignoruj tę wiadomość.<br><br>" +
+        //                $"Proszę potwierdzić swoje konto klikając w ten link: <a href='{callbackUrl}'>Kliknij tutaj</a>");
+        //            _logger.LogInformation(3, "User created a new account with password.");
+        //            return RedirectToAction(nameof(RegisterConfirmation));
+        //        }
+        //        AddErrors(result);
+        //    }
 
-            // If we got this far, something failed, redisplay form
-            return View(model);
-        }
+        //    // If we got this far, something failed, redisplay form
+        //    return View(model);
+        //}
         [HttpGet]
         [AllowAnonymous]
         public IActionResult RegisterConfirmation()

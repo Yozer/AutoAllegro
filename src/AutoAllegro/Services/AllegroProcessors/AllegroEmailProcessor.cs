@@ -32,7 +32,7 @@ namespace AutoAllegro.Services.AllegroProcessors
 
         public override void Init()
         {
-            _backgroundJob.Schedule<IAllegroEmailProcessor>(t => t.Process(), Interval.Add(TimeSpan.FromSeconds(30)));
+            _backgroundJob.Schedule<IAllegroEmailProcessor>(t => t.Process(), Interval.Add(TimeSpan.FromSeconds(10)));
         }
 
         protected override void Execute()
