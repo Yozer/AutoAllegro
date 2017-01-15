@@ -110,7 +110,7 @@ namespace AutoAllegro.Tests
                     {
                         DisplayName = "x",
                         MessageSubject = "xy",
-                        MessageTemplate = "xyz",
+                        MessageTemplate = "xyz<br><br>test<br>",
                         ReplyTo = "xyzx"
                     }
                 }, "Pass@word1").Wait();

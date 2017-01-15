@@ -49,6 +49,7 @@ namespace AutoAllegro
                 builder.AddApplicationInsightsSettings(developerMode: true);
             }
 
+            builder.AddEnvironmentVariables();
             Configuration = builder.Build();
             HostingEnvironment = env;
         }
@@ -230,10 +231,10 @@ namespace AutoAllegro
             }).ReverseMap();
             cf.CreateMap<VirtualItemSettings, VirtualItemSettingsViewModel>().AfterMap((settings, model) =>
             {
-                settings.MessageTemplate = settings.MessageTemplate.Replace("<br>", "\r\n");
+                model.MessageTemplate = settings.MessageTemplate.Replace("<br>", "\r\n");
             }).ReverseMap().AfterMap((model, settings) =>
             {
-                settings.MessageTemplate = settings.MessageTemplate.Replace("\r\n", "<br>");
+                settings.MessageTemplate = model.MessageTemplate.Replace("\r\n", "<br>");
             });
 
             cf.CreateMap<CodeViewModel, GameCode>().ReverseMap();

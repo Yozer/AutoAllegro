@@ -54,7 +54,7 @@ namespace AutoAllegro.Tests.Controllers
             var model = (VirtualItemSettingsViewModel)((ViewResult)result).Model;
             Assert.Equal("x", model.DisplayName);
             Assert.Equal("xy", model.MessageSubject);
-            Assert.Equal("xyz", model.MessageTemplate);
+            Assert.Equal("xyz\r\n\r\ntest\r\n", model.MessageTemplate);
             Assert.Equal("xyzx", model.ReplyTo);
         }
 
@@ -67,7 +67,7 @@ namespace AutoAllegro.Tests.Controllers
             // act
             IActionResult result = await _controller.VirtualItemSettings(new VirtualItemSettingsViewModel
             {
-                MessageTemplate = "messageTemplate",
+                MessageTemplate = "messageTemplate\r\n\r\ntest2\r\n",
                 MessageSubject = "messageSubject",
                 ReplyTo = "replyTo",
                 DisplayName = "displayName"
@@ -84,7 +84,7 @@ namespace AutoAllegro.Tests.Controllers
             Assert.NotNull(user.VirtualItemSettings);
             Assert.Equal("displayName", user.VirtualItemSettings.DisplayName);
             Assert.Equal("messageSubject", user.VirtualItemSettings.MessageSubject);
-            Assert.Equal("messageTemplate", user.VirtualItemSettings.MessageTemplate);
+            Assert.Equal("messageTemplate<br><br>test2<br>", user.VirtualItemSettings.MessageTemplate);
             Assert.Equal("replyTo", user.VirtualItemSettings.ReplyTo);
         }
         [Fact]
@@ -122,40 +122,6 @@ namespace AutoAllegro.Tests.Controllers
             var httpContext = _scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext;
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
             _controller.ControllerContext.HttpContext = httpContext;
-        }
-        protected override void CreateFakeData()
-        {
-            base.CreateFakeData();
-            //using (var scope = CreateScope())
-            //{
-            //    var database = GetDatabase(scope);
-            //    var ad = database.Auctions.Include(t => t.Orders).First(t => t.AllegroAuctionId == 111);
-            //    ad.GameCodes.Add(new GameCode
-            //    {
-            //        Code = "xxx",
-            //        AddDate = new DateTime(2012, 5, 4),
-            //        Order = ad.Orders.First()
-            //    });
-            //    ad.GameCodes.Add(new GameCode
-            //    {
-            //        Code = "yyy",
-            //        AddDate = new DateTime(2012, 5, 5)
-            //    });
-
-            //    ad = database.Auctions.First(t => t.AllegroAuctionId == 7731);
-            //    ad.GameCodes.Add(new GameCode
-            //    {
-            //        Code = "aaa",
-            //        AddDate = new DateTime(2012, 5, 6)
-            //    });
-            //    ad.GameCodes.Add(new GameCode
-            //    {
-            //        Code = "bbb",
-            //        AddDate = new DateTime(2012, 5, 7)
-            //    });
-
-            //    database.SaveChanges();
-            //}
         }
     }
 }
