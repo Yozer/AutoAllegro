@@ -250,3 +250,4 @@ ModelManifest.xml
 src/AutoAllegro/wwwroot/css/main.css
 src/AutoAllegro/wwwroot/css/*.min.css
 src/AutoAllegro/wwwroot/js/*.min.js
+/src/AutoAllegro/wwwroot/Thumbs.db
