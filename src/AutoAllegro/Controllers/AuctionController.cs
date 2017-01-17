@@ -103,6 +103,7 @@ namespace AutoAllegro.Controllers
                 }
             }
 
+            viewModel.Orders = viewModel.Orders.OrderByDescending(t => t.OrderDate).ToList();
             viewModel.Message = message;
             viewModel.SettingsTabActive = settingsTabActive;
             viewModel.Paginate(page, pageSize, c => c.Orders);
