@@ -221,23 +221,23 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(1, model.FreeCodesCount);
             Assert.Equal(2, model.Orders.Count);
 
-            Assert.Equal(1, model.Orders[0].AuctionId);
-            Assert.Equal(4, model.Orders[0].Quantity);
-            Assert.Equal(4 * 8.99m, model.Orders[0].TotalPayment);
-            Assert.Equal(new DateTime(1993, 12, 11, 14, 55, 22), model.Orders[0].OrderDate);
-            Assert.Equal(OrderStatus.Send, model.Orders[0].OrderStatus);
-            Assert.True(model.Orders[0].VirtualItem);
-            Assert.Equal("buyer1@gmail.com", model.Orders[0].Buyer.Email);
-            Assert.Equal("Pierdola", model.Orders[0].Buyer.UserLogin);
-
             Assert.Equal(1, model.Orders[1].AuctionId);
-            Assert.Equal(66, model.Orders[1].Quantity);
-            Assert.Equal(66 * 8.99m, model.Orders[1].TotalPayment);
-            Assert.Equal(new DateTime(2222, 3, 5, 12, 33, 22), model.Orders[1].OrderDate);
-            Assert.Equal(OrderStatus.Created, model.Orders[1].OrderStatus);
+            Assert.Equal(4, model.Orders[1].Quantity);
+            Assert.Equal(4 * 8.99m, model.Orders[1].TotalPayment);
+            Assert.Equal(new DateTime(1993, 12, 11, 14, 55, 22), model.Orders[1].OrderDate);
+            Assert.Equal(OrderStatus.Send, model.Orders[1].OrderStatus);
             Assert.True(model.Orders[1].VirtualItem);
-            Assert.Equal("buyer3@gmail.com", model.Orders[1].Buyer.Email);
-            Assert.Equal("Tomus", model.Orders[1].Buyer.UserLogin);
+            Assert.Equal("buyer1@gmail.com", model.Orders[1].Buyer.Email);
+            Assert.Equal("Pierdola", model.Orders[1].Buyer.UserLogin);
+
+            Assert.Equal(1, model.Orders[0].AuctionId);
+            Assert.Equal(66, model.Orders[0].Quantity);
+            Assert.Equal(66 * 8.99m, model.Orders[0].TotalPayment);
+            Assert.Equal(new DateTime(2222, 3, 5, 12, 33, 22), model.Orders[0].OrderDate);
+            Assert.Equal(OrderStatus.Created, model.Orders[0].OrderStatus);
+            Assert.True(model.Orders[0].VirtualItem);
+            Assert.Equal("buyer3@gmail.com", model.Orders[0].Buyer.Email);
+            Assert.Equal("Tomus", model.Orders[0].Buyer.UserLogin);
         }
         [Fact]
         public async Task Codes_ShouldReturnFreeCodesList()
@@ -1201,15 +1201,13 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal(55.1m, ad.PricePerItem);
             Assert.Equal("test addd", ad.Title);
             Assert.Equal(UserId, ad.UserId);
-            //Assert.Equal(1m, ad.Fee);
-            //Assert.Equal(52m, ad.OpenCost);
-            Assert.Equal(0m, ad.Fee);
-            Assert.Equal(0m, ad.OpenCost);
+            Assert.Equal(1m, ad.Fee);
+            Assert.Equal(52m, ad.OpenCost);
             Assert.Null(redirect.ControllerName);
             Assert.Equal("Index", redirect.ActionName);
 
-            //await _allegroService.Received(1).Login(UserId, Arg.Any<AllegroCredentials>());
-            //await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
+            await _allegroService.Received(1).Login(UserId, Arg.Any<AllegroCredentials>());
+            await _allegroService.Received(1).UpdateAuctionFees(Arg.Is<Auction>(t => t.AllegroAuctionId == 1261));
         }
 
         [Fact]

@@ -54,7 +54,7 @@ namespace AutoAllegro.Tests.Services
             await _allegroService.Login("userId", _allegroCredentials);
 
             // assert
-            Assert.True(_allegroService.IsLogged);
+            Assert.False(_allegroService.IsSessionExpired);
             await _servicePort.ReceivedWithAnyArgs(1).doLoginEncAsync(null);
             await _servicePort.ReceivedWithAnyArgs(1).doQuerySysStatusAsync(null);
         }
@@ -68,10 +68,10 @@ namespace AutoAllegro.Tests.Services
             // act
             await _allegroService.Login("userId", _allegroCredentials);
             Thread.Sleep(500);
-            await _allegroService.Login("userId", null);
+            await _allegroService.Login("userId", _allegroCredentials);
 
             // assert
-            Assert.True(_allegroService.IsLogged);
+            Assert.False(_allegroService.IsSessionExpired);
             await _servicePort.ReceivedWithAnyArgs(1).doLoginEncAsync(null);
             await _servicePort.ReceivedWithAnyArgs(1).doQuerySysStatusAsync(null);
         }
@@ -84,11 +84,11 @@ namespace AutoAllegro.Tests.Services
             // act
             await _allegroService.Login("userId", _allegroCredentials);
             Thread.Sleep(1200);
-            Assert.False(_allegroService.IsLogged);
+            Assert.True(_allegroService.IsSessionExpired);
             await _allegroService.Login("userId", _allegroCredentials);
 
             // assert
-            Assert.True(_allegroService.IsLogged);
+            Assert.False(_allegroService.IsSessionExpired);
             await _servicePort.ReceivedWithAnyArgs(2).doLoginEncAsync(null);
             await _servicePort.ReceivedWithAnyArgs(2).doQuerySysStatusAsync(null);
         }
@@ -225,7 +225,7 @@ namespace AutoAllegro.Tests.Services
             // arrange
             MockLogin();
             await Login();
-            _servicePort.doCancelRefundFormAsync(null).ThrowsForAnyArgs(new FaultException(new FaultReason("xx"), new FaultCode("xx", "ww"), "action"));
+            _servicePort.doCancelRefundFormAsync(null).ThrowsForAnyArgs(new FaultException(new FaultReason("xx"), new FaultCode("ERR_CANNOT_BE_CANCELLED", "ww"), "action"));
             // act
             bool result = await _allegroService.CancelRefund(4);
 
@@ -361,6 +361,24 @@ namespace AutoAllegro.Tests.Services
             // assert
             Assert.Equal(65.73m, result.Fee);
             Assert.Equal(442.73m, result.OpenCost);
+        }
+        [Fact]
+        public async Task UpdateAuctionFees_ShouldUpdateAuctionFees_WhenNoFeesDataIsAvailable()
+        {
+            // arrange
+            Auction auction = new Auction { AllegroAuctionId = 512 };
+
+            MockLogin();
+            await Login();
+            _servicePort.doMyBillingItemAsync(Arg.Is<doMyBillingItemRequest>(t => t.itemId == auction.AllegroAuctionId))
+                .Throws(new FaultException(new FaultReason("reason"), new FaultCode("ERR_INVALID_ITEM_ID", "ns"), "action"));
+
+            // act
+            Auction result = await _allegroService.UpdateAuctionFees(auction);
+
+            // assert
+            Assert.Equal(0m, result.Fee);
+            Assert.Equal(0m, result.OpenCost);
         }
         [Fact]
         public async Task GetWaitingFeedback_GetFeedbacks()

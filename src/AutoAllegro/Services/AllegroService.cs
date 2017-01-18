@@ -27,18 +27,21 @@ namespace AutoAllegro.Services
         private string _userId;
         private AllegroCredentials _credentials;
 
-        public bool IsLogged => !IsLoginRequired();
+        public bool IsSessionExpired => SessionHasExpired();
+
+        private bool SessionHasExpired()
+        {
+            string dummy;
+            return IsLoginRequired || !_memoryCache.TryGetValue(_userId, out dummy);
+        }
+
+        private bool IsLoginRequired => _userId == null || _credentials == null;
 
         public AllegroService(IMemoryCache memoryCache, servicePort servicePort, ILogger<AllegroService> logger)
         {
             _memoryCache = memoryCache;
             _servicePort = servicePort;
             _logger = logger;
-        }
-
-        private bool IsLoginRequired()
-        {
-            return _userId == null || !_memoryCache.TryGetValue(_userId, out _sessionKey);
         }
 
         public async Task Login(string userId, AllegroCredentials credentials)
@@ -111,14 +114,22 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
-            var billing = await DoRequest(() => _servicePort.doMyBillingItemAsync(new doMyBillingItemRequest
+            try
             {
-                itemId = auction.AllegroAuctionId,
-                sessionHandle = _sessionKey
-            }));
+                var billing = await DoRequest(() => _servicePort.doMyBillingItemAsync(new doMyBillingItemRequest
+                {
+                    itemId = auction.AllegroAuctionId,
+                    sessionHandle = _sessionKey
+                }));
 
-            auction.Fee = billing.endingFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
-            auction.OpenCost = billing.entryFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
+                auction.Fee = billing.endingFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
+                auction.OpenCost = billing.entryFees.Sum(t => -decimal.Parse(t.biValue, CultureInfo.InvariantCulture));
+            }
+            catch (FaultException e) when (e.Code.Name == "ERR_INVALID_ITEM_ID")
+            {
+                auction.Fee = auction.OpenCost = 0m;
+            }
+
             return auction;
         }
 
@@ -224,7 +235,7 @@ namespace AutoAllegro.Services
                 if(response.cancellationResult)
                     return true;
             }
-            catch (FaultException)
+            catch (FaultException e) when (e.Code.Name == "ERR_INCORRECT_REFUND_ID" || e.Code.Name == "ERR_CANNOT_BE_CANCELLED")
             {
                 // this refund is finished user got warning
             }
@@ -315,7 +326,7 @@ namespace AutoAllegro.Services
         }
         private void ThrowIfNotLogged()
         {
-            if(!IsLogged)
+            if(IsLoginRequired)
                 throw new InvalidOperationException("Not logged in");
         }
     }

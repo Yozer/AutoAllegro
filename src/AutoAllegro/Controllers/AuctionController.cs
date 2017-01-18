@@ -178,7 +178,7 @@ namespace AutoAllegro.Controllers
                     Title = t.Name,
                     UserId = GetUserId()
                 })
-                .Select(Task.FromResult).ToList();
+                .Select(_allegroService.UpdateAuctionFees).ToList();
 
             await Task.WhenAll(auctions);
             _dbContext.Auctions.AddRange(auctions.Select(t => t.Result));
