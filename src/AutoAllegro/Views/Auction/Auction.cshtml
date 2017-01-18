@@ -13,6 +13,10 @@
                     <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
                 }
                 <h1>@Model.Title</h1>
+                @if (Model.HasEnded)
+                {
+                    <h5>Zakończona</h5>
+                }
                 <div class="row">
                     <div class="col-md-8">
                         <p><strong>Prowizja od sprzedaży:</strong> @Html.DisplayFor(x => x.Fee)</p>

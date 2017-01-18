@@ -26,6 +26,7 @@ namespace AutoAllegro.Models.AuctionViewModels
         public bool IsVirtualItem { get; set; }
         public bool AutomaticFeedbackEnabled { get; set; }
         public bool AutomaticRefundsEnabled { get; set; }
+        public bool HasEnded { get; set; }
         public AuctionMessageId? Message { get; set; }
         public bool SettingsTabActive { get; set; }
         public int FreeCodesCount { get; set; }

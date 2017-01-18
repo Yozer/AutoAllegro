@@ -18,6 +18,7 @@ namespace AutoAllegro.Models
         public bool IsMonitored { get; set; }
         public bool AutomaticFeedbackEnabled { get; set; }
         public bool AutomaticRefundsEnabled { get; set; }
+        public bool HasEnded { get; set; }
 
         public string UserId { get; set; }
         public virtual User User { get; set; }

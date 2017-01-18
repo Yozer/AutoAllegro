@@ -281,31 +281,35 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
-            if (auction.EndDate <= DateTime.Now)
-            {
-                var response = await DoRequest(() => _servicePort.doGetMySoldItemsAsync(new doGetMySoldItemsRequest
-                {
-                    sessionId = _sessionKey,
-                    itemIds = new[] {auction.AllegroAuctionId}
-                }));
+            if (auction.HasEnded)
+                return;
 
-                var ad = response.soldItemsList[0];
+            var response = await DoRequest(() => _servicePort.doGetMySellItemsAsync(new doGetMySellItemsRequest
+            {
+                sessionId = _sessionKey,
+                itemIds = new[] { auction.AllegroAuctionId }
+            }));
+
+            if (response.sellItemsList.Length == 1)
+            {
+                var ad = response.sellItemsList[0];
                 auction.Title = ad.itemTitle;
                 auction.PricePerItem = Convert.ToDecimal(ad.itemPrice.Single(t => t.priceType == 1).priceValue);
                 auction.EndDate = ad.itemEndTime.ToDateTime();
             }
             else
             {
-                var response = await DoRequest(() => _servicePort.doGetMySellItemsAsync(new doGetMySellItemsRequest
+                var responseSold = await DoRequest(() => _servicePort.doGetMySoldItemsAsync(new doGetMySoldItemsRequest
                 {
                     sessionId = _sessionKey,
                     itemIds = new[] { auction.AllegroAuctionId }
                 }));
 
-                var ad = response.sellItemsList[0];
+                var ad = responseSold.soldItemsList[0];
                 auction.Title = ad.itemTitle;
                 auction.PricePerItem = Convert.ToDecimal(ad.itemPrice.Single(t => t.priceType == 1).priceValue);
                 auction.EndDate = ad.itemEndTime.ToDateTime();
+                auction.HasEnded = true;
             }
         }
         public async Task<List<AllegroRefundReason>> GetReasonsList(int dealId)
