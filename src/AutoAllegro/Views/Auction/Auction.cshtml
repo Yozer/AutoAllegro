@@ -13,10 +13,6 @@
                     <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
                 }
                 <h1>@Model.Title</h1>
-                @if (Model.HasEnded)
-                {
-                    <h5>Zakończona</h5>
-                }
                 <div class="row">
                     <div class="col-md-8">
                         <p><strong>Prowizja od sprzedaży:</strong> @Html.DisplayFor(x => x.Fee)</p>
@@ -25,7 +21,13 @@
                     </div>
                     <div class="col-md-4">
                         <p><strong>Cena za sztukę:</strong> @Html.DisplayFor(x => x.PricePerItem)</p>
-                        <p><strong>Koniec:</strong> @Model.EndDate</p>
+                        <p>
+                            <strong>Koniec:</strong> @Model.EndDate
+                            @if (Model.HasEnded)
+                            {
+                                <b style="font-size:15px">(zakończona)</b>
+                            }
+                        </p>
                         @if (Model.IsVirtualItem)
                         {
                             <p><strong>Liczba wolnych kodów:</strong> @Model.FreeCodesCount</p>
@@ -77,7 +79,7 @@
                         <tbody>
                         @foreach (OrderViewModel order in Model.Orders)
                         {
-                            <tr>
+                            <tr class="@(order.OrderStatus == OrderStatus.Canceled ? "order-cancelled" : order.OrderStatus != OrderStatus.Done ? "order-inprogress" : string.Empty)">
                                 <td><a asp-action="Order" asp-route-id="@order.Id">@order.Buyer.UserLogin</a></td>
                                 <td>@order.Buyer.Email</td>
                                 <td>@order.OrderDate</td>

@@ -15,4 +15,14 @@
     .pagination-wrapper {
         text-align: center;
     }
+
+    .order-completed { 
+        background-color: #c9ffd1; 
+    }
+    .order-cancelled { 
+        background-color: #ffd3d3; 
+    }
+    .order-inprogress { 
+        background-color: #d9f5f9;
+    }
 }
