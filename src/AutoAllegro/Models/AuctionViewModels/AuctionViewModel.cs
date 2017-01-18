@@ -20,6 +20,7 @@ namespace AutoAllegro.Models.AuctionViewModels
         [CurrencyFormat]
         public decimal Profit { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime CreationDate { get; set; }
         public IList<OrderViewModel> Orders { get; set; }
         public PaginationView PaginationSettings { get; set; }
         public bool IsMonitored { get; set; }

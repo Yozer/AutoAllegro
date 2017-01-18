@@ -43,7 +43,7 @@ namespace AutoAllegro.Controllers
 
             var viewModel = new IndexViewModel
             {
-                Auctions = _mapper.Map<List<AuctionViewModel>>(auctions)
+                Auctions = _mapper.Map<List<AuctionViewModel>>(auctions).OrderByDescending(t => t.CreationDate).ToList()
             };
 
             viewModel.Paginate(page, pageSize, c => c.Auctions);
