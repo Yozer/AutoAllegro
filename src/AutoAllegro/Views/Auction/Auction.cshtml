@@ -14,12 +14,12 @@
                 }
                 <h1>@Model.Title</h1>
                 <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-md-7">
                         <p><strong>Prowizja od sprzedaży:</strong> @Html.DisplayFor(x => x.Fee)</p>
                         <p><strong>Prowizja od wystawienia aukcji:</strong> @Html.DisplayFor(x => x.OpenCost)</p>
                         <p><strong>Zarobek netto:</strong> @Html.DisplayFor(x => x.Profit)</p>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-5">
                         <p><strong>Cena za sztukę:</strong> @Html.DisplayFor(x => x.PricePerItem)</p>
                         <p>
                             <strong>Koniec:</strong> @Model.EndDate

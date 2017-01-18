@@ -26,7 +26,7 @@
                 <tbody>
                 @foreach (var auction in Model.Auctions)
                 {
-                    <tr>
+                    <tr class="@(auction.HasEnded ? "auction-ended" : string.Empty)">
                         <td>@auction.AllegroAuctionId</td>
                         <td><a asp-action="Auction" asp-route-id="@auction.Id">@auction.Title</a></td>
                         <td>@Html.DisplayFor(x => auction.PricePerItem)</td>
