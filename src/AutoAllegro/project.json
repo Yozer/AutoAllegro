@@ -38,7 +38,7 @@
     "Microsoft.Extensions.Logging.Console": "1.1.0",
     "Microsoft.Extensions.Logging.AzureAppServices": "1.0.0",
     "Microsoft.VisualStudio.Web.CodeGenerators.Mvc": "1.1.0-preview4-final",
-    "Microsoft.AspNetCore.Mvc.TagHelpers": "1.1.0",
+    "Microsoft.AspNetCore.Mvc.TagHelpers": "1.1.1",
     "AutoMapper": "5.2.0",
     "Hangfire.MemoryStorage.Core": "1.4.0",
     "Microsoft.Extensions.DependencyInjection": "1.1.0",
