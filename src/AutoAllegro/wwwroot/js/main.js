@@ -11,3 +11,12 @@ $(function () {
 });
 
 new Clipboard('.clipboard-copy');
+
+$("[data-confirm='default']").popConfirm({
+        title: "Potwierdzenie", 
+        content: "Czy na pewno chcesz to zrobić?",
+        placement: "bottom", 
+        container: "body",
+        yesBtn: "Tak",
+        noBtn: "Nie"
+});

@@ -110,9 +110,9 @@
                     <div class="list-group">
                         @if (Model.OrderStatus == OrderStatus.Created || Model.OrderStatus == OrderStatus.Canceled)
                         {
-                            <form asp-action="MarkAsPaid" onsubmit="return confirm('Czy na pewno chcesz to zrobić?');">
+                            <form asp-action="MarkAsPaid">
                                 @Html.HiddenFor(t => t.Id)
-                                <button type="submit" class="list-group-item">Oznacz jako opłacona</button>
+                                <button type="submit" class="list-group-item" data-confirm="default">Oznacz jako opłacona</button>
                             </form>
                         }
 
@@ -155,9 +155,9 @@
                             }
                             @if (Model.OrderStatus == OrderStatus.Done)
                             {
-                                <form asp-action="GetExtraCode" onsubmit="return confirm('Czy na pewno chcesz wygenerować dodatkowy kod?');">
+                                <form asp-action="GetExtraCode">
                                     @Html.HiddenFor(t => t.Id)
-                                    <button type="submit" class="list-group-item">Wygeneruj dodatkowy kod</button>
+                                    <button type="submit" class="list-group-item" data-confirm="default">Wygeneruj dodatkowy kod</button>
                                 </form>
                             }
                         }
@@ -179,7 +179,7 @@
                         {
                             <form asp-action="FreeCodes">
                                 @Html.HiddenFor(t => t.Id)
-                                <button type="submit" class="list-group-item">Zwolnij kody</button>
+                                <button type="submit" class="list-group-item" data-confirm="default">Zwolnij kody</button>
                             </form>
                         }
                     </div>
