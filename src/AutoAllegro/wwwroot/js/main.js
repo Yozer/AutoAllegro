@@ -1,5 +1,5 @@
 $(function () {
-    $('body.auction input#non_material_checkbox').change(function () {
+    $('body.auction input#non_material_checkbox').change(function() {
         var nonMaterialWrapper = $('#non-material-wrapper');
 
         if ($(this).is(':checked')) {
@@ -7,16 +7,17 @@ $(function () {
         } else {
             nonMaterialWrapper.addClass('hidden');
         }
-    })
-});
+    });
 
-new Clipboard('.clipboard-copy');
+    new Clipboard('.clipboard-copy');
 
-$("[data-confirm='default']").popConfirm({
-        title: "Potwierdzenie", 
+    $("[data-confirm='default']").popConfirm({
+        title: "Potwierdzenie",
         content: "Czy na pewno chcesz to zrobić?",
-        placement: "bottom", 
+        placement: "bottom",
         container: "body",
         yesBtn: "Tak",
         noBtn: "Nie"
+    });
 });
+
