@@ -149,9 +149,10 @@
                             </div>
                         </div>
 
-
-                        <div id="non-material-wrapper" class="@(Model.IsVirtualItem ? string.Empty : "hidden")">
-                            <p><a asp-action="AddCodes" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Dodaj nowe kody</a></p>
+                        <div id="non-material-wrapper" class="form-group @(Model.IsVirtualItem ? string.Empty : "hidden")">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <a asp-action="AddCodes" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Dodaj nowe kody</a>
+                            </div>
                         </div>
 
                         <hr>

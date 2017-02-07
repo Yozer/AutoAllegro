@@ -9,3 +9,5 @@ $(function () {
         }
     })
 });
+
+new Clipboard('.clipboard-copy');

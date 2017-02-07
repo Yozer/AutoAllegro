@@ -26,16 +26,14 @@
                         <p><strong>Data zamówienia:</strong> @Html.DisplayFor(t => t.OrderDate)</p>
                     </div>
                 </div>
-                <p><a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Przejdź do aukcji</a></p>
-                <p><a asp-action="Order" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Odśwież</a></p>
-                @if (Model.OrderStatus == OrderStatus.Created || Model.OrderStatus == OrderStatus.Canceled)
-                {
-                    // TUTAJ MODAL Z PYTANIEM CZY NA PEWNO CHCESZ TO ZROBI (nie da się tego cofnąć i automatycznie wyśle kody)
-                    <form asp-action="MarkAsPaid">
-                        @Html.HiddenFor(t => t.Id)
-                        <button type="submit" class="btn btn-primary btn-lg">Oznacz jako opłacona</button>
-                    </form>
-                }
+                <div class="btn-toolbar" role="toolbar">
+                    <div class="btn-group" role="group">
+                        <a asp-action="Auction" asp-route-id="@Model.AuctionId" class="btn btn-primary btn-lg">Przejdź do aukcji</a>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <a asp-action="Order" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Odśwież</a>
+                    </div>
+                </div>                
             </div>
         </div>
     </div>
@@ -110,11 +108,19 @@
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
+                        @if (Model.OrderStatus == OrderStatus.Created || Model.OrderStatus == OrderStatus.Canceled)
+                        {
+                            <form asp-action="MarkAsPaid" onsubmit="return confirm('Czy na pewno chcesz to zrobić?');">
+                                @Html.HiddenFor(t => t.Id)
+                                <button type="submit" class="list-group-item">Oznacz jako opłacona</button>
+                            </form>
+                        }
+
                         @if (Model.VirtualItem)
                         {
                             @if (Model.GameCodes.Count > 0)
                             {
-                                <a class="list-group-item" data-toggle="modal" data-target="#codesModal">Zobacz kody</a>
+                                <a href="#" class="list-group-item" data-toggle="modal" data-target="#codesModal">Zobacz kody</a>
                                 <div class="modal fade" id="codesModal" tabindex="-1" role="dialog">
                                     <div class="modal-dialog" role="document">
                                         <div class="modal-content">
@@ -125,12 +131,23 @@
                                             <div class="modal-body">
                                                 <ul class="list-group">
                                                     @foreach (var code in Model.GameCodes) {
-                                                        <li class="list-group-item">@code.Code</li>
+                                                        <li class="list-group-item">
+                                                            <div class="row">
+                                                                <div class="col-sm-10">
+                                                                    <span id="code-@code.Id">@code.Code</span>
+                                                                </div>
+                                                                <div class="col-sm-2 text-right">
+                                                                    <button class="btn btn-sm btn-warning clipboard-copy" data-clipboard-target="#code-@code.Id">
+                                                                        <i class="fa fa-clipboard"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </li>
                                                     }
                                                 </ul>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-info" data-dismiss="modal">Zamknij</button>
+                                                <button type="button" class="btn btn-success" data-dismiss="modal">Zamknij</button>
                                             </div>
                                         </div>
                                     </div>
@@ -168,14 +185,17 @@
                     </div>
                 </div>
             </div>
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Wiadomość od kupującego</h3>
+            @if (Model.ShippingAddress?.MessageToSeller != null) 
+            {
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Wiadomość od kupującego</h3>
+                    </div>
+                    <div class="panel-body">
+                        <p>@(Model.ShippingAddress?.MessageToSeller ?? "Brak wiadomości")</p>
+                    </div>
                 </div>
-                <div class="panel-body">
-                    <p>@(Model.ShippingAddress?.MessageToSeller ?? "Brak wiadomości")</p>
-                </div>
-            </div>
+            }
         </div>
     </div>
 
