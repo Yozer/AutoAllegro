@@ -51,7 +51,6 @@ namespace AutoAllegro
                 builder.AddApplicationInsightsSettings(developerMode: true);
             }
 
-            builder.AddEnvironmentVariables();
             Configuration = builder.Build();
             HostingEnvironment = env;
         }
