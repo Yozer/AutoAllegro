@@ -185,7 +185,7 @@
                     </div>
                 </div>
             </div>
-            @if (Model.ShippingAddress?.MessageToSeller != null) 
+            @if (!string.IsNullOrEmpty(Model.ShippingAddress?.MessageToSeller)) 
             {
                 <div class="panel panel-info">
                     <div class="panel-heading">
