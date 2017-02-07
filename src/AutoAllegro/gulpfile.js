@@ -42,12 +42,12 @@ gulp.task('compile:sass', function () {
 
 gulp.task("min:js", function () {
     return gulp.src([paths.js, "!" + paths.minJs], { base: "." })
+        .pipe(addsrc(paths.webroot + "lib/clipboard/clipboard.js"))
+        .pipe(addsrc(paths.webroot + "lib/jquery-popconfirm/jquery.popconfirm.js"))
         .pipe(uglify())
         .pipe(addsrc(paths.webroot + "lib/jquery-validation/jquery.validate.min.js"))
         .pipe(addsrc(paths.webroot + "lib/jquery-validation-unobtrusive/jquery-validation-unobtrusive.min.js"))
         .pipe(addsrc(paths.webroot + "lib/bootstrap/bootstrap.min.js"))
-        .pipe(addsrc(paths.webroot + "lib/clipboard/clipboard.js"))
-        .pipe(addsrc(paths.webroot + "lib/jquery-popconfirm/jquery.popconfirm.js"))
         .pipe(concat(paths.minJs))
         .pipe(gulp.dest("."));
 });
