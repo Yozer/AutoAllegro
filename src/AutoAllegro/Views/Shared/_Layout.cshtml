@@ -56,11 +56,13 @@
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="~/lib/jquery-popconfirm/jquery.popconfirm.js"></script>
     <script src="~/lib/clipboard/clipboard.js"></script>
+    <script src="~/lib/chart-js/chart.min.js"></script>
     <script src="~/js/main.js"></script>
 </environment>
 <environment names="Staging,Production">
     <script src="~/js/main.min.js"></script>
 </environment>
+@RenderSection("JavaScripts",required:false);
 </body>
 
 </html>
