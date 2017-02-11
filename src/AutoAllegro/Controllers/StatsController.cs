@@ -20,7 +20,6 @@ namespace AutoAllegro.Controllers
             yearlyStats.Add(new DateTime(2016, 07, 10), 12);
             viewModel.YearlyStats = yearlyStats;
 
-
             return View(viewModel);
         }
 
