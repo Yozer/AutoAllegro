@@ -25,7 +25,18 @@ namespace AutoAllegro.Controllers
 
         public IActionResult Daily(string date) 
         {
-            return View();
+            var viewModel = new DailyViewModel();
+            viewModel.StatsDate = date;
+
+            // Mock data
+            Dictionary<DateTime, decimal> dailyStats = new Dictionary<DateTime, decimal>();
+            dailyStats.Add(new DateTime(2016, 06, 10), 10);
+            dailyStats.Add(new DateTime(2016, 06, 11), 8);
+            dailyStats.Add(new DateTime(2016, 06, 12), 12);
+            dailyStats.Add(new DateTime(2016, 06, 13), 15);
+            viewModel.DailyStats = dailyStats;
+
+            return View(viewModel);
         }
 
         public IActionResult Auction(int id) 
