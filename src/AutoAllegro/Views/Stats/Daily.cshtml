@@ -21,7 +21,7 @@
         var yearlyChart = new Chart(yearlyStats, {
             type: 'line',
             data: {
-                labels: [ @Html.Raw(@AutoAllegro.Helpers.Functions.StatsFunctions.FormatList(@Model.DailyStats.Keys.ToList())) ],
+                labels: [ @Html.Raw(@AutoAllegro.Helpers.Functions.StatsFunctions.FormatList(@Model.DailyStats.Keys.ToList(), "dd.MM")) ],
                 datasets: [
                     {
                         label: 'Zarobek netto',
