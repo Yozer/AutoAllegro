@@ -3,6 +3,9 @@
     ViewData["bodyClass"] = "";
 }
 
+@model AutoAllegro.Models.StatsViewModels.IndexViewModel
+
+
 <div class="container">
     <div class="row">
         <div class="col-md-12">
@@ -30,38 +33,12 @@
         var yearlyChart = new Chart(yearlyStats, {
             type: 'bar',
             data: {
-                labels: ["01.2016", "02.2016", "03.2016", "04.2016", "05.2016", "06.2016", "07.2016", "08.2016", "09.2016", "10.2016", "11.2016", "12.2016",],
+                labels: [ @Html.Raw(@AutoAllegro.Helpers.Functions.StatsFunctions.FormatList(@Model.YearlyStats.Keys.ToList())) ],
                 datasets: [{
                     label: 'Zarobek netto',
-                    data: [12, 19, 3, 5, 2, 3, 4, 5, 7, 8, 10, 20,],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(153, 102, 255, 0.2)',
-                        'rgba(255, 159, 64, 0.2)',
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(153, 102, 255, 0.2)',
-                        'rgba(255, 159, 64, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(255,99,132,1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(255,99,132,1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)'
-                    ],
+                    data: [ @Html.Raw(@AutoAllegro.Helpers.Functions.StatsFunctions.FormatList(@Model.YearlyStats.Values.ToList())) ],
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
                     borderWidth: 1
                 }]
             },
@@ -74,8 +51,8 @@
                     }]
                 },
                 onClick: function(event, details) {
-                    var baseUrl = 'http://localhost:5000/';
-                    baseUrl += 'Stats/Daily/';
+                    var baseUrl = '@Url.Action("", null, null, "http")';
+                    baseUrl += '/Daily/';
 
                     var date = details[0]._model.label;
                     
