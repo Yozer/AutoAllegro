@@ -11,9 +11,9 @@ namespace AutoAllegro.Helpers.Extensions
             return string.Join(",", data.Keys.Select(t => $"\"{t.Date.ToString(format)}\""));
         }
 
-        public static string FormatDecimals(this Dictionary<DateTime, decimal> data, string format = "{0:0.00} z³")
+        public static string FormatDecimals(this Dictionary<DateTime, decimal> data)
         {
-            return string.Join(",", data.Values.Select(t => t.ToString(format)));
+            return string.Join(",", data.Values.Select(t => t.ToString()));
         }
     }
 }

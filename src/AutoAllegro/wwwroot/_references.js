@@ -2,6 +2,7 @@
 /// <reference path="../gulpfile.js" />
 /// <reference path="js/main.js" />
 /// <reference path="lib/bootstrap/bootstrap.min.js" />
+/// <reference path="lib/chart-js/chart.min.js" />
 /// <reference path="lib/clipboard/clipboard.js" />
 /// <reference path="lib/jquery-popconfirm/jquery.popconfirm.js" />
 /// <reference path="lib/jquery-validation/additional-methods.min.js" />

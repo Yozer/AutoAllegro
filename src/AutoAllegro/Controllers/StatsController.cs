@@ -1,16 +1,35 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AutoAllegro.Data;
+using AutoAllegro.Models;
+using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Models.StatsViewModels;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using IndexViewModel = AutoAllegro.Models.StatsViewModels.IndexViewModel;
 
 namespace AutoAllegro.Controllers
 {
     [Authorize]
     public class StatsController : Controller
     {
+        private readonly ApplicationDbContext _dbContext;
+        private readonly UserManager<User> _userManager;
+        private readonly IMapper _mapper;
 
-        public IActionResult Index()
+        public StatsController(ApplicationDbContext dbContext, IMapper mapper, UserManager<User> userManager)
+        {
+            _dbContext = dbContext;
+            _mapper = mapper;
+            _userManager = userManager;
+        }
+
+        public async Task<IActionResult> Index()
         {
             var viewModel = new IndexViewModel();
             
@@ -19,6 +38,9 @@ namespace AutoAllegro.Controllers
             yearlyStats.Add(new DateTime(2016, 06, 10), 10);
             yearlyStats.Add(new DateTime(2016, 07, 10), 12);
             viewModel.YearlyStats = yearlyStats;
+
+            var auctions = await _dbContext.Auctions.Where(t => t.UserId == _userManager.GetUserId(User)).ToListAsync();
+            viewModel.Auctions = _mapper.Map<List<AuctionViewModel>>(auctions);
 
             return View(viewModel);
         }
