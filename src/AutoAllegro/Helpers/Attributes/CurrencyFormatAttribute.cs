@@ -6,7 +6,7 @@ namespace AutoAllegro.Helpers.Attributes
     {
         public CurrencyFormatAttribute()
         {
-            DataFormatString = "{0:0.00} z≥";
+            DataFormatString = "{0:0.00} z≈Ç";
         }
     }
 }
