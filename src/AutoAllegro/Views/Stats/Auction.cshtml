@@ -6,6 +6,11 @@
 @model AutoAllegro.Models.StatsViewModels.AuctionViewModel
 
 <div class="container">
+    <div class="btn-toolbar" role="toolbar">
+        <div class="btn-group" role="group">
+            <a asp-action="Auction" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Przejdź do aukcji</a>
+        </div>
+    </div>      
     <div class="row">
         <div class="col-md-12">
             <h2>Statystyki sprzedaży dla aukcji: @Model.Title</h2>

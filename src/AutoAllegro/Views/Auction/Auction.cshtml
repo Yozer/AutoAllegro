@@ -49,6 +49,12 @@
                              <div class="btn-group" role="group" aria-label="...">
                                  <a asp-action="Auction" asp-route-id="@Model.Id" asp-route-refreshAd="true" class="btn btn-primary btn-lg">Odśwież dane</a>
                              </div>
+                             <div class="btn-group" role="group">
+                                 <a asp-action="Auction" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Odśwież widok</a>
+                             </div>
+                             <div class="btn-group" role="group" aria-label="...">
+                                 <a asp-controller="Stats" asp-action="Auction" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Statystyki</a>
+                             </div>
                         </div>
                     </div>
                 </div>
