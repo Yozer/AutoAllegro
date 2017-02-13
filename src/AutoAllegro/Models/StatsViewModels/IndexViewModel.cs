@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System;
-using AutoAllegro.Models.AuctionViewModels;
 
 namespace AutoAllegro.Models.StatsViewModels
 {
@@ -8,6 +7,6 @@ namespace AutoAllegro.Models.StatsViewModels
     {
         public Dictionary<DateTime, decimal> YearlyStats { get; set; }
 
-        public List<AuctionViewModel> Auctions { get; set; }
+        public List<AutoAllegro.Models.AuctionViewModels.AuctionViewModel> Auctions { get; set; }
     }
 }

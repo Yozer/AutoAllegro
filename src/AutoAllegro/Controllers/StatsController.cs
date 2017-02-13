@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoAllegro.Data;
 using AutoAllegro.Models;
-using AutoAllegro.Models.AuctionViewModels;
 using AutoAllegro.Models.StatsViewModels;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +39,7 @@ namespace AutoAllegro.Controllers
             viewModel.YearlyStats = yearlyStats;
 
             var auctions = await _dbContext.Auctions.Where(t => t.UserId == _userManager.GetUserId(User)).ToListAsync();
-            viewModel.Auctions = _mapper.Map<List<AuctionViewModel>>(auctions);
+            viewModel.Auctions = _mapper.Map<List<AutoAllegro.Models.AuctionViewModels.AuctionViewModel>>(auctions);
 
             return View(viewModel);
         }
@@ -63,7 +62,17 @@ namespace AutoAllegro.Controllers
 
         public IActionResult Auction(int id) 
         {
-            return View();
+            var viewModel = new AuctionViewModel();
+                        
+            // Mock data
+            Dictionary<DateTime, decimal> saledItems = new Dictionary<DateTime, decimal>();
+            saledItems.Add(new DateTime(2016, 06, 10), 10);
+            saledItems.Add(new DateTime(2016, 06, 11), 8);
+            saledItems.Add(new DateTime(2016, 06, 12), 12);
+            saledItems.Add(new DateTime(2016, 06, 13), 15);
+            viewModel.SaledItems = saledItems;
+
+            return View(viewModel);
         } 
 
     }

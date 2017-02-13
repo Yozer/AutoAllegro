@@ -9,7 +9,7 @@
     <div class="row">
         <div class="col-md-12">
             <h2>Statystyki sprzedaży w @Model.StatsDate</h2>
-            <canvas id="yearlyChart" width="800" height="400"></canvas>
+            <canvas id="dailyChart" width="800" height="400"></canvas>
         </div>
     </div>
 </div>
@@ -17,8 +17,8 @@
 @section JavaScripts
 {
     <script>
-        var yearlyStats = $("#yearlyChart");
-        var yearlyChart = new Chart(yearlyStats, {
+        var DailyStats = $("#dailyChart");
+        var dailyChart = new Chart(DailyStats, {
             type: 'line',
             data: {
                 labels: [ @Html.Raw(Model.DailyStats.FormatDates()) ],

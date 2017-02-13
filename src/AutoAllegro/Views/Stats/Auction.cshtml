@@ -1,0 +1,50 @@
+@{
+    ViewData["Title"] = "Nazwa aukcji - Statystyki";
+    ViewData["bodyClass"] = "";
+}
+
+@model AutoAllegro.Models.StatsViewModels.AuctionViewModel
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Statystyki sprzedaży dla aukcji {{nazwa-aukcji}}</h2>
+            <canvas id="chart" width="800" height="400"></canvas>
+        </div>
+    </div>
+</div>
+
+@section JavaScripts
+{
+    <script>
+        var chartDiv = $("#chart");
+        var chart = new Chart(chartDiv, {
+            type: 'line',
+            data: {
+                labels: [ @Html.Raw(Model.SaledItems.FormatDates()) ],
+                datasets: [
+                    {
+                        label: 'Sprzedanych produktów',
+                        data: [ @Html.Raw(Model.SaledItems.FormatDecimals()) ],
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderColor:  'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            xAxisID: "Test",
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true
+                        }
+                    }]
+                }
+            }
+           
+    });
+    </script> 
+}
+
+
