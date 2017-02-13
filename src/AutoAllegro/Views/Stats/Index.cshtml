@@ -52,7 +52,7 @@
                 },
                 onClick: function(event, details) {
                     var baseUrl = '@Url.Action("", null, null, "http")';
-                    baseUrl += '/Daily/';
+                    baseUrl += '/Daily?date=';
 
                     var date = details[0]._model.label;
 

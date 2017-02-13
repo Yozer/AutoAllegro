@@ -244,7 +244,7 @@ namespace AutoAllegro
             {
                 settings.MessageTemplate = model.MessageTemplate.Replace("\r\n", "<br>");
             });
-
+            cf.CreateMap<Auction, Models.StatsViewModels.AuctionViewModel>().ReverseMap();
             cf.CreateMap<CodeViewModel, GameCode>().ReverseMap();
         }
 

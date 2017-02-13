@@ -5,8 +5,9 @@ namespace AutoAllegro.Models.StatsViewModels
 {
     public class AuctionViewModel 
     {
-        public Dictionary<DateTime, decimal> SaledItems { get; set; }
+        public List<Tuple<DateTime, int>> SoldItems { get; set; }
 
-        public Auction Auction { get; set; }
+        public int Id { get; set; }
+        public string Title { get; set; }
     }
 }

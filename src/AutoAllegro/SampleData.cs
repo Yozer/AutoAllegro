@@ -113,8 +113,8 @@ namespace AutoAllegro
             {
                 UserId = userId,
                 AllegroAuctionId = 247,
-                CreationDate = new DateTime(2004, 12, 3, 5, 4, 3),
-                EndDate = new DateTime(2007, 5, 4, 2, 3, 6),
+                CreationDate = new DateTime(2012, 3, 3, 5, 4, 3),
+                EndDate = new DateTime(2012, 3, 18, 2, 3, 6),
                 Fee = 7,
                 Title = "test ad4",
                 OpenCost = 9.23m,
@@ -245,6 +245,33 @@ namespace AutoAllegro
                 OrderDate = new DateTime(2012, 3, 3, 12, 33, 11),
                 OrderStatus = OrderStatus.Canceled,
                 Quantity = 3
+            });
+            db.Orders.Add(new Order
+            {
+                AllegroDealId = 6,
+                Auction = auction4,
+                Buyer = buyer3,
+                OrderDate = new DateTime(2012, 3, 7, 12, 33, 11),
+                OrderStatus = OrderStatus.Paid,
+                Quantity = 1
+            });
+            db.Orders.Add(new Order
+            {
+                AllegroDealId = 7,
+                Auction = auction4,
+                Buyer = buyer2,
+                OrderDate = new DateTime(2012, 3, 14, 12, 33, 11),
+                OrderStatus = OrderStatus.Paid,
+                Quantity = 1
+            });
+            db.Orders.Add(new Order
+            {
+                AllegroDealId = 8,
+                Auction = auction4,
+                Buyer = buyer2,
+                OrderDate = new DateTime(2012, 3, 16, 12, 33, 11),
+                OrderStatus = OrderStatus.Created,
+                Quantity = 1
             });
 
             await db.SaveChangesAsync();
