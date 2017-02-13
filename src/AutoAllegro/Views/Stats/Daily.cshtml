@@ -17,34 +17,39 @@
 @section JavaScripts
 {
     <script>
-        var DailyStats = $("#dailyChart");
-        var dailyChart = new Chart(DailyStats, {
-            type: 'bar',
-            data: {
-                labels: [ @Html.Raw(Model.DailyStats.FormatDates("dd MMMM")) ],
-                datasets: [
-                    {
-                        label: 'Zarobek netto [zł]',
-                        data: [ @Html.Raw(Model.DailyStats.FormatDecimals()) ],
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor:  'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            xAxisID: "Test",
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero:true
+        $(function() {
+            var DailyStats = $("#dailyChart");
+            var dailyChart = new Chart(DailyStats,
+            {
+                type: 'bar',
+                data: {
+                    labels: [@Html.Raw(Model.DailyStats.FormatDates("dd MMMM"))],
+                    datasets: [
+                        {
+                            label: 'Zarobek netto [zł]',
+                            data: [@Html.Raw(Model.DailyStats.FormatDecimals())],
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
                         }
-                    }]
+                    ]
+                },
+                xAxisID: "Test",
+                options: {
+                    scales: {
+                        yAxes: [
+                            {
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }
+                        ]
+                    }
                 }
-            }
-           
-    });
-    </script> 
+
+            });
+        });
+    </script>
 }
 
 

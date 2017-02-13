@@ -19,7 +19,7 @@
             <div class="list-group">
                 @foreach (var auction in Model.Auctions)
                 {
-                    <a asp-action="Auction" asp-route-id="@auction.Id" class="list-group-item">@auction.Title</a>
+                    <a asp-action="Auction" asp-route-id="@auction.Id" class="list-group-item">@auction.AllegroAuctionId - @auction.Title</a>
                 }
             </div>
         </div>
@@ -29,40 +29,50 @@
 @section JavaScripts
 {
     <script>
-        var yearlyStats = $("#yearlyChart");
-        var yearlyChart = new Chart(yearlyStats, {
-            type: 'bar',
-            data: {
-                labels: [ @Html.Raw(Model.YearlyStats.FormatDates()) ],
-                datasets: [{
-                    label: 'Zarobek netto [zł]',
-                    data: [ @Html.Raw(Model.YearlyStats.FormatDecimals()) ],
-                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                    borderColor: 'rgba(255, 206, 86, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero:true
+        $(function() {
+
+
+            var yearlyStats = $("#yearlyChart");
+            var yearlyChart = new Chart(yearlyStats,
+            {
+                type: 'bar',
+                data: {
+                    labels: [@Html.Raw(Model.YearlyStats.FormatDates())],
+                    datasets: [
+                        {
+                            label: 'Zarobek netto [zł]',
+                            data: [@Html.Raw(Model.YearlyStats.FormatDecimals())],
+                            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                            borderColor: 'rgba(255, 206, 86, 1)',
+                            borderWidth: 1
                         }
-                    }]
+                    ]
                 },
-                onClick: function(event, details) {
-                    var baseUrl = '@Url.Action("", null, null, "http")';
-                    baseUrl += '/Daily?date=';
+                options: {
+                    scales: {
+                        yAxes: [
+                            {
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }
+                        ]
+                    },
+                    onClick: function(event, details) {
+                        var baseUrl = '@Url.Action("", null, null, "http")';
+                        baseUrl += '/Daily?date=';
 
-                    var date = details[0]._model.label;
+                        var date = details[0]._model.label;
 
-                    var url = baseUrl + date;
+                        var url = baseUrl + date;
 
-                    window.location.href = url;
+                        window.location.href = url;
+                    }
                 }
-            }
 
-    });
+            });
+        });
+
     </script> 
 }
 

@@ -8,7 +8,7 @@
 <div class="container">
     <div class="btn-toolbar" role="toolbar">
         <div class="btn-group" role="group">
-            <a asp-action="Auction" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Przejdź do aukcji</a>
+            <a asp-controller="Auction" asp-action="Auction" asp-route-id="@Model.Id" class="btn btn-primary btn-lg">Przejdź do aukcji</a>
         </div>
     </div>      
     <div class="row">
@@ -22,34 +22,39 @@
 @section JavaScripts
 {
     <script>
-        var chartDiv = $("#chart");
-        var chart = new Chart(chartDiv, {
-            type: 'bar',
-            data: {
-                labels: [ @Html.Raw(Model.SoldItems.FormatDates("dd MMMM yyyy")) ],
-                datasets: [
-                    {
-                        label: 'Sprzedanych produktów',
-                        data: [ @Html.Raw(Model.SoldItems.FormatInts()) ],
-                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                        borderColor:  'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            xAxisID: "Test",
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero:true
+        $(function() {
+            var chartDiv = $("#chart");
+            var chart = new Chart(chartDiv,
+            {
+                type: 'bar',
+                data: {
+                    labels: [@Html.Raw(Model.SoldItems.FormatDates("dd MMMM yyyy"))],
+                    datasets: [
+                        {
+                            label: 'Sprzedanych produktów',
+                            data: [@Html.Raw(Model.SoldItems.FormatInts())],
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
                         }
-                    }]
+                    ]
+                },
+                xAxisID: "Test",
+                options: {
+                    scales: {
+                        yAxes: [
+                            {
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }
+                        ]
+                    }
                 }
-            }
-           
-    });
-    </script> 
+
+            });
+        });
+    </script>
 }
 
 
