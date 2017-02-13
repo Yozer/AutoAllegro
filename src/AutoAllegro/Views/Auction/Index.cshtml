@@ -20,6 +20,8 @@
                     <tr>
                         <th>ID Aukcji</th>
                         <th>Tytuł</th>
+                        <th>Data utworzenia</th>
+                        <th>Data zakończenia</th>
                         <th>Cena</th>
                     </tr>
                 </thead>
@@ -29,6 +31,8 @@
                     <tr class="@(auction.HasEnded ? "auction-ended" : string.Empty)">
                         <td>@auction.AllegroAuctionId</td>
                         <td><a asp-action="Auction" asp-route-id="@auction.Id">@auction.Title</a></td>
+                        <td>@auction.CreationDate</td>
+                        <td>@auction.EndDate</td>
                         <td>@Html.DisplayFor(x => auction.PricePerItem)</td>
                     </tr>
                 }
