@@ -17,10 +17,10 @@
         <div class="col-md-12">
             <h2>Statystyki dla aukcji</h2>
             <div class="list-group">
-                <a href="#" class="list-group-item">Dapibus ac facilisis in</a>
-                <a href="#" class="list-group-item">Morbi leo risus</a>
-                <a href="#" class="list-group-item">Porta ac consectetur ac</a>
-                <a href="#" class="list-group-item">Vestibulum at eros</a>
+                @foreach (var auction in Model.Auctions)
+                {
+                    <a asp-action="Auction" asp-route-id="@auction.Id" class="list-group-item">@auction.Title</a>
+                }
             </div>
         </div>
     </div>
@@ -35,7 +35,7 @@
             data: {
                 labels: [ @Html.Raw(Model.YearlyStats.FormatDates()) ],
                 datasets: [{
-                    label: 'Zarobek netto',
+                    label: 'Zarobek netto [zł]',
                     data: [ @Html.Raw(Model.YearlyStats.FormatDecimals()) ],
                     backgroundColor: 'rgba(255, 206, 86, 0.2)',
                     borderColor: 'rgba(255, 206, 86, 1)',
