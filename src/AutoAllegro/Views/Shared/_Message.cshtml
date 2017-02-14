@@ -1,0 +1,24 @@
+@model Enum
+
+@if (Model != null)
+{
+    @if (Model.GetStatus() == "Success")
+    {
+        <div class="alert alert-success" role="alert">
+            @Html.DisplayFor(t => Model)
+        </div>
+    }
+    else if (Model.GetStatus() == "Error")
+    {
+        <div class="alert alert-danger" role="alert">
+            @Html.DisplayFor(t => Model)
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning" role="alert">
+            @Html.DisplayFor(t => Model)
+        </div>
+    }
+    
+}

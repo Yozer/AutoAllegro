@@ -8,10 +8,9 @@
     <div class="row">
         <div class="col-md-12">
             <div class="jumbotron">
-                @if (Model.Message != null)
-                {
-                    <p class="text-success">@Html.DisplayFor(t => t.Message)</p>
-                }
+
+                @Html.Partial("~/Views/Shared/_Message.cshtml", Model.Message)
+
                 <h1>@Model.Title</h1>
                 <div class="row">
                     <div class="col-md-7">

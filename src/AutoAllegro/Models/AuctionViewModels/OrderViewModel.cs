@@ -24,23 +24,23 @@ namespace AutoAllegro.Models.AuctionViewModels
 
     public enum OrderViewMessage
     {
-        [Display(Name = "Zamówienie anulowano pomyślnie.")]
+        [Display(Name = "Zamówienie anulowano pomyślnie.", ShortName = "Success")]
         OrderCancelSuccess,
-        [Display(Name = "Kod wygnerowany pomyślnie.")]
+        [Display(Name = "Kod wygnerowany pomyślnie.", ShortName = "Success")]
         GenerateCodeSuccess,
-        [Display(Name = "Błąd. Dla tej aukcji nie ma już dostępnych kodów. Dodaj nowe.")]
+        [Display(Name = "Błąd. Dla tej aukcji nie ma już dostępnych kodów. Dodaj nowe.", ShortName = "Error")]
         GenerateCodeNoCodesAvailable,
-        [Display(Name = "Błąd. Nie możesz anulować już anulowanego zamówienia.")]
+        [Display(Name = "Błąd. Nie możesz anulować już anulowanego zamówienia.", ShortName = "Error")]
         OrderCancelFail,
-        [Display(Name = "Błąd podczas wysyłania zwrotu prowizji do Allegro.")]
+        [Display(Name = "Błąd podczas wysyłania zwrotu prowizji do Allegro.", ShortName = "Error")]
         SendingRefundFailed,
-        [Display(Name = "Zamówienie oznaczone jako opłacone.")]
+        [Display(Name = "Zamówienie oznaczone jako opłacone.", ShortName = "Success")]
         OrderMarkedAsPaid,
-        [Display(Name = "Błąd podczas anulowania zwrotu prowizji. Prawdopodobnie kupujący otrzymał już ostrzeżenie od Allegro.")]
+        [Display(Name = "Błąd podczas anulowania zwrotu prowizji. Prawdopodobnie kupujący otrzymał już ostrzeżenie od Allegro.", ShortName = "Error")]
         CannotMarkAsPaid,
-        [Display(Name = "Pomyślnie zwolniono kody.")]
+        [Display(Name = "Pomyślnie zwolniono kody.", ShortName = "Success")]
         FreeCodesSuccess,
-        [Display(Name = "Błąd. Kody można zwolnić tylko dla anulowanego zamówienia.")]
+        [Display(Name = "Błąd. Kody można zwolnić tylko dla anulowanego zamówienia.", ShortName = "Error")]
         FreeCodesOnlyForCanceledOrder
     }
 }

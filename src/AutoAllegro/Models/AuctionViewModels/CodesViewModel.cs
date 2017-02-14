@@ -15,9 +15,9 @@ namespace AutoAllegro.Models.AuctionViewModels
 
     public enum CodeViewMessage
     {
-        [Display(Name = "Błąd! Kod już sprzedany.")]
+        [Display(Name = "Błąd! Kod już sprzedany.", ShortName = "Error")]
         ErrorCodeSold,
-        [Display(Name = "Kod usunięty pomyślnie.")]
+        [Display(Name = "Kod usunięty pomyślnie.", ShortName = "Success")]
         SuccessDelete
     }
 }

@@ -36,11 +36,11 @@ namespace AutoAllegro.Models.AuctionViewModels
 
     public enum AuctionMessageId
     {
-        [Display(Name = "Zanim włączysz opcję \"Wirtualny przedmiot\" ustaw dane do wysyłki maili w ustawieniach konta.")]
+        [Display(Name = "Zanim włączysz opcję \"Wirtualny przedmiot\" ustaw dane do wysyłki maili w ustawieniach konta.", ShortName = "Error")]
         CannotSetVirtualItem,
-        [Display(Name = "Ustawienia zapisane pomyślnie.")]
+        [Display(Name = "Ustawienia zapisane pomyślnie.", ShortName = "Success")]
         SuccessSaveSettings,
-        [Display(Name = "Kody zostały dodane pomyślnie.")]
+        [Display(Name = "Kody zostały dodane pomyślnie.", ShortName = "Success")]
         SuccessAddCodes
     }
 }
