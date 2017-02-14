@@ -69,8 +69,8 @@ namespace AutoAllegro
             {
                 UserId = userId,
                 AllegroAuctionId = 111,
-                CreationDate = new DateTime(2002, 12, 3, 5, 4, 2),
-                EndDate = new DateTime(2011, 5, 4, 5, 6, 6),
+                CreationDate = new DateTime(2012, 2, 27, 5, 4, 2),
+                EndDate = new DateTime(2012, 3, 3, 5, 6, 6),
                 Fee = 50.0m,
                 Title = "test ad",
                 OpenCost = 51.23m,
@@ -88,12 +88,12 @@ namespace AutoAllegro
             {
                 UserId = userId,
                 AllegroAuctionId = 7731,
-                CreationDate = new DateTime(1994, 12, 3, 5, 4, 2),
-                EndDate = new DateTime(1998, 5, 4, 5, 6, 6),
-                Fee = 513,
+                CreationDate = new DateTime(2012, 1, 25, 5, 4, 2),
+                EndDate = new DateTime(2012, 2, 28, 5, 6, 6),
+                Fee = 3.42m,
                 Title = "test ad2",
-                OpenCost = 634,
-                PricePerItem = 619m,
+                OpenCost = 5.42m,
+                PricePerItem = 6.99m,
                 IsVirtualItem = false,
                 Converter = 5
             };
@@ -101,12 +101,12 @@ namespace AutoAllegro
             {
                 UserId = userId,
                 AllegroAuctionId = 333,
-                CreationDate = new DateTime(2005, 12, 3, 5, 4, 2),
-                EndDate = new DateTime(2006, 5, 4, 5, 6, 6),
+                CreationDate = new DateTime(2012, 2, 24, 5, 4, 2),
+                EndDate = new DateTime(2012, 3, 24, 5, 6, 6),
                 Fee = 5,
                 Title = "test ad3",
                 OpenCost = 5.23m,
-                PricePerItem = 88.99m,
+                PricePerItem = 8.99m,
                 IsVirtualItem = false,
             };
             var auction4 = new Auction
@@ -177,7 +177,7 @@ namespace AutoAllegro
                 AllegroDealId = 1,
                 Auction = auction1,
                 Buyer = buyer1,
-                OrderDate = new DateTime(1993, 12, 11, 14, 55, 22),
+                OrderDate = new DateTime(2012, 2, 28, 14, 55, 22),
                 OrderStatus = OrderStatus.Done,
                 Quantity = 4,
                 ShippingAddress = new ShippingAddress
@@ -202,7 +202,7 @@ namespace AutoAllegro
                 AllegroDealId = 2,
                 Auction = auction2,
                 Buyer = buyer1,
-                OrderDate = new DateTime(1991, 12, 11, 12, 55, 22),
+                OrderDate = new DateTime(2012, 2, 16, 12, 55, 22),
                 OrderStatus = OrderStatus.Paid,
                 Quantity = 2,
                 ShippingAddress = new ShippingAddress
@@ -220,7 +220,7 @@ namespace AutoAllegro
                 AllegroDealId = 3,
                 Auction = auction3,
                 Buyer = buyer2,
-                OrderDate = new DateTime(1995, 12, 5, 12, 33, 22),
+                OrderDate = new DateTime(2012, 3, 14, 12, 33, 22),
                 OrderStatus = OrderStatus.Created,
                 Quantity = 1
             });
@@ -229,7 +229,7 @@ namespace AutoAllegro
                 AllegroDealId = 4,
                 Auction = auction1,
                 Buyer = buyer3,
-                OrderDate = new DateTime(2222, 3, 5, 12, 33, 22),
+                OrderDate = new DateTime(2012, 3, 2, 12, 33, 22),
                 OrderStatus = OrderStatus.Created,
                 Quantity = 1,
                 GameCodes = new List<GameCode>
@@ -274,14 +274,28 @@ namespace AutoAllegro
                 Quantity = 1
             });
 
-            for (int i = 6; i < 200; ++i)
+            Random random = new Random();
+            for (int i = 9; i < 500; ++i)
             {
                 db.Orders.Add(new Order
                 {
                     AllegroDealId = i,
                     Auction = auction3,
                     Buyer = buyer3,
-                    OrderDate = new DateTime(2012, 3, 3, 12, 33, 11).AddMinutes(i),
+                    OrderDate = new DateTime(2012, 2, 16, 12, 33, 11).AddMinutes(random.Next(0, 40000)),
+                    OrderStatus = OrderStatus.Done,
+                    Quantity = 1
+                });
+            }
+
+            for (int i = 600; i < 1100; ++i)
+            {
+                db.Orders.Add(new Order
+                {
+                    AllegroDealId = i,
+                    Auction = auction2,
+                    Buyer = buyer2,
+                    OrderDate = new DateTime(2012, 1, 25, 12, 33, 11).AddMinutes(random.Next(0, 40000)),
                     OrderStatus = OrderStatus.Done,
                     Quantity = 1
                 });
