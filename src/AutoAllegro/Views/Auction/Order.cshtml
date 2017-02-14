@@ -166,11 +166,31 @@
                         }
                         @if (Model.OrderStatus != OrderStatus.Canceled)
                         {
-                            // tutaj też modale z potwierdzeniami czy na pewno chcesz to zrobić + lista gdzie można wybrać powód anulowania -> @Model.RefundReasons
-                            <form asp-action="CancelOrder">
-                                @Html.HiddenFor(t => t.Id)
-                                <button type="submit" class="list-group-item">Anuluj zamówienie</button>
-                            </form>
+                            <button id="cancelOrder" type="submit" class="list-group-item">Anuluj zamówienie</button>
+
+                            <div class="modal fade" id="cancelOrderModal" role="dialog">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" ><span>&times;</span></button>
+                                            <h4 class="modal-title">Wybierz powód anulowania zamówienia</h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form asp-action="CancelOrder" method="POST">
+                                                <input type="hidden" name="id" value="@Model.Id">
+                                                <div class="form-group">
+                                                    <label for="refundReasonsSelect">Wybierz powód zwrotu</label>
+                                                    <select name="reasonId" id="refundReasonsSelect" class="form-control">
+                                                    </select>
+                                                </div>
+                                                <div class="form-group text-right">
+                                                    <button class="btn btn-success" type="submit" data-confirm="default">Anuluj</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         }
                         else if(Model.GameCodes.Count > 0)
                         {
@@ -197,3 +217,28 @@
     </div>
 
 </div>
+
+@section JavaScripts
+{
+    <script>
+        $(document).ready(function() {
+            $('#cancelOrder').click(function() {
+                var baseUrl = '@Url.Action("", null, null, "http")';
+                var allegroDealId = @Model.AllegroDealId;
+                var refundReasonsUrl = baseUrl + 'Auction/RefundReasons/' + allegroDealId;
+
+                $.get(refundReasonsUrl, function(data) {
+                    var reasons = jQuery.parseJSON(data);
+                    for (var i in reasons) {
+                        var reason = reasons[i];
+                        $('#refundReasonsSelect').append('<option value="' + reason.Id + '">' + reason.Reason + '</option>');
+                    }
+                    $('#cancelOrderModal').modal('show');
+                });
+                
+            }); 
+        });
+    </script>
+}
+
+
