@@ -114,7 +114,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            var result = await _controller.Auction(3);
+            var result = await _controller.Auction(new GetAuctionViewModel {Id = 3});
 
             // assert
             Assert.IsType<RedirectToActionResult>(result);
@@ -130,7 +130,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            IActionResult result = await _controller.Auction(1, searchString: "Pierdola");
+            IActionResult result = await _controller.Auction(new GetAuctionViewModel {Id = 1, SearchString = "Pierdola"});
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -167,7 +167,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            IActionResult result = await _controller.Auction(1, searchString: "buyer1@gmail.com");
+            IActionResult result = await _controller.Auction(new GetAuctionViewModel { Id = 1, SearchString = "buyer1@gmail.com"});
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -203,7 +203,7 @@ namespace AutoAllegro.Tests.Controllers
             PopulateHttpContext(UserId);
 
             // act
-            IActionResult result = await _controller.Auction(1);
+            IActionResult result = await _controller.Auction(new GetAuctionViewModel {Id = 1});
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -770,7 +770,7 @@ namespace AutoAllegro.Tests.Controllers
                 });
 
             // act
-            IActionResult result = await _controller.Auction(1, refreshFees: true);
+            IActionResult result = await _controller.Auction(new GetAuctionViewModel {Id = 1, RefreshFees = true});
 
             // assert
             Assert.IsType<ViewResult>(result);
@@ -788,7 +788,7 @@ namespace AutoAllegro.Tests.Controllers
         [Fact]
         public async Task Auction_ShouldRedirectToIndex_ForModelError()
         {
-            await TestForModelError(async () => await _controller.Auction(0));
+            await TestForModelError(async () => await _controller.Auction(new GetAuctionViewModel { Id = 0 }));
 
         }
         [Fact]
@@ -804,7 +804,7 @@ namespace AutoAllegro.Tests.Controllers
         [Fact]
         public async Task AuctionPost_ShouldRedirectToIndex_ForModelError()
         {
-            await TestForModelError(() => _controller.Auction(null));
+            await TestForModelError(() => _controller.Auction((GetAuctionViewModel)null));
         }
         [Fact]
         public async Task AuctionPost_ShouldRedirectToIndex_ForNotExistingAuction()
@@ -1133,7 +1133,7 @@ namespace AutoAllegro.Tests.Controllers
             var auction = _db.Auctions.Single(t => t.AllegroAuctionId == 111);
 
             // act
-            IActionResult result = await _controller.Auction(auction.Id, refreshAd: true);
+            IActionResult result = await _controller.Auction(new GetAuctionViewModel {Id = auction.Id, RefreshAd = true});
 
             // assert
             Assert.IsType<ViewResult>(result);

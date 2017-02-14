@@ -51,21 +51,20 @@ namespace AutoAllegro.Controllers
         }
 
 
-        public async Task<IActionResult> Auction(int id, int? page = null, bool refreshFees = false, bool refreshAd = false, 
-            AuctionMessageId? message = null, bool settingsTabActive = false, string searchString = null)
+        public async Task<IActionResult> Auction(GetAuctionViewModel model)
         {
             if (!ModelState.IsValid)
                 return RedirectToAction(nameof(Index));
 
             const int pageSize = 25;
-            Auction auction = string.IsNullOrEmpty(searchString) ? 
+            Auction auction = string.IsNullOrEmpty(model.SearchString) ? 
                 await (
                     from ad in _dbContext.Auctions.Include(t => t.Orders).ThenInclude(t => t.Buyer)
-                    where ad.UserId == GetUserId() && ad.Id == id
+                    where ad.UserId == GetUserId() && ad.Id == model.Id
                     select ad).FirstOrDefaultAsync() 
                 : await (
                     from ad in _dbContext.Auctions
-                    where ad.UserId == GetUserId() && ad.Id == id
+                    where ad.UserId == GetUserId() && ad.Id == model.Id
                     select ad).FirstOrDefaultAsync();
 
 
@@ -74,13 +73,13 @@ namespace AutoAllegro.Controllers
 
             int codesCount = await _dbContext.GameCodes.CountAsync(t => t.AuctionId == auction.Id && t.Order == null);
 
-            if (refreshFees)
+            if (model.RefreshFees)
             {
                 await LoginToAllegro();
                 await _allegroService.UpdateAuctionFees(auction);
                 await _dbContext.SaveChangesAsync();
             }
-            if (refreshAd)
+            if (model.RefreshAd)
             {
                 await LoginToAllegro();
                 await _allegroService.RefreshAd(auction);
@@ -89,27 +88,27 @@ namespace AutoAllegro.Controllers
 
             // possible bottleneck
             var viewModel = _mapper.Map<AuctionViewModel>(auction);
-            if(!string.IsNullOrEmpty(searchString))
+            if(!string.IsNullOrEmpty(model.SearchString))
             {
-                if (Regex.IsMatch(searchString, EmailPattern))
+                if (Regex.IsMatch(model.SearchString, EmailPattern))
                 {
-                   var orders = await GetOrdersByEmail(id,searchString);
+                   var orders = await GetOrdersByEmail(model.Id, model.SearchString);
                     viewModel.Orders = _mapper.Map<List<OrderViewModel>>(orders);
                 } 
                 else 
                 {
-                   var orders = await GetOrdersByName(id,searchString);
+                   var orders = await GetOrdersByName(model.Id, model.SearchString);
                     viewModel.Orders = _mapper.Map<List<OrderViewModel>>(orders);
 
                 }
             }
 
             viewModel.Orders = viewModel.Orders.OrderByDescending(t => t.OrderDate).ToList();
-            viewModel.Message = message;
-            viewModel.SettingsTabActive = settingsTabActive;
-            viewModel.Paginate(page, pageSize, c => c.Orders);
+            viewModel.Message = model.Message;
+            viewModel.SettingsTabActive = model.SettingsTabActive;
+            viewModel.Paginate(model.Page, pageSize, c => c.Orders);
             viewModel.FreeCodesCount = codesCount;
-            viewModel.SearchString = searchString;
+            viewModel.SearchString = model.SearchString;
             return View(viewModel);
         }
 
