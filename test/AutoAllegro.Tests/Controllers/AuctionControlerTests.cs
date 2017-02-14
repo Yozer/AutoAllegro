@@ -139,6 +139,7 @@ namespace AutoAllegro.Tests.Controllers
 
             
             Assert.Equal(1, model.Id);
+            Assert.Equal("Pierdola", model.SearchString);
             Assert.Equal("test ad", model.Title);
             Assert.Equal(111, model.AllegroAuctionId);
             Assert.Equal(50, model.Fee);
@@ -174,6 +175,7 @@ namespace AutoAllegro.Tests.Controllers
             AuctionViewModel model = (AuctionViewModel) view.Model;
 
             Assert.Equal(1, model.Id);
+            Assert.Equal("buyer1@gmail.com", model.SearchString);
             Assert.Equal("test ad", model.Title);
             Assert.Equal(111, model.AllegroAuctionId);
             Assert.Equal(50, model.Fee);

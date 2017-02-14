@@ -51,7 +51,8 @@ namespace AutoAllegro.Controllers
         }
 
 
-        public async Task<IActionResult> Auction(int id, int? page = null, bool refreshFees = false, bool refreshAd = false, AuctionMessageId? message = null, bool settingsTabActive = false, string searchString = null)
+        public async Task<IActionResult> Auction(int id, int? page = null, bool refreshFees = false, bool refreshAd = false, 
+            AuctionMessageId? message = null, bool settingsTabActive = false, string searchString = null)
         {
             if (!ModelState.IsValid)
                 return RedirectToAction(nameof(Index));
@@ -108,6 +109,7 @@ namespace AutoAllegro.Controllers
             viewModel.SettingsTabActive = settingsTabActive;
             viewModel.Paginate(page, pageSize, c => c.Orders);
             viewModel.FreeCodesCount = codesCount;
+            viewModel.SearchString = searchString;
             return View(viewModel);
         }
 

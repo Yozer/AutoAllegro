@@ -274,6 +274,19 @@ namespace AutoAllegro
                 Quantity = 1
             });
 
+            for (int i = 6; i < 200; ++i)
+            {
+                db.Orders.Add(new Order
+                {
+                    AllegroDealId = i,
+                    Auction = auction3,
+                    Buyer = buyer3,
+                    OrderDate = new DateTime(2012, 3, 3, 12, 33, 11).AddMinutes(i),
+                    OrderStatus = OrderStatus.Done,
+                    Quantity = 1
+                });
+            }
+
             await db.SaveChangesAsync();
             //await AddOrUpdateAsync(serviceProvider, g => g.GenreId, Genres.Select(genre => genre.Value));
             //await AddOrUpdateAsync(serviceProvider, a => a.ArtistId, Artists.Select(artist => artist.Value));

@@ -76,7 +76,7 @@
                             <form asp-action="Auction" asp-route-id="@Model.Id" method="GET">
                                 <div class="form-group">
                                     <div class="input-group">
-                                        <input name="searchString" type="text" class="form-control" placeholder="Wyszukaj login lub e-mail...">
+                                        <input value="@Model.SearchString" name="searchString" type="text" class="form-control" placeholder="Wyszukaj login lub e-mail...">
                                         <span class="input-group-btn">
                                             <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
                                         </span>
@@ -113,15 +113,15 @@
                     </table>
                     <div class="pagination-wrapper">
                         <ul class="pagination">
-                            <li><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="1">&laquo;&laquo;</a></li>
-                            <li class=@(Model.PaginationSettings.IsFirstPage ? "disabled" : string.Empty)><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@(Model.PaginationSettings.CurrentPage - 1)">&laquo;</a></li>
+                            <li><a asp-action="Auction" asp-route-searchString="@Model.SearchString" asp-route-id="@Model.Id" asp-route-page="1">&laquo;&laquo;</a></li>
+                            <li class=@(Model.PaginationSettings.IsFirstPage ? "disabled" : string.Empty)><a asp-route-searchString="@Model.SearchString" asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@(Model.PaginationSettings.CurrentPage - 1)">&laquo;</a></li>
                             @for (int i = Model.PaginationSettings.StartPage; i <= Model.PaginationSettings.EndPage; ++i)
                             {
-                                <li class=@(Model.PaginationSettings.CurrentPage == i ? "active" : string.Empty)><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@i">@i</a></li>
+                                <li class=@(Model.PaginationSettings.CurrentPage == i ? "active" : string.Empty)><a asp-route-searchString="@Model.SearchString" asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@i">@i</a></li>
                             }
 
-                            <li class=@(Model.PaginationSettings.IsLastPage ? "disabled" : string.Empty)><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@(Model.PaginationSettings.CurrentPage + 1)">&raquo;</a></li>
-                            <li><a asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@Model.PaginationSettings.PagesCount">&raquo;&raquo;</a></li>
+                            <li class=@(Model.PaginationSettings.IsLastPage ? "disabled" : string.Empty)><a asp-route-searchString="@Model.SearchString" asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@(Model.PaginationSettings.CurrentPage + 1)">&raquo;</a></li>
+                            <li><a asp-route-searchString="@Model.SearchString" asp-action="Auction" asp-route-id="@Model.Id" asp-route-page="@Model.PaginationSettings.PagesCount">&raquo;&raquo;</a></li>
                         </ul>
                     </div>
                 </div>
