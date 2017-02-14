@@ -71,6 +71,21 @@
 
             <div class="tab-content">
                 <div role="tabpanel" class="@($"tab-pane {(!Model.SettingsTabActive ? "active" : string.Empty)}")" id="buyers">
+                    <div class="row">
+                        <div class="col-md-4 col-md-offset-8">
+                            <form asp-action="Auction" asp-route-id="@Model.Id" method="GET">
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input name="searchString" type="text" class="form-control" placeholder="Wyszukaj...">
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <table class="table table-hover ">
                         <thead>
                         <tr>
