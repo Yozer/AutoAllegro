@@ -225,13 +225,12 @@
             $('#cancelOrder').click(function() {
                 var baseUrl = '@Url.Action("", null, null, "http")';
                 var allegroDealId = @Model.AllegroDealId;
-                var refundReasonsUrl = baseUrl + 'Auction/RefundReasons/' + allegroDealId;
+                var refundReasonsUrl = baseUrl + 'Auction/RefundReasons?dealId=' + allegroDealId;
 
-                $.get(refundReasonsUrl, function(data) {
-                    var reasons = jQuery.parseJSON(data);
+                $.get(refundReasonsUrl, function(reasons) {
                     for (var i in reasons) {
                         var reason = reasons[i];
-                        $('#refundReasonsSelect').append('<option value="' + reason.Id + '">' + reason.Reason + '</option>');
+                        $('#refundReasonsSelect').append('<option value="' + reason.id + '">' + reason.reason + '</option>');
                     }
                     $('#cancelOrderModal').modal('show');
                 });

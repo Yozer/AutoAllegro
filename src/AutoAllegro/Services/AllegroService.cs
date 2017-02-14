@@ -316,11 +316,13 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
+            _logger.LogInformation("Getting reasons for deal: " + dealId);
             var reasons = await DoRequest(() => _servicePort.doGetRefundsReasonsAsync(new doGetRefundsReasonsRequest
             {
                 dealId = dealId,
                 sessionId = _sessionKey
             }));
+            _logger.LogInformation("Reasons count for deal: " + dealId + ": " + reasons.reasonsCount);
 
             return reasons.reasonsList.Select(t => new AllegroRefundReason
             {
