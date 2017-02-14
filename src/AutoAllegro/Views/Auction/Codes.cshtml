@@ -40,7 +40,7 @@
                         <td>
                             <form asp-controller="Auction" asp-action="DeleteCode" method="post">
                                 <input type="hidden" name="id" value="@code.Id" />
-                                <button type="submit" class="btn btn-danger">Usuń</button>
+                                <button type="submit" class="btn btn-danger" data-confirm="default">Usuń</button>
                             </form>
                         </td>
                     </tr>
