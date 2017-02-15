@@ -134,7 +134,109 @@ namespace AutoAllegro.Tests.Services
             User user = _db.Users.Single(t => t.Id == UserId);
             Assert.Equal(152, _db.Events.Last(t => t.Order.Auction.UserId == ad.UserId).AllegroEventId);
         }
+        [Fact]
+        public void Process_TransactionFinished_AndThenCreated()
+        {
+            // arrange
+            CreateFakeData();
+            long userJournal = 14;
 
+            Auction ad = _db.Auctions.Single(t => t.Id == 1);
+            Buyer buyer = _db.Buyers.Single(t => t.Id == 1);
+            ClearTransactionData();
+
+            _db.Auctions.Single(t => t.AllegroAuctionId == 333).IsMonitored = false;
+            _db.Events.Add(new Event {Order = new Order {Auction = ad, Buyer = new Buyer() }, AllegroEventId = userJournal });
+            _db.SaveChanges();
+
+            buyer.Orders = null;
+            _allegroService.FetchJournal(userJournal).Returns(new List<SiteJournalDealsStruct>
+            {
+                new SiteJournalDealsStruct
+                {
+                    dealBuyerId = (int) buyer.AllegroUserId,
+                    dealEventId = 152,
+                    dealItemId = ad.AllegroAuctionId,
+                    dealEventTime = new DateTime(2015, 4, 6, 5, 8, 4).FromDateTime(),
+                    dealQuantity = 3,
+                    dealEventType = (int)EventType.DealCreated,
+                    dealId = 5999
+                },
+                new SiteJournalDealsStruct
+                {
+                    dealBuyerId = (int) buyer.AllegroUserId,
+                    dealEventId = 153,
+                    dealItemId = ad.AllegroAuctionId,
+                    dealEventTime = new DateTime(2015, 4, 6, 5, 8, 4).FromDateTime(),
+                    dealQuantity = 3,
+                    dealEventType = (int)EventType.TransactionFinished,
+                    dealTransactionId = 341,
+                    dealId = 5999
+                },
+                new SiteJournalDealsStruct
+                {
+                    dealBuyerId = (int) buyer.AllegroUserId,
+                    dealEventId = 154,
+                    dealItemId = ad.AllegroAuctionId,
+                    dealEventTime = new DateTime(2015, 4, 6, 5, 8, 4).FromDateTime(),
+                    dealQuantity = 3,
+                    dealEventType = (int)EventType.TransactionCreated,
+                    dealTransactionId = 341,
+                    dealId = 5999
+                }
+            });
+            _allegroService.FetchBuyerData(ad.AllegroAuctionId, buyer.AllegroUserId).Returns(buyer);
+            _allegroService.GetTransactionDetails(341, Arg.Is<Order>(t => t.AllegroDealId == 5999)).Returns(t => new Transaction
+            {
+                AllegroTransactionId = t.Arg<long>(),
+                Amount = ad.PricePerItem * 3,
+                TransactionStatus = TransactionStatus.Created
+            }).AndDoes(t =>
+            {
+                Order o = t.Arg<Order>();
+                o.ShippingAddress = new ShippingAddress
+                {
+                    Address = "add",
+                    City = "city",
+                    FirstName = "finame",
+                    LastName = "laName",
+                    MessageToSeller = "msg",
+                    PostCode = "33-331"
+                };
+            });
+
+            // act
+            _processor.Process();
+
+            // assert
+            var subScope = _scope.ServiceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            _db = subScope.ServiceProvider.GetService<ApplicationDbContext>();
+            _allegroService.Received().FetchBuyerData(ad.AllegroAuctionId, buyer.AllegroUserId);
+            Assert.Equal(4, _allegroService.ReceivedCalls().Count()); // login, journal, buyer data, transaction data
+
+            Order order = _db.Orders.Include(t => t.Buyer).Include(t => t.Auction).Include(t => t.Transactions).Last();
+            Assert.Equal(ad.AllegroAuctionId, order.Auction.AllegroAuctionId);
+            Assert.Equal(5999, order.AllegroDealId);
+            Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), order.OrderDate);
+            Assert.Equal(OrderStatus.Paid, order.OrderStatus);
+            Assert.Equal(3, order.Quantity);
+            Assert.Null(order.ShippingAddress);
+            Assert.Equal(buyer.AllegroUserId, order.Buyer.AllegroUserId);
+
+            var transactions = order.Transactions;
+            Assert.Equal(1, transactions.Count);
+            Assert.Equal(TransactionStatus.Finished, transactions.ElementAt(0).TransactionStatus);
+            Assert.Equal(341, transactions.ElementAt(0).AllegroTransactionId);
+
+            Event ev = _db.Events.Last();
+            Assert.Equal(order.Id, ev.OrderId);
+            Assert.Equal(154, ev.AllegroEventId);
+            Assert.Equal(new DateTime(2015, 4, 6, 5, 8, 4), ev.EventTime);
+            Assert.Equal(EventType.TransactionCreated, ev.EventType);
+
+            User user = _db.Users.Single(t => t.Id == UserId);
+            Assert.Equal(154, _db.Events.Last(t => t.Order.Auction.UserId == ad.UserId).AllegroEventId);
+        }
         [Fact]
         public void Process_TwoTransactionCreated_OneCanceled_OneFinished()
         {

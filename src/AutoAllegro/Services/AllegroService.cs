@@ -137,6 +137,7 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
             SiteJournalDealsStruct[] response;
+            _logger.LogInformation("Fetching journal with id: " + journalStart);
 
             do
             {

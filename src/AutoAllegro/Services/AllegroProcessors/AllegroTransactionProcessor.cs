@@ -85,9 +85,18 @@ namespace AutoAllegro.Services.AllegroProcessors
                 }
                 else if (dealsStruct.dealEventType == (int) EventType.TransactionCreated)
                 {
-                    order = _db.Orders.First(t => t.AllegroDealId == dealsStruct.dealId);
-                    Transaction transaction = _allegroService.GetTransactionDetails(dealsStruct.dealTransactionId, order);
-                    order.Transactions.Add(transaction);
+                    _logger.LogInformation($"Got transaction created dealId: {dealsStruct.dealId} transactionId: {dealsStruct.dealTransactionId}");
+                    order = _db.Orders.Include(t => t.Transactions).First(t => t.AllegroDealId == dealsStruct.dealId);
+                    if (order.Transactions.All(t => t.AllegroTransactionId != dealsStruct.dealTransactionId))
+                    {
+                        Transaction transaction = _allegroService.GetTransactionDetails(dealsStruct.dealTransactionId, order);
+                        order.Transactions.Add(transaction);
+                    }
+                    else
+                    {
+                        // rare case, allegro can give us transaction finished before transaction created...
+                        _logger.LogInformation($"Transaction already created for dealId: {dealsStruct.dealId} transactionId: {dealsStruct.dealTransactionId}");
+                    }
                 }
                 else if (dealsStruct.dealEventType == (int) EventType.TransactionCanceled)
                 {
@@ -97,9 +106,20 @@ namespace AutoAllegro.Services.AllegroProcessors
                 }
                 else if (dealsStruct.dealEventType == (int) EventType.TransactionFinished)
                 {
-                    _logger.LogInformation($"Transaction finished dealId: {dealsStruct.dealId}");
-                    Transaction transaction = _db.Transactions.Include(t => t.Order).First(t => t.AllegroTransactionId == dealsStruct.dealTransactionId);
-                    order = transaction.Order;
+                    _logger.LogInformation($"Got transaction finished dealId: {dealsStruct.dealId} transactionId: {dealsStruct.dealTransactionId}");
+                    Transaction transaction = _db.Transactions.Include(t => t.Order).FirstOrDefault(t => t.AllegroTransactionId == dealsStruct.dealTransactionId);
+                    if (transaction == null)
+                    {
+                        _logger.LogInformation($"Transaction not found {dealsStruct.dealTransactionId} dealId: {dealsStruct.dealId}");
+                        // rare case, allegro can give us transaction finished before transaction created...
+                        order = _db.Orders.First(t => t.AllegroDealId == dealsStruct.dealId);
+                        transaction = _allegroService.GetTransactionDetails(dealsStruct.dealTransactionId, order);
+                        order.Transactions.Add(transaction);
+                    }
+                    else
+                    {
+                        order = transaction.Order;
+                    }
 
                     if (order.AllegroRefundId != null)
                     {
@@ -116,7 +136,12 @@ namespace AutoAllegro.Services.AllegroProcessors
                     }
 
                     transaction.TransactionStatus = TransactionStatus.Finished;
-                    order.OrderStatus = OrderStatus.Paid;
+
+                    // we could manually mark this order as paid
+                    if (order.OrderStatus != OrderStatus.Done && order.OrderStatus != OrderStatus.Send)
+                    {
+                        order.OrderStatus = OrderStatus.Paid;
+                    }
                 }
 
                 var e = new Event
