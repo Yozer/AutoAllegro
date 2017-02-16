@@ -309,11 +309,35 @@ namespace AutoAllegro.Tests.Controllers
             Assert.Equal("Index", ((RedirectToActionResult)result).ActionName);
         }
         [Fact]
-        public async Task MarkAsPaid_ShouldChangeOrderStateToPaid_WithRefund()
+        public async Task MarkAsPaid_ShouldRedirectToOrder_NoTransaction()
         {
             // arrange
             var order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            PopulateHttpContext(UserId);
+
+            // act
+            IActionResult result = await _controller.MarkAsPaid(order.Id);
+
+            // assert
+            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            Assert.Equal(OrderStatus.Created, order.OrderStatus);
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirect = ((RedirectToActionResult)result);
+            Assert.Equal("Order", redirect.ActionName);
+            Assert.Equal(order.Id, redirect.RouteValues["id"]);
+            Assert.Equal(OrderViewMessage.CannotMarkOrderAsPaid_NoTransaction, redirect.RouteValues["message"]);
+        }
+        [Fact]
+        public async Task MarkAsPaid_ShouldChangeOrderStateToPaid_WithRefund()
+        {
+            // arrange
+            var order = _db.Orders.Include(t => t.Transactions).Single(t => t.AllegroDealId == 4);
             order.AllegroRefundId = 512;
+            order.Transactions.Add(new Transaction
+            {
+                TransactionStatus = TransactionStatus.Created,
+                AllegroTransactionId = 512351
+            });
             _db.SaveChanges();
             _allegroService.CancelRefund(512).Returns(true);
             PopulateHttpContext(UserId);
@@ -322,10 +346,10 @@ namespace AutoAllegro.Tests.Controllers
             IActionResult result = await _controller.MarkAsPaid(order.Id);
 
             // assert
-
-            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            order = _db.Orders.Include(t => t.Transactions).Single(t => t.AllegroDealId == 4);
             Assert.Equal(OrderStatus.Paid, order.OrderStatus);
             Assert.Null(order.AllegroRefundId);
+            Assert.Equal(TransactionStatus.Finished, order.Transactions.ElementAt(0).TransactionStatus);
 
             Assert.IsType<RedirectToActionResult>(result);
             var redirect = ((RedirectToActionResult)result);
@@ -339,6 +363,11 @@ namespace AutoAllegro.Tests.Controllers
             // arrange
             var order = _db.Orders.Single(t => t.AllegroDealId == 4);
             order.AllegroRefundId = 512;
+            order.Transactions.Add(new Transaction
+            {
+                TransactionStatus = TransactionStatus.Created,
+                AllegroTransactionId = 512351
+            });
             _db.SaveChanges();
             _allegroService.CancelRefund(512).Returns(false);
             PopulateHttpContext(UserId);
@@ -347,8 +376,9 @@ namespace AutoAllegro.Tests.Controllers
             IActionResult result = await _controller.MarkAsPaid(order.Id);
 
             // assert
-            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            order = _db.Orders.Include(t => t.Transactions).Single(t => t.AllegroDealId == 4);
             Assert.Equal(OrderStatus.Created, order.OrderStatus);
+            Assert.Equal(TransactionStatus.Created, order.Transactions.ElementAt(0).TransactionStatus);
             Assert.Equal(512, order.AllegroRefundId);
 
             Assert.IsType<RedirectToActionResult>(result);
@@ -361,7 +391,13 @@ namespace AutoAllegro.Tests.Controllers
         public async Task MarkAsPaid_ShouldChangeOrderStateToPaid()
         {
             // arrange
-            var order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            var order = _db.Orders.Include(t => t.Transactions).Single(t => t.AllegroDealId == 4);
+            order.Transactions.Add(new Transaction
+            {
+                TransactionStatus = TransactionStatus.Created,
+                AllegroTransactionId = 512351
+            });
+            _db.SaveChanges();
             PopulateHttpContext(UserId);
 
             // act
@@ -369,12 +405,14 @@ namespace AutoAllegro.Tests.Controllers
 
             // assert
 
-            order = _db.Orders.Single(t => t.AllegroDealId == 4);
+            order = _db.Orders.Include(t => t.Transactions).Single(t => t.AllegroDealId == 4);
             Assert.IsType<RedirectToActionResult>(result);
             var redirect = ((RedirectToActionResult)result);
             Assert.Equal("Order", redirect.ActionName);
             Assert.Equal(order.Id, redirect.RouteValues["id"]);
             Assert.Equal(OrderViewMessage.OrderMarkedAsPaid, redirect.RouteValues["message"]);
+            Assert.Equal(TransactionStatus.Finished, order.Transactions.ElementAt(0).TransactionStatus);
+            Assert.Equal(OrderStatus.Paid, order.OrderStatus);
         }
         [Fact]
         public async Task DeleteCode_ShouldRedirectToIndex_NotOurAd()

@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NuGet.Packaging;
 
 namespace AutoAllegro.Controllers
@@ -28,13 +29,15 @@ namespace AutoAllegro.Controllers
         private readonly IAllegroService _allegroService;
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
+        private readonly ILogger<AuctionController> _logger;
 
-        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper)
+        public AuctionController(ApplicationDbContext dbContext, UserManager<User> userManager, IAllegroService allegroService, IMapper mapper, ILogger<AuctionController> logger)
         {
             _dbContext = dbContext;
             _userManager = userManager;
             _allegroService = allegroService;
             _mapper = mapper;
+            _logger = logger;
         }
         public async Task<IActionResult> Index(int? page)
         {
@@ -358,24 +361,48 @@ namespace AutoAllegro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsPaid(int id)
         {
-            var order = await _dbContext.Orders.FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId() && t.OrderStatus == OrderStatus.Created || t.OrderStatus == OrderStatus.Canceled);
+            _logger.LogInformation(1, "Marking order as paid: " + id);
+            var order = await _dbContext.Orders.Include(t => t.Transactions)
+                .FirstOrDefaultAsync(t => t.Id == id && t.Auction.UserId == GetUserId() && (t.OrderStatus == OrderStatus.Created || t.OrderStatus == OrderStatus.Canceled));
             if (order == null)
+            {
+                _logger.LogInformation(2, "No order found: " + id);
                 return RedirectToAction(nameof(Index));
+            }
 
+            _logger.LogInformation(2, "Order found: " + id + " transaction count: " + order.Transactions.Count + 
+                " Statuses: " + string.Join(", ", order.Transactions.Select(t => t.TransactionStatus.ToString())));
+
+            Transaction transaction = order.Transactions.SingleOrDefault(t => t.TransactionStatus == TransactionStatus.Created);
+            if (transaction == null)
+            {
+                _logger.LogInformation(3, "Transaction <<Created>> for order " + id + " not found.");
+                return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.CannotMarkOrderAsPaid_NoTransaction});
+            }
+
+            _logger.LogInformation(3, "Transaction <<Created>> for order " + id + " found: " + transaction.Id);
             if (order.AllegroRefundId != null)
             {
+                _logger.LogInformation(4, "Trying to cancel allegro refund with id: " + order.AllegroRefundId);
                 await LoginToAllegro();
                 if (!await _allegroService.CancelRefund(order.AllegroRefundId.Value))
                 {
-                    return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.CannotMarkAsPaid });
+                    return RedirectToAction(nameof(Order), new {id, message = OrderViewMessage.CannotMarkAsPaid});
                 }
 
                 order.AllegroRefundId = null;
             }
+            else
+            {
+                _logger.LogInformation(5, "No refund to cancel for order " + order.Id);
+            }
 
             order.AllegroRefundId = null;
             order.OrderStatus = OrderStatus.Paid;
+            transaction.TransactionStatus = TransactionStatus.Finished;
             await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(6, "Marking order as paid success for order: " + id);
             return RedirectToAction(nameof(Order), new { id, message = OrderViewMessage.OrderMarkedAsPaid });
         }
         private async Task LoginToAllegro()

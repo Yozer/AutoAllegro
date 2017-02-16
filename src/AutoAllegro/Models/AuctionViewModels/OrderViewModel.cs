@@ -41,6 +41,8 @@ namespace AutoAllegro.Models.AuctionViewModels
         [Display(Name = "Pomyślnie zwolniono kody.", ShortName = "Success")]
         FreeCodesSuccess,
         [Display(Name = "Błąd. Kody można zwolnić tylko dla anulowanego zamówienia.", ShortName = "Error")]
-        FreeCodesOnlyForCanceledOrder
+        FreeCodesOnlyForCanceledOrder,
+        [Display(Name = "Błąd. Nie znalazłem transakcji dla tego zamówienia.", ShortName = "Error")]
+        CannotMarkOrderAsPaid_NoTransaction
     }
 }
