@@ -282,8 +282,12 @@ namespace AutoAllegro.Services
         {
             ThrowIfNotLogged();
 
+            _logger.LogInformation(1, "Refreshing ad: " + auction.Id);
             if (auction.HasEnded)
+            {
+                _logger.LogInformation(2, "Ad has already ended: " + auction.Id);
                 return;
+            }
 
             var response = await DoRequest(() => _servicePort.doGetMySellItemsAsync(new doGetMySellItemsRequest
             {
@@ -293,6 +297,8 @@ namespace AutoAllegro.Services
 
             if (response.sellItemsList.Length == 1)
             {
+                _logger.LogInformation(2, "Got SellItemsList " + auction.Id);
+
                 var ad = response.sellItemsList[0];
                 auction.Title = ad.itemTitle;
                 auction.PricePerItem = Convert.ToDecimal(ad.itemPrice.Single(t => t.priceType == 1).priceValue);
@@ -300,6 +306,8 @@ namespace AutoAllegro.Services
             }
             else
             {
+                _logger.LogInformation(2, "Got SoldItemsList " + auction.Id);
+
                 var responseSold = await DoRequest(() => _servicePort.doGetMySoldItemsAsync(new doGetMySoldItemsRequest
                 {
                     sessionId = _sessionKey,
