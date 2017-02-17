@@ -14,7 +14,7 @@
         <link href="~/css/main.min.css" rel="stylesheet">
     </environment>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    @Html.ApplicationInsightsJavaScript(TelemetryConfiguration)
+    @Html.Raw(JavaScriptSnippet.FullScript)
 </head>
 
 <body class="@ViewData["bodyClass"]">

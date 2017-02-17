@@ -124,7 +124,6 @@ namespace AutoAllegro
 
         public void ConfigureDevelopment(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            app.UseApplicationInsightsRequestTelemetry();
             loggerFactory.AddConsole(minLevel: LogLevel.Information);
 
             // StatusCode pages to gracefully handle status codes 400-599.
@@ -141,7 +140,6 @@ namespace AutoAllegro
         }
         public void ConfigureStaging(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            app.UseApplicationInsightsRequestTelemetry();
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
 
             // StatusCode pages to gracefully handle status codes 400-599.
@@ -153,7 +151,6 @@ namespace AutoAllegro
         }
         public void ConfigureProduction(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            app.UseApplicationInsightsRequestTelemetry();
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
             loggerFactory.AddAzureWebAppDiagnostics();
 
@@ -167,7 +164,6 @@ namespace AutoAllegro
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
-            app.UseApplicationInsightsExceptionTelemetry();
             app.UseHangfireServer();
 
             app.UseStaticFiles();
@@ -208,8 +204,18 @@ namespace AutoAllegro
             using (var scope = serviceProvider.CreateScope())
             {
                 HashSet<Type> scheduledJobs = new HashSet<Type>();
-
+                HashSet<string> toDelete = new HashSet<string>();
                 IMonitoringApi api = JobStorage.Current.GetMonitoringApi();
+
+                toDelete.AddRange(api.ScheduledJobs(0, 1000).Where(t => t.Value.Job == null).Select(t => t.Key));
+                toDelete.AddRange(api.ProcessingJobs(0, 1000).Where(t => t.Value.Job == null).Select(t => t.Key));
+                toDelete.AddRange(api.EnqueuedJobs("default", 0, 1000).Where(t => t.Value.Job == null).Select(t => t.Key));
+
+                foreach (string jobId in toDelete)
+                {
+                    BackgroundJob.Delete(jobId);
+                }
+
                 scheduledJobs.AddRange(api.ScheduledJobs(0, 1000).Select(t => t.Value.Job.Type));
                 scheduledJobs.AddRange(api.ProcessingJobs(0, 1000).Select(t => t.Value.Job.Type));
                 scheduledJobs.AddRange(api.EnqueuedJobs("default", 0, 1000).Select(t => t.Value.Job.Type));
