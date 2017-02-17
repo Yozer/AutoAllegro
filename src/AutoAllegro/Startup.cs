@@ -102,7 +102,6 @@ namespace AutoAllegro
             services.AddTransient<servicePort, servicePortClient>();
 
             // processors
-            services.AddTransient<IAllegroFeedbackProcessor, AllegroFeedbackProcessor>();
             services.AddTransient<IAllegroTransactionProcessor, AllegroTransactionProcessor>();
             services.AddTransient<IAllegroEmailProcessor, AllegroEmailProcessor>();
             services.AddTransient<IAllegroRefundProcessor, AllegroRefundProcessor>();
@@ -202,8 +201,7 @@ namespace AutoAllegro
         {
             typeof(IAllegroTransactionProcessor),
             typeof(IAllegroEmailProcessor),
-            typeof(IAllegroRefundProcessor),
-            typeof(IAllegroFeedbackProcessor)
+            typeof(IAllegroRefundProcessor)
         };
         private void InitHangfire(IServiceProvider serviceProvider)
         {

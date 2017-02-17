@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -39,7 +40,7 @@ namespace AutoAllegro.Tests.Controllers
             var userManager = GetUserManager(_scope);
 
             CreateFakeData();
-            _controller = new AuctionController(_db, userManager, _allegroService, _mapper);
+            _controller = new AuctionController(_db, userManager, _allegroService, _mapper, Substitute.For<ILogger<AuctionController>>());
         }
 
         [Fact]
