@@ -1,34 +1,21 @@
-# Commitiownie
+# AutoAllegro
 
-Do mastera nie commitujemy. Robimy nowego brancha dla danego issue. 
+Application written in ASP.NET Core as an academic project.
+This application helps and automates selling virtual items (like game codes) on Allegro.pl.
 
-Jak skończymy pracę to robimy merge requesta:
-https://docs.gitlab.com/ee/gitlab-basics/add-merge-request.html
+AutoAllegro can automatically send virtual items to buyer right after they buy.
 
-Zaznaczymy w merge request, żeby zamykało issue po zamknięciu merge requesta!
+# First run
 
-# Pierwsze uruchomienie
-
-1. Klonujemy repo
-3. Installujemy npm jak nie mamy
-3. Ustawiamy sobie zmienną środowiskową na:
-```
-ASPNETCORE_ENVIRONMENT=Development
-```
-
-4. Uruchamiamy (będą w src/AutoAllegro):
+1. Install npm
+2. Set enviorment variable:
+``ASPNETCORE_ENVIRONMENT=Development``
+3. Run following commands:
 ```
 npm install gulp -g
 npm install
 dotnet restore
 dotnet run
 ```
-5. Jeśli ty/ktoś zmienił bazę to usuwamy plik db.sqlite z folderu bin.
-Więcej o migracjach bazy po aktualizowaniu modelu można poczytać na necie.
 
-6. Na localhost:5000 mamy stronke
-7. Domyślny user: domino.baran@gmail.com:admin
-
-# Pomoce
-Przykładowy projekt w którym możemy zobaczyć jak zrobić wiele rzeczy:
-https://github.com/aspnet/MusicStore/tree/rel/1.1.0
+Now you can go to localhost:5000 and see website. Default user: ``admin@admin.com:admin``
