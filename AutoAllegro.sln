@@ -1,20 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1E1CD5CE-2FDA-4C72-AD37-B4106A0BC707}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{456F4941-3223-4AF9-8068-F4F14DC1B9CA}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AutoAllegro", "src\AutoAllegro\AutoAllegro.xproj", "{B23D4D3A-81A5-41D6-BA21-1E0F616A08C5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{51D69DA1-7543-4EC7-BC85-FF18E7568A1D}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AutoAllegro.Tests", "test\AutoAllegro.Tests\AutoAllegro.Tests.xproj", "{930A295D-756D-4D1D-90B2-F7312094107A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoAllegro", "src\AutoAllegro\AutoAllegro.csproj", "{B23D4D3A-81A5-41D6-BA21-1E0F616A08C5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoAllegro.Tests", "test\AutoAllegro.Tests\AutoAllegro.Tests.csproj", "{930A295D-756D-4D1D-90B2-F7312094107A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
